@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import { AuthController } from './api/auth/auth.controller';
 import { RolesController } from './api/roles/roles.controller';
 import { RequirementsController } from './api/requirements/requirements.controller';
+import { CandidatesController } from './api/candidates/candidates.controller';
+import { ApplicationsController } from './api/applications/applications.controller';
 
 dotenv.config();
 
@@ -38,6 +40,18 @@ app.post('/api/v1/requirements', RequirementsController.createRequirement);
 app.get('/api/v1/requirements', RequirementsController.getRequirements);
 app.put('/api/v1/requirements/:id', RequirementsController.updateRequirement);
 app.delete('/api/v1/requirements/:id', RequirementsController.deleteRequirement);
+
+// Candidate routes
+app.post('/api/v1/candidates/register', CandidatesController.registerCandidate);
+app.get('/api/v1/candidates', CandidatesController.getCandidates);
+app.get('/api/v1/candidates/:id', CandidatesController.getCandidate);
+app.put('/api/v1/candidates/:id', CandidatesController.updateCandidate);
+
+// Application routes
+app.post('/api/v1/applications', ApplicationsController.applyForRole);
+app.get('/api/v1/applications', ApplicationsController.getApplications);
+app.get('/api/v1/applications/:id', ApplicationsController.getApplication);
+app.put('/api/v1/applications/:id/status', ApplicationsController.updateApplicationStatus);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
