@@ -1,0 +1,310 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Organisations
+model Organisation {
+  id                String   @id @default(cuid())
+  name              String
+  type              String?
+  industry          String?
+  subscriptionPlan  String   @default("basic")
+  status            String   @default("active")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  users             User[]
+  roles             Role[]
+  candidates        Candidate[]
+  applications      Application[]
+  auditLogs         AuditLog[]
+
+  @@map("organisations")
+}
+
+// Users
+model User {
+  id                String   @id @default(cuid())
+  organisationId    String
+  email             String   @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  role              String   // admin, recruiter, employer
+  status            String   @default("active")
+  emailVerified     Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organisation      Organisation @relation(fields: [organisationId], references: [id])
+  auditLogs         AuditLog[]
+
+  @@index([organisationId])
+  @@map("users")
+}
+
+// Roles (Job Positions)
+model Role {
+  id                String   @id @default(cuid())
+  organisationId    String
+  title             String
+  location          String?
+  salaryMin         Decimal? @db.Decimal(10, 2)
+  salaryMax         Decimal? @db.Decimal(10, 2)
+  employmentType    String?  // full-time, part-time, contract
+  status            String   @default("draft") // active, closed, draft
+  jdFileUrl         String?
+  jdFileContent     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organisation      Organisation @relation(fields: [organisationId], references: [id])
+  requirements      RoleRequirement[]
+  applications      Application[]
+  scoringRules      ScoringRule[]
+
+  @@index([organisationId])
+  @@index([status])
+  @@map("roles")
+}
+
+// Role Requirements
+model RoleRequirement {
+  id                String   @id @default(cuid())
+  roleId            String
+  category          String   // location, salary, qualifications, work_rights, experience
+  requirementName   String
+  requirementType   String   // text, number, boolean, select
+  mandatory         Boolean  @default(false)
+  weight            Decimal  @default(0) @db.Decimal(3, 2)
+  minValue          String?
+  maxValue          String?
+  acceptableValues  Json?    // array of acceptable values
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  role              Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  candidateScores   CandidateScore[]
+  scoringRules      ScoringRule[]
+
+  @@index([roleId])
+  @@map("role_requirements")
+}
+
+// Candidates
+model Candidate {
+  id                String   @id @default(cuid())
+  organisationId    String
+  email             String
+  phone             String?
+  firstName         String
+  lastName          String
+  suburb            String?
+  postcode          String?
+  source            String?  // job board, referral, etc
+  status            String   @default("active")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organisation      Organisation @relation(fields: [organisationId], references: [id])
+  applications      Application[]
+
+  @@unique([organisationId, email])
+  @@index([organisationId])
+  @@index([email])
+  @@map("candidates")
+}
+
+// Applications
+model Application {
+  id                String   @id @default(cuid())
+  organisationId    String
+  candidateId       String
+  roleId            String
+  source            String?
+  status            String   @default("applied") // applied, screening, completed, progressed, rejected, review
+  atsReferenceId    String?
+  appliedAt         DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organisation      Organisation @relation(fields: [organisationId], references: [id])
+  candidate         Candidate @relation(fields: [candidateId], references: [id])
+  role              Role @relation(fields: [roleId], references: [id])
+  screeningSession  ScreeningSession?
+  candidateScores   CandidateScore[]
+  routingDecision   RoutingDecision?
+  communicationLogs CommunicationLog[]
+
+  @@index([organisationId])
+  @@index([candidateId])
+  @@index([roleId])
+  @@index([status])
+  @@map("applications")
+}
+
+// Screening Sessions
+model ScreeningSession {
+  id                String   @id @default(cuid())
+  applicationId     String   @unique
+  status            String   @default("active") // active, completed, expired, paused
+  startedAt         DateTime?
+  completedAt       DateTime?
+  expiredAt         DateTime?
+  currentStep       Int      @default(0)
+  sessionToken      String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  candidateAnswers  CandidateAnswer[]
+
+  @@index([applicationId])
+  @@map("screening_sessions")
+}
+
+// Candidate Answers
+model CandidateAnswer {
+  id                String   @id @default(cuid())
+  screeningSessionId String
+  questionKey       String
+  questionText      String?
+  rawAnswer         String?
+  structuredAnswer  Json?
+  confidenceScore   Decimal? @db.Decimal(3, 2)
+  qualificationArea String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  screeningSession  ScreeningSession @relation(fields: [screeningSessionId], references: [id], onDelete: Cascade)
+
+  @@index([screeningSessionId])
+  @@map("candidate_answers")
+}
+
+// Scoring Rules
+model ScoringRule {
+  id                String   @id @default(cuid())
+  roleId            String
+  requirementId     String?
+  ruleType          String   // mandatory, weighted, threshold
+  operator          String   // equals, greater_than, less_than, contains
+  value             String?
+  scoreValue        Decimal  @default(0) @db.Decimal(5, 2)
+  failAction        String   // reject, review, pass
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  role              Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  requirement       RoleRequirement? @relation(fields: [requirementId], references: [id])
+
+  @@index([roleId])
+  @@map("scoring_rules")
+}
+
+// Candidate Scores
+model CandidateScore {
+  id                String   @id @default(cuid())
+  applicationId     String
+  requirementId     String?
+  qualificationArea String?
+  rawScore          Decimal  @db.Decimal(5, 2)
+  weightedScore     Decimal  @db.Decimal(5, 2)
+  weight            Decimal  @db.Decimal(3, 2)
+  status            String   // pass, fail, review, warning
+  evaluationLogic   Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  requirement       RoleRequirement? @relation(fields: [requirementId], references: [id])
+
+  @@index([applicationId])
+  @@map("candidate_scores")
+}
+
+// Routing Decisions
+model RoutingDecision {
+  id                String   @id @default(cuid())
+  applicationId     String   @unique
+  outcome           String   // progress, review, reject
+  overallScore      Decimal  @db.Decimal(5, 2)
+  reasonSummary     String?
+  decisionData      Json?
+  recruiterOverride Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("routing_decisions")
+}
+
+// Communication Logs
+model CommunicationLog {
+  id                String   @id @default(cuid())
+  applicationId     String
+  channel           String   // email, sms
+  templateId        String?
+  sentTo            String
+  subject           String?
+  body              String?
+  status            String   // pending, sent, failed, bounced
+  sentAt            DateTime?
+  createdAt         DateTime @default(now())
+
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("communication_logs")
+}
+
+// Audit Logs
+model AuditLog {
+  id                String   @id @default(cuid())
+  organisationId    String
+  userId            String?
+  entityType        String
+  entityId          String?
+  actionType        String   // created, updated, deleted, progressed
+  oldData           Json?
+  newData           Json?
+  ipAddress         String?
+  createdAt         DateTime @default(now())
+
+  organisation      Organisation @relation(fields: [organisationId], references: [id])
+  user              User? @relation(fields: [userId], references: [id])
+
+  @@index([organisationId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Question Bank
+model QuestionBank {
+  id                String   @id @default(cuid())
+  organisationId    String?
+  questionKey       String   @unique
+  questionText      String
+  questionType      String   // text, multiple_choice, yes_no, range
+  qualificationArea String?
+  category          String?
+  options           Json?    // for multiple choice
+  helpText          String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([questionKey])
+  @@map("question_bank")
+}

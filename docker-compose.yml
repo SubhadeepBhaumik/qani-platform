@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: qani-postgres
+    environment:
+      POSTGRES_USER: qani_user
+      POSTGRES_PASSWORD: qani_password_dev
+      POSTGRES_DB: qani_development
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qani_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - qani-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: qani-backend
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://qani_user:qani_password_dev@postgres:5432/qani_development
+      NODE_ENV: development
+      API_PORT: 5000
+      JWT_SECRET: your-secret-key-change-in-production
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - qani-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: qani-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
+      NEXT_PUBLIC_APP_NAME: QANI
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - qani-network
+
+volumes:
+  postgres_data:
+
+networks:
+  qani-network:
+    driver: bridge
