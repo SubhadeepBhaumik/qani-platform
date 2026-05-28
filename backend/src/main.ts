@@ -9,6 +9,7 @@ import { RolesController } from './api/roles/roles.controller';
 import { RequirementsController } from './api/requirements/requirements.controller';
 import { CandidatesController } from './api/candidates/candidates.controller';
 import { ApplicationsController } from './api/applications/applications.controller';
+import { ScreeningController } from './api/screening/screening.controller';
 
 dotenv.config();
 
@@ -52,6 +53,12 @@ app.post('/api/v1/applications', ApplicationsController.applyForRole);
 app.get('/api/v1/applications', ApplicationsController.getApplications);
 app.get('/api/v1/applications/:id', ApplicationsController.getApplication);
 app.put('/api/v1/applications/:id/status', ApplicationsController.updateApplicationStatus);
+
+// Screening routes
+app.post('/api/v1/screening/start', ScreeningController.startScreening);
+app.post('/api/v1/screening/message', ScreeningController.sendMessage);
+app.post('/api/v1/screening/end', ScreeningController.endScreening);
+app.get('/api/v1/screening/:id', ScreeningController.getSession);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
