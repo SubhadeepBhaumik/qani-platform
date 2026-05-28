@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile
     container_name: qani-backend
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       DATABASE_URL: postgresql://qani_user:qani_password_dev@postgres:5432/qani_development
       NODE_ENV: development
