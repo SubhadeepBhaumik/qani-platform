@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import 'express-async-errors';
 import dotenv from 'dotenv';
 import { AuthController } from './api/auth/auth.controller';
+import { RolesController } from './api/roles/roles.controller';
+import { RequirementsController } from './api/requirements/requirements.controller';
 
 dotenv.config();
 
@@ -24,6 +26,18 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
 // Auth routes
 app.post('/api/v1/auth/register', AuthController.register);
 app.post('/api/v1/auth/login', AuthController.login);
+
+// Role routes
+app.post('/api/v1/roles', RolesController.createRole);
+app.get('/api/v1/roles', RolesController.getRoles);
+app.put('/api/v1/roles/:id', RolesController.updateRole);
+app.delete('/api/v1/roles/:id', RolesController.deleteRole);
+
+// Requirement routes
+app.post('/api/v1/requirements', RequirementsController.createRequirement);
+app.get('/api/v1/requirements', RequirementsController.getRequirements);
+app.put('/api/v1/requirements/:id', RequirementsController.updateRequirement);
+app.delete('/api/v1/requirements/:id', RequirementsController.deleteRequirement);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
