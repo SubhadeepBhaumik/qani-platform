@@ -25,7 +25,7 @@ app.use(express.json());
 
 // Health check
 app.get('/api/v1/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: '1.1.0', timestamp: new Date().toISOString() });
 });
 
 // Auth routes
