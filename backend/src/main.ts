@@ -1,3 +1,4 @@
+import { NotificationsController } from './api/notifications/notifications.controller';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -78,6 +79,13 @@ app.get('/api/v1/dashboard/role-metrics', DashboardController.getRoleMetrics);
 app.get('/api/v1/dashboard/screening-progress', DashboardController.getScreeningProgress);
 app.get('/api/v1/dashboard/qualification-breakdown', DashboardController.getQualificationBreakdown);
 app.get('/api/v1/dashboard/recommendations', DashboardController.getRecommendations);
+
+// Notification routes
+app.post('/api/v1/notifications/send', NotificationsController.sendNotification);
+app.get('/api/v1/notifications', NotificationsController.getNotifications);
+app.post('/api/v1/notifications/application-status', NotificationsController.sendApplicationStatusEmail);
+app.post('/api/v1/notifications/recruiter-alert', NotificationsController.sendRecruiterAlert);
+app.get('/api/v1/notifications/history', NotificationsController.getNotificationHistory);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
