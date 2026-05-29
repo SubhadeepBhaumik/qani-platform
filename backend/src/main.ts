@@ -1,3 +1,5 @@
+
+import { errorHandler } from './middleware/errorHandler';
 import { NotificationsController } from './api/notifications/notifications.controller';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
@@ -26,7 +28,12 @@ app.use(express.json());
 
 // Health check
 app.get('/api/v1/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', version: '1.1.0', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    version: '1.0.0',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString() 
+  });
 });
 
 // Auth routes
@@ -91,6 +98,8 @@ app.get('/api/v1/notifications/history', NotificationsController.getNotification
 app.get('/api/v1/test', (_req: Request, res: Response) => {
   res.json({ message: 'QANI API running', version: '1.0.0' });
 });
+
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`✓ Server running on http://localhost:${port}`);
