@@ -11,6 +11,7 @@ import { CandidatesController } from './api/candidates/candidates.controller';
 import { ApplicationsController } from './api/applications/applications.controller';
 import { ScreeningController } from './api/screening/screening.controller';
 import { ScoringController } from './api/scoring/scoring.controller';
+import { DashboardController } from './api/dashboard/dashboard.controller';
 
 dotenv.config();
 
@@ -68,6 +69,15 @@ app.post('/api/v1/scoring/record', ScoringController.recordScore);
 app.post('/api/v1/scoring/calculate', ScoringController.calculateDecision);
 app.get('/api/v1/scoring/decision', ScoringController.getRoutingDecision);
 app.get('/api/v1/scoring/scores', ScoringController.getSessionScores);
+
+// Dashboard routes
+app.get('/api/v1/dashboard/stats', DashboardController.getStats);
+app.get('/api/v1/dashboard/applications', DashboardController.getApplications);
+app.get('/api/v1/dashboard/pipeline', DashboardController.getCandidatePipeline);
+app.get('/api/v1/dashboard/role-metrics', DashboardController.getRoleMetrics);
+app.get('/api/v1/dashboard/screening-progress', DashboardController.getScreeningProgress);
+app.get('/api/v1/dashboard/qualification-breakdown', DashboardController.getQualificationBreakdown);
+app.get('/api/v1/dashboard/recommendations', DashboardController.getRecommendations);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
