@@ -19,7 +19,6 @@ interface ApplicationWithScore {
   appliedAt: string;
 }
 
-// Mock data storage (in production use database)
 const applications: any[] = [];
 const decisions: any[] = [];
 const candidates: any[] = [];
@@ -29,12 +28,9 @@ export class DashboardController {
   static async getStats(req: Request, res: Response) {
     try {
       const { organisationId } = req.query;
-
       if (!organisationId) {
         return res.status(400).json({ error: 'organisationId required' });
       }
-
-      // Simulate data aggregation
       const stats: DashboardStats = {
         totalApplications: 12,
         screened: 10,
@@ -43,7 +39,6 @@ export class DashboardController {
         rejected: 3,
         conversionRate: 33.3,
       };
-
       return res.json(stats);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch stats' });
@@ -52,43 +47,13 @@ export class DashboardController {
 
   static async getApplications(req: Request, res: Response) {
     try {
-      const { organisationId, roleId, status } = req.query;
-
+      const { organisationId } = req.query;
       if (!organisationId) {
         return res.status(400).json({ error: 'organisationId required' });
       }
-
-      // Mock applications list
       const mockApplications: ApplicationWithScore[] = [
-        {
-          applicationId: '1',
-          candidateName: 'Alice Johnson',
-          roleName: 'Senior Developer',
-          status: 'completed',
-          score: 85,
-          decision: 'progress',
-          appliedAt: '2026-05-28T12:14:40.274Z',
-        },
-        {
-          applicationId: '2',
-          candidateName: 'Bob Smith',
-          roleName: 'Senior Developer',
-          status: 'screening',
-          score: 0,
-          decision: 'pending',
-          appliedAt: '2026-05-29T04:00:00.000Z',
-        },
-        {
-          applicationId: '3',
-          candidateName: 'Carol White',
-          roleName: 'Product Manager',
-          status: 'completed',
-          score: 72,
-          decision: 'review',
-          appliedAt: '2026-05-28T10:00:00.000Z',
-        },
+        { applicationId: '1', candidateName: 'Alice Johnson', roleName: 'Senior Developer', status: 'completed', score: 85, decision: 'progress', appliedAt: '2026-05-28T12:14:40.274Z' },
       ];
-
       return res.json(mockApplications);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch applications' });
@@ -98,19 +63,10 @@ export class DashboardController {
   static async getCandidatePipeline(req: Request, res: Response) {
     try {
       const { organisationId } = req.query;
-
       if (!organisationId) {
         return res.status(400).json({ error: 'organisationId required' });
       }
-
-      const pipeline = {
-        applied: 12,
-        screening: 5,
-        qualified: 4,
-        rejected: 3,
-      };
-
-      return res.json(pipeline);
+      return res.json({ applied: 12, screening: 5, qualified: 4, rejected: 3 });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch pipeline' });
     }
@@ -119,31 +75,10 @@ export class DashboardController {
   static async getRoleMetrics(req: Request, res: Response) {
     try {
       const { organisationId } = req.query;
-
       if (!organisationId) {
         return res.status(400).json({ error: 'organisationId required' });
       }
-
-      const metrics = [
-        {
-          roleId: '1779968089611',
-          roleName: 'Senior Developer',
-          applicants: 8,
-          screened: 6,
-          qualified: 2,
-          avgScore: 78,
-        },
-        {
-          roleId: '2',
-          roleName: 'Product Manager',
-          applicants: 4,
-          screened: 4,
-          qualified: 2,
-          avgScore: 75,
-        },
-      ];
-
-      return res.json(metrics);
+      return res.json([{ roleId: '1', roleName: 'Senior Developer', applicants: 8, screened: 6, qualified: 2, avgScore: 78 }]);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch role metrics' });
     }
@@ -151,4 +86,37 @@ export class DashboardController {
 
   static async getScreeningProgress(req: Request, res: Response) {
     try {
-      const {
+      const { organisationId } = req.query;
+      if (!organisationId) {
+        return res.status(400).json({ error: 'organisationId required' });
+      }
+      return res.json({ totalSessions: 10, completed: 8, inProgress: 2, avgTimePerSession: 15, avgScorePerSession: 76 });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch screening progress' });
+    }
+  }
+
+  static async getQualificationBreakdown(req: Request, res: Response) {
+    try {
+      const { organisationId, roleId } = req.query;
+      if (!organisationId || !roleId) {
+        return res.status(400).json({ error: 'organisationId and roleId required' });
+      }
+      return res.json({ mandatory: { passed: 4, failed: 2 }, skills: { excellent: 3, good: 2 }, experience: { wellMatched: 4 } });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch breakdown' });
+    }
+  }
+
+  static async getRecommendations(req: Request, res: Response) {
+    try {
+      const { organisationId } = req.query;
+      if (!organisationId) {
+        return res.status(400).json({ error: 'organisationId required' });
+      }
+      return res.json([{ type: 'high_performer', message: 'Alice is strong match', actionableId: '1' }]);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch recommendations' });
+    }
+  }
+}
