@@ -10,6 +10,7 @@ import { RequirementsController } from './api/requirements/requirements.controll
 import { CandidatesController } from './api/candidates/candidates.controller';
 import { ApplicationsController } from './api/applications/applications.controller';
 import { ScreeningController } from './api/screening/screening.controller';
+import { ScoringController } from './api/scoring/scoring.controller';
 
 dotenv.config();
 
@@ -59,6 +60,14 @@ app.post('/api/v1/screening/start', ScreeningController.startScreening);
 app.post('/api/v1/screening/message', ScreeningController.sendMessage);
 app.post('/api/v1/screening/end', ScreeningController.endScreening);
 app.get('/api/v1/screening/:id', ScreeningController.getSession);
+
+// Scoring routes
+app.post('/api/v1/scoring/rules', ScoringController.createScoringRule);
+app.get('/api/v1/scoring/rules', ScoringController.getScoringRules);
+app.post('/api/v1/scoring/record', ScoringController.recordScore);
+app.post('/api/v1/scoring/calculate', ScoringController.calculateDecision);
+app.get('/api/v1/scoring/decision', ScoringController.getRoutingDecision);
+app.get('/api/v1/scoring/scores', ScoringController.getSessionScores);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
