@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../AppContext';
 import {
   ShieldAlert, Trash2, Activity, Users, Briefcase,
@@ -74,7 +75,14 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   const { user, jobs, applications, logs, navigate, refreshStates, showToast } = useApp();
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-  const [activeTab, setActiveTab] = useState('overview');
+  const routerNavigate = useNavigate();
+  const location = useLocation();
+  const tabFromUrl = location.pathname.replace('/admin/', '').replace('/admin', '') || 'overview';
+  const activeTab = tabFromUrl;
+  const setActiveTab = (tab: string) => {
+    const path = tab === 'overview' ? '/admin' : `/admin/${tab}`;
+    routerNavigate(path);
+  };
 
   const [cmsContent, setCmsContent] = useState({
     heroTitle: "Let AI Screen Your Candidates 24/7",
@@ -105,7 +113,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   };
 
   const demoUsers = [
-    { id: 'u1', firstName: 'Alex', lastName: 'Mercer', email: 'admin@qani.io', role: 'admin', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u1', firstName: 'Steve', lastName: 'Begg', email: 'admin@qani.io', role: 'admin', location: 'Sydney, NSW', status: 'active', verified: true },
     { id: 'u2', firstName: 'Sarah', lastName: 'Chen', email: 'recruiter@qani.io', role: 'recruiter', location: 'Sydney, NSW', status: 'active', verified: true },
     { id: 'u3', firstName: 'James', lastName: 'Morrison', email: 'james.hr@techcorp.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true },
     { id: 'u4', firstName: 'Emma', lastName: 'Thompson', email: 'emma.hr@seek.com.au', role: 'recruiter', location: 'Brisbane, QLD', status: 'active', verified: true },
@@ -186,7 +194,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const tab = activeTab;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -639,9 +646,9 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <div>
                     <label className="text-xs font-semibold text-gray-700">Default AI Model</label>
                     <select className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
-                      <option>gemini-2.0-flash</option>
-                      <option>gemini-1.5-pro</option>
-                      <option>gemini-1.5-flash</option>
+                      <option>gpt-4o</option>
+                      <option>gpt-4o-mini</option>
+                      <option>gpt-4-turbo</option>
                     </select>
                   </div>
                   <div>

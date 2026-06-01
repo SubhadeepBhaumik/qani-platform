@@ -1,6 +1,6 @@
 import { Job, User, Application, Notification, ScreeningSession, SystemLog, ChatMessage } from '../types';
 
-const API_BASE = 'http://139.180.181.11:5001/api/v1';
+const API_BASE = 'http://qani.io/api/v1';
 
 const KEYS = {
   AUTH_TOKEN: 'qani_auth_token',
