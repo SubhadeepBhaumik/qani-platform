@@ -8,3 +8,5 @@ uploads/
 .next/
 out/
 .prisma/
+Documentation/
+*.zip
