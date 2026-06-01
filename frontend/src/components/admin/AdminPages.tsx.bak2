@@ -2,14 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import {
   ShieldAlert, Trash2, Activity, Users, Briefcase,
-  FileText, Settings, Edit3, Save, X, Eye,
+  FileText, Settings, BarChart2, Edit3, Save, X, Eye,
   Plus, Search, Download, DollarSign, TrendingUp,
-  Lock, Unlock, PenTool, Database, Shield, Bell,
-  Ban, Mail, Layout, Globe, Zap, Package, CreditCard,
-  CheckCircle, AlertCircle, Clock, Bot, BarChart2
+  Lock, Unlock, RefreshCw, PenTool, Database, Shield, Bell,
+  Ban, Mail, Layout, Globe, Zap, Package, CreditCard
 } from 'lucide-react';
 
-// ─── RICH TEXT EDITOR ─────────────────────────────────────────────────────────
 const RichTextEditor: React.FC<{ value: string; onChange: (v: string) => void; label: string }> = ({ value, onChange, label }) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -72,125 +70,11 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${map[status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>{status}</span>;
 };
 
-// ─── USER DETAIL MODAL ────────────────────────────────────────────────────────
-const UserModal: React.FC<{ user: any; onClose: () => void; onSave: (u: any) => void; onDelete: (id: string) => void; onToggleStatus: (u: any) => void }> = ({ user, onClose, onSave, onDelete, onToggleStatus }) => {
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ ...user });
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg">
-              {form.firstName[0]}{form.lastName[0]}
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900">{form.firstName} {form.lastName}</h3>
-              <StatusBadge status={form.role} />
-            </div>
-          </div>
-          <button onClick={onClose} className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-4">
-          {editing ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-gray-700">First Name</label>
-                  <input value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-gray-700">Last Name</label>
-                  <input value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Email</label>
-                <input value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Role</label>
-                <select value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
-                  <option value="candidate">Candidate</option>
-                  <option value="recruiter">Recruiter</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-gray-700">Location</label>
-                <input value={form.location || ''} onChange={e => setForm({...form, location: e.target.value})} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-              </div>
-              {form.role === 'recruiter' && (
-                <div>
-                  <label className="text-xs font-semibold text-gray-700">Company</label>
-                  <input value={form.company || ''} onChange={e => setForm({...form, company: e.target.value})} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {[
-                { label: 'Email', value: form.email },
-                { label: 'Role', value: form.role },
-                { label: 'Location', value: form.location || '—' },
-                { label: 'Status', value: form.status },
-                { label: 'Verified', value: form.verified ? 'Yes ✓' : 'No ✗' },
-                ...(form.role === 'recruiter' ? [{ label: 'Company', value: form.company || '—' }] : []),
-              ].map(item => (
-                <div key={item.label} className="flex justify-between py-2 border-b border-gray-50 text-sm">
-                  <span className="text-gray-500 font-medium">{item.label}</span>
-                  <span className="text-gray-900 font-semibold capitalize">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="p-6 border-t border-gray-100 flex flex-wrap gap-2">
-          {editing ? (
-            <>
-              <button onClick={() => { onSave(form); setEditing(false); }} className="cursor-pointer flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
-                <Save className="w-3.5 h-3.5" /> Save Changes
-              </button>
-              <button onClick={() => setEditing(false)} className="cursor-pointer flex items-center gap-2 text-xs border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg transition">
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button onClick={() => setEditing(true)} className="cursor-pointer flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
-                <Edit3 className="w-3.5 h-3.5" /> Edit Profile
-              </button>
-              <button onClick={() => onToggleStatus(form)} className={`cursor-pointer flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg transition ${form.status === 'active' ? 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}>
-                {form.status === 'active' ? <><Ban className="w-3.5 h-3.5" /> Suspend</> : <><Unlock className="w-3.5 h-3.5" /> Reactivate</>}
-              </button>
-              <button onClick={() => { if (window.confirm(`Permanently delete ${form.firstName} ${form.lastName}? This cannot be undone.`)) { onDelete(form.id); onClose(); } }} className="cursor-pointer flex items-center gap-2 text-xs bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-semibold px-4 py-2 rounded-lg transition">
-                <Trash2 className="w-3.5 h-3.5" /> Delete User
-              </button>
-              <button onClick={() => window.open(`mailto:${form.email}`)} className="cursor-pointer flex items-center gap-2 text-xs bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 font-semibold px-4 py-2 rounded-lg transition">
-                <Mail className="w-3.5 h-3.5" /> Send Email
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── MAIN ADMIN PAGES ─────────────────────────────────────────────────────────
 export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   const { user, jobs, applications, logs, navigate, refreshStates, showToast } = useApp();
-  const { navigate: appNavigate } = useApp();
-
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-
+  const { navigate: appNavigate } = useApp();
   const activeTab = subView || 'overview';
   const setActiveTab = (tab: string) => {
     const viewMap: Record<string, string> = {
@@ -202,15 +86,11 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
       'cms': 'admin-cms',
       'settings': 'admin-settings',
     };
-    appNavigate(viewMap[tab] as any || 'admin-dashboard');
+    const view = viewMap[tab] || 'admin-dashboard';
+    appNavigate(view as any);
   };
 
-  const [cmsContent, setCmsContent] = useState(() => {
-    try {
-      const saved = localStorage.getItem('qani_cms_content');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  } || {
+  const [cmsContent, setCmsContent] = useState({
     heroTitle: "Let AI Screen Your Candidates 24/7",
     heroSubtitle: "Australia's #1 AI Recruitment Platform",
     heroDescription: "QANI's AI recruiter interviews every candidate automatically — evaluating skills, salary fit, work rights, and location match.",
@@ -225,17 +105,25 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     footerTagline: "Australia's leading AI recruitment platform.",
   });
 
-  const saveCMS = () => {
-    localStorage.setItem('qani_cms_content', JSON.stringify(cmsContent));
-    showToast('Content saved successfully! Changes will reflect on next deploy.', 'success');
+  const finances = {
+    transactions: [
+      { id: 't1', user: 'Atlassian', plan: 'Enterprise', amount: '$999', date: '2026-05-01', status: 'paid' },
+      { id: 't2', user: 'Canva', plan: 'Professional', amount: '$299', date: '2026-05-01', status: 'paid' },
+      { id: 't3', user: 'Seek', plan: 'Professional', amount: '$299', date: '2026-05-03', status: 'paid' },
+      { id: 't4', user: 'REA Group', plan: 'Enterprise', amount: '$999', date: '2026-05-05', status: 'paid' },
+      { id: 't5', user: 'Afterpay', plan: 'Professional', amount: '$299', date: '2026-05-07', status: 'paid' },
+      { id: 't6', user: 'TechStartup AU', plan: 'Starter', amount: '$0', date: '2026-05-10', status: 'trial' },
+      { id: 't7', user: 'HireNow Agency', plan: 'Professional', amount: '$299', date: '2026-05-12', status: 'paid' },
+      { id: 't8', user: 'BuildCorp', plan: 'Enterprise', amount: '$999', date: '2026-05-15', status: 'failed' },
+    ]
   };
 
-  const [demoUsers, setDemoUsers] = useState([
+  const demoUsers = [
     { id: 'u1', firstName: 'Steve', lastName: 'Begg', email: 'admin@qani.io', role: 'admin', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u2', firstName: 'Sarah', lastName: 'Chen', email: 'recruiter@qani.io', role: 'recruiter', location: 'Sydney, NSW', status: 'active', verified: true, company: 'Atlassian' },
-    { id: 'u3', firstName: 'James', lastName: 'Morrison', email: 'james.hr@techcorp.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true, company: 'Canva' },
-    { id: 'u4', firstName: 'Emma', lastName: 'Thompson', email: 'emma.hr@seek.com.au', role: 'recruiter', location: 'Brisbane, QLD', status: 'active', verified: true, company: 'Seek' },
-    { id: 'u5', firstName: 'Michael', lastName: 'Zhang', email: 'michael.hr@rea.com.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true, company: 'REA Group' },
+    { id: 'u2', firstName: 'Sarah', lastName: 'Chen', email: 'recruiter@qani.io', role: 'recruiter', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u3', firstName: 'James', lastName: 'Morrison', email: 'james.hr@techcorp.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u4', firstName: 'Emma', lastName: 'Thompson', email: 'emma.hr@seek.com.au', role: 'recruiter', location: 'Brisbane, QLD', status: 'active', verified: true },
+    { id: 'u5', firstName: 'Michael', lastName: 'Zhang', email: 'michael.hr@rea.com.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true },
     { id: 'u6', firstName: 'Liam', lastName: 'Nguyen', email: 'candidate@qani.io', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
     { id: 'u7', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
     { id: 'u8', firstName: 'Tom', lastName: 'Williams', email: 'tom.williams@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
@@ -256,27 +144,27 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'u23', firstName: 'Amelia', lastName: 'Hall', email: 'amelia.hall@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
     { id: 'u24', firstName: 'Lucas', lastName: 'Jackson', email: 'lucas.jackson@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
     { id: 'u25', firstName: 'William', lastName: 'Young', email: 'william.young@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
-  ]);
-
-  const demoApps = [
-    { id: 'a1', candidate: 'Liam Nguyen', email: 'candidate@qani.io', job: 'Senior Full Stack Developer', score: 92, status: 'qualified', date: '2026-05-16' },
-    { id: 'a2', candidate: 'Priya Sharma', email: 'priya.sharma@gmail.com', job: 'Product Manager — Platform', score: 89, status: 'qualified', date: '2026-05-19' },
-    { id: 'a3', candidate: 'Tom Williams', email: 'tom.williams@gmail.com', job: 'DevOps / Platform Engineer', score: 94, status: 'qualified', date: '2026-05-21' },
-    { id: 'a4', candidate: 'Jessica Lee', email: 'jessica.lee@gmail.com', job: 'UX/UI Product Designer', score: 78, status: 'review', date: '2026-05-23' },
-    { id: 'a5', candidate: 'Marcus Vance', email: 'marcus.vance@gmail.com', job: 'Data Scientist — AI/ML', score: 91, status: 'qualified', date: '2026-05-25' },
-    { id: 'a6', candidate: 'Sophie Martin', email: 'sophie.martin@gmail.com', job: 'Backend Engineer — Go', score: 88, status: 'qualified', date: '2026-05-27' },
-    { id: 'a7', candidate: 'Noah Anderson', email: 'noah.anderson@gmail.com', job: 'QA Automation Engineer', score: 87, status: 'qualified', date: '2026-05-28' },
-    { id: 'a8', candidate: 'Natalie Kim', email: 'natalie.kim@gmail.com', job: 'Cybersecurity Analyst', score: 93, status: 'qualified', date: '2026-05-29' },
-    { id: 'a9', candidate: 'Ava Thomas', email: 'ava.thomas@gmail.com', job: 'ML Engineer — LLM Systems', score: 82, status: 'review', date: '2026-05-30' },
-    { id: 'a10', candidate: 'David Patel', email: 'david.patel@gmail.com', job: 'Senior Full Stack Developer', score: 76, status: 'review', date: '2026-05-17' },
-    { id: 'a11', candidate: 'James Wilson', email: 'james.wilson@gmail.com', job: 'Product Manager — Platform', score: 45, status: 'rejected', date: '2026-05-20' },
-    { id: 'a12', candidate: 'Ethan Brown', email: 'ethan.brown@gmail.com', job: 'DevOps / Platform Engineer', score: 96, status: 'qualified', date: '2026-05-22' },
-    { id: 'a13', candidate: 'Grace White', email: 'grace.white@gmail.com', job: 'Data Scientist — AI/ML', score: undefined, status: 'screening', date: '2026-05-26' },
-    { id: 'a14', candidate: 'Emily Clark', email: 'emily.clark@gmail.com', job: 'UX/UI Product Designer', score: undefined, status: 'applied', date: '2026-05-31' },
-    { id: 'a15', candidate: 'Amelia Hall', email: 'amelia.hall@gmail.com', job: 'Growth Engineer', score: undefined, status: 'applied', date: '2026-05-31' },
   ];
 
-  const [demoJobs, setDemoJobs] = useState([
+  const demoApps = [
+    { id: 'a1', candidate: 'Liam Nguyen', job: 'Senior Full Stack Developer', score: 92, status: 'qualified', date: '2026-05-16' },
+    { id: 'a2', candidate: 'Priya Sharma', job: 'Product Manager — Platform', score: 89, status: 'qualified', date: '2026-05-19' },
+    { id: 'a3', candidate: 'Tom Williams', job: 'DevOps / Platform Engineer', score: 94, status: 'qualified', date: '2026-05-21' },
+    { id: 'a4', candidate: 'Jessica Lee', job: 'UX/UI Product Designer', score: 78, status: 'review', date: '2026-05-23' },
+    { id: 'a5', candidate: 'Marcus Vance', job: 'Data Scientist — AI/ML', score: 91, status: 'qualified', date: '2026-05-25' },
+    { id: 'a6', candidate: 'Sophie Martin', job: 'Backend Engineer — Go', score: 88, status: 'qualified', date: '2026-05-27' },
+    { id: 'a7', candidate: 'Noah Anderson', job: 'QA Automation Engineer', score: 87, status: 'qualified', date: '2026-05-28' },
+    { id: 'a8', candidate: 'Natalie Kim', job: 'Cybersecurity Analyst', score: 93, status: 'qualified', date: '2026-05-29' },
+    { id: 'a9', candidate: 'Ava Thomas', job: 'ML Engineer — LLM Systems', score: 82, status: 'review', date: '2026-05-30' },
+    { id: 'a10', candidate: 'David Patel', job: 'Senior Full Stack Developer', score: 76, status: 'review', date: '2026-05-17' },
+    { id: 'a11', candidate: 'James Wilson', job: 'Product Manager — Platform', score: 45, status: 'rejected', date: '2026-05-20' },
+    { id: 'a12', candidate: 'Ethan Brown', job: 'DevOps / Platform Engineer', score: 96, status: 'qualified', date: '2026-05-22' },
+    { id: 'a13', candidate: 'Grace White', job: 'Data Scientist — AI/ML', score: undefined, status: 'screening', date: '2026-05-26' },
+    { id: 'a14', candidate: 'Emily Clark', job: 'UX/UI Product Designer', score: undefined, status: 'applied', date: '2026-05-31' },
+    { id: 'a15', candidate: 'Amelia Hall', job: 'Growth Engineer', score: undefined, status: 'applied', date: '2026-05-31' },
+  ];
+
+  const demoJobs = [
     { id: 'j1', title: 'Senior Full Stack Developer', company: 'Atlassian', location: 'Sydney, NSW', salary: '$130k–$160k', status: 'open', posted: '2026-05-15', apps: 8 },
     { id: 'j2', title: 'Product Manager — Platform', company: 'Canva', location: 'Melbourne, VIC', salary: '$120k–$150k', status: 'open', posted: '2026-05-18', apps: 5 },
     { id: 'j3', title: 'DevOps / Platform Engineer', company: 'Seek', location: 'Remote (AU)', salary: '$120k–$145k', status: 'open', posted: '2026-05-20', apps: 6 },
@@ -287,20 +175,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'j8', title: 'Cybersecurity Analyst', company: 'Commonwealth Bank', location: 'Sydney, NSW', salary: '$110k–$140k', status: 'open', posted: '2026-05-29', apps: 4 },
     { id: 'j9', title: 'ML Engineer — LLM Systems', company: 'Canva', location: 'Sydney, NSW', salary: '$150k–$190k', status: 'open', posted: '2026-05-30', apps: 2 },
     { id: 'j10', title: 'Growth Engineer', company: 'Seek', location: 'Melbourne, VIC', salary: '$110k–$135k', status: 'draft', posted: '2026-05-31', apps: 0 },
-  ]);
-
-  const finances = {
-    transactions: [
-      { id: 't1', user: 'Atlassian', plan: 'Enterprise', amount: '$999', date: '2026-05-01', status: 'paid' },
-      { id: 't2', user: 'Canva', plan: 'Professional', amount: '$299', date: '2026-05-01', status: 'paid' },
-      { id: 't3', user: 'Seek', plan: 'Professional', amount: '$299', date: '2026-05-03', status: 'paid' },
-      { id: 't4', user: 'REA Group', plan: 'Enterprise', amount: '$999', date: '2026-05-05', status: 'paid' },
-      { id: 't5', user: 'Afterpay', plan: 'Professional', amount: '$299', date: '2026-05-07', status: 'paid' },
-      { id: 't6', user: 'TechStartup AU', plan: 'Starter', amount: '$0', date: '2026-05-10', status: 'trial' },
-      { id: 't7', user: 'HireNow Agency', plan: 'Professional', amount: '$299', date: '2026-05-12', status: 'paid' },
-      { id: 't8', user: 'BuildCorp', plan: 'Enterprise', amount: '$999', date: '2026-05-15', status: 'failed' },
-    ]
-  };
+  ];
 
   useEffect(() => { refreshStates(); }, []);
 
@@ -325,53 +200,9 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const handleSaveUser = (updated: any) => {
-    setDemoUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
-    showToast(`${updated.firstName}'s profile updated.`, 'success');
-  };
-
-  const handleDeleteUser = (id: string) => {
-    setDemoUsers(prev => prev.filter(u => u.id !== id));
-    showToast('User permanently deleted.', 'warning');
-  };
-
-  const handleToggleStatus = (u: any) => {
-    const newStatus = u.status === 'active' ? 'suspended' : 'active';
-    setDemoUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: newStatus } : x));
-    setSelectedUser((prev: any) => prev ? { ...prev, status: newStatus } : null);
-    showToast(`${u.firstName} ${newStatus === 'suspended' ? 'suspended' : 'reactivated'}.`, newStatus === 'suspended' ? 'warning' : 'success');
-  };
-
-  const handleToggleJobStatus = (id: string) => {
-    setDemoJobs(prev => prev.map(j => j.id === id ? { ...j, status: j.status === 'open' ? 'closed' : 'open' } : j));
-    showToast('Job status updated.', 'success');
-  };
-
-  const handleDeleteJob = (id: string) => {
-    if (window.confirm('Delete this job posting? This cannot be undone.')) {
-      setDemoJobs(prev => prev.filter(j => j.id !== id));
-      showToast('Job deleted.', 'warning');
-    }
-  };
-
-  const filteredUsers = demoUsers
-    .filter(u => filterRole === 'all' || u.role === filterRole)
-    .filter(u => !search || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* User detail modal */}
-      {selectedUser && (
-        <UserModal
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-          onSave={handleSaveUser}
-          onDelete={handleDeleteUser}
-          onToggleStatus={handleToggleStatus}
-        />
-      )}
-
-      {/* Admin top nav */}
       <div className="bg-gray-950 border-b border-gray-800 px-6 py-3 flex items-center gap-2 overflow-x-auto shrink-0">
         <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest mr-3 shrink-0">SUPER ADMIN</span>
         {navTabs.map(t => {
@@ -387,38 +218,18 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
 
-        {/* ── OVERVIEW ── */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Platform Overview</h2>
-              <p className="text-xs text-gray-500 mt-1">Real-time metrics — logged in as Steve Begg (Super Admin)</p>
+              <p className="text-xs text-gray-500 mt-1">Real-time metrics across all QANI systems</p>
             </div>
-
-            {/* AI Status Banner */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-5 text-white flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Bot className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="font-bold text-sm">QANI AI Recruiter — Active</p>
-                  <p className="text-xs text-blue-100">Screening candidates 24/7 · Powered by OpenAI GPT-4o · 47 sessions completed this month</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 bg-green-400/20 border border-green-400/30 px-3 py-1.5 rounded-full">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-xs font-bold text-green-200">ONLINE</span>
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Total Users" value={25} icon={<Users className="w-5 h-5 text-blue-600" />} color="bg-blue-50" sub="+8 this month" />
               <StatCard label="Active Jobs" value={9} icon={<Briefcase className="w-5 h-5 text-green-600" />} color="bg-green-50" sub="1 draft pending" />
               <StatCard label="Applications" value={15} icon={<FileText className="w-5 h-5 text-purple-600" />} color="bg-purple-50" sub="3 need review" />
               <StatCard label="Monthly Revenue" value="$47,200" icon={<DollarSign className="w-5 h-5 text-orange-600" />} color="bg-orange-50" sub="+12% vs last month" />
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
                 <h3 className="text-sm font-bold text-gray-900">Recent Activity</h3>
@@ -429,7 +240,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                     { event: 'Application Rejected', detail: 'James Wilson — Score below threshold', type: 'warning', time: '08:45' },
                     { event: 'New User Registered', detail: 'Priya Sharma — Candidate', type: 'success', time: '08:30' },
                     { event: 'AI Screening Completed', detail: 'Tom Williams — Score 94/100 — Qualified', type: 'success', time: '08:15' },
-                    { event: 'Payment Received', detail: 'Atlassian — Enterprise Plan — $999', type: 'success', time: '07:00' },
                   ].map((l, i) => (
                     <div key={i} className="flex items-start gap-3 text-xs">
                       <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${l.type === 'success' ? 'bg-green-500' : l.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'}`} />
@@ -442,7 +252,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                   ))}
                 </div>
               </div>
-
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-bold text-gray-900">Quick Actions</h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -472,13 +281,12 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {/* ── USERS ── */}
         {activeTab === 'users' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">User Management</h2>
-                <p className="text-xs text-gray-500 mt-1">{demoUsers.length} total · {demoUsers.filter(u=>u.role==='candidate').length} candidates · {demoUsers.filter(u=>u.role==='recruiter').length} recruiters · click any row to view/edit</p>
+                <p className="text-xs text-gray-500 mt-1">25 candidates · 5 recruiters · 1 admin</p>
               </div>
             </div>
             <div className="flex gap-3 flex-wrap">
@@ -506,43 +314,52 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {filteredUsers.map(u => (
-                      <tr key={u.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => setSelectedUser(u)}>
-                        <td className="p-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
-                              {u.firstName[0]}{u.lastName[0]}
+                    {demoUsers
+                      .filter(u => filterRole === 'all' || u.role === filterRole)
+                      .filter(u => !search || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase()))
+                      .map(u => (
+                        <tr key={u.id} className="hover:bg-gray-50 transition">
+                          <td className="p-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                                {u.firstName[0]}{u.lastName[0]}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900">{u.firstName} {u.lastName}</p>
+                                <p className="text-[10px] text-gray-400">{u.verified ? '✓ Verified' : '⚠ Unverified'}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{u.firstName} {u.lastName}</p>
-                              <p className="text-[10px] text-gray-400">{u.verified ? '✓ Verified' : '⚠ Unverified'}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 font-mono text-gray-600">{u.email}</td>
-                        <td className="p-4"><StatusBadge status={u.role} /></td>
-                        <td className="p-4 text-gray-500">{u.location}</td>
-                        <td className="p-4"><StatusBadge status={u.status} /></td>
-                        <td className="p-4" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => setSelectedUser(u)} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View & Edit">
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                            <button onClick={() => handleToggleStatus(u)} className={`cursor-pointer p-1.5 rounded-lg transition ${u.status === 'active' ? 'text-gray-400 hover:text-orange-600 hover:bg-orange-50' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`} title={u.status === 'active' ? 'Suspend' : 'Reactivate'}>
-                              {u.status === 'active' ? <Ban className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                            </button>
-                            <button onClick={() => window.open(`mailto:${u.email}`)} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Email">
-                              <Mail className="w-3.5 h-3.5" />
-                            </button>
-                            {u.id !== 'u1' && (
-                              <button onClick={() => { if (window.confirm(`Delete ${u.firstName}?`)) handleDeleteUser(u.id); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
-                                <Trash2 className="w-3.5 h-3.5" />
+                          </td>
+                          <td className="p-4 font-mono text-gray-600">{u.email}</td>
+                          <td className="p-4"><StatusBadge status={u.role} /></td>
+                          <td className="p-4 text-gray-500">{u.location}</td>
+                          <td className="p-4"><StatusBadge status={u.status} /></td>
+                          <td className="p-4">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button onClick={() => showToast(`Viewing ${u.firstName}'s profile`, 'info')} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
+                                <Eye className="w-3.5 h-3.5" />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <button onClick={() => showToast(`Email sent to ${u.email}`, 'success')} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Email">
+                                <Mail className="w-3.5 h-3.5" />
+                              </button>
+                              {u.status === 'active' ? (
+                                <button onClick={() => showToast(`${u.firstName} suspended`, 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Suspend">
+                                  <Ban className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button onClick={() => showToast(`${u.firstName} reactivated`, 'success')} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Reactivate">
+                                  <Unlock className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {u.id !== 'u1' && (
+                                <button onClick={() => showToast(`${u.firstName} deleted`, 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -550,13 +367,12 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {/* ── JOBS ── */}
         {activeTab === 'jobs' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Job Management</h2>
-                <p className="text-xs text-gray-500 mt-1">{demoJobs.filter(j=>j.status==='open').length} active · {demoJobs.filter(j=>j.status==='draft').length} draft</p>
+                <p className="text-xs text-gray-500 mt-1">9 active · 1 draft</p>
               </div>
               <button onClick={() => navigate('recruiter-create-job')} className="cursor-pointer flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
                 <Plus className="w-3.5 h-3.5" /> Post New Job
@@ -590,10 +406,10 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                             <button onClick={() => navigate('recruiter-create-job', { editJobId: j.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => handleToggleJobStatus(j.id)} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Toggle Status">
+                            <button onClick={() => showToast('Job status toggled', 'info')} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Toggle">
                               {j.status === 'open' ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                             </button>
-                            <button onClick={() => handleDeleteJob(j.id)} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                            <button onClick={() => showToast('Job deleted', 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -607,7 +423,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {/* ── APPLICATIONS ── */}
         {activeTab === 'applications' && (
           <div className="space-y-5">
             <div>
@@ -634,7 +449,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
                       <th className="p-4">Candidate</th>
-                      <th className="p-4">Email</th>
                       <th className="p-4">Job</th>
                       <th className="p-4">AI Score</th>
                       <th className="p-4">Status</th>
@@ -646,24 +460,23 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                     {demoApps.map(a => (
                       <tr key={a.id} className="hover:bg-gray-50 transition">
                         <td className="p-4 font-semibold text-gray-900">{a.candidate}</td>
-                        <td className="p-4 font-mono text-gray-500 text-[10px]">{a.email}</td>
                         <td className="p-4 text-gray-600">{a.job}</td>
                         <td className="p-4">
                           {a.score !== undefined ? (
                             <span className={`font-bold ${a.score >= 85 ? 'text-green-600' : a.score >= 70 ? 'text-orange-500' : 'text-red-500'}`}>{a.score}/100</span>
-                          ) : <span className="text-gray-400">Pending</span>}
+                          ) : <span className="text-gray-400">—</span>}
                         </td>
                         <td className="p-4"><StatusBadge status={a.status} /></td>
                         <td className="p-4 text-gray-500">{a.date}</td>
                         <td className="p-4">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => showToast(`Viewing ${a.candidate}'s application`, 'info')} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
+                            <button onClick={() => navigate('recruiter-app-detail', { applicationId: a.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => window.open(`mailto:${a.email}`)} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Email Candidate">
-                              <Mail className="w-3.5 h-3.5" />
+                            <button onClick={() => showToast('Status updated', 'success')} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition">
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => { if (window.confirm(`Delete ${a.candidate}'s application?`)) showToast('Application deleted.', 'warning'); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                            <button onClick={() => showToast('Application deleted', 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -677,7 +490,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {/* ── FINANCE ── */}
         {activeTab === 'finance' && (
           <div className="space-y-6">
             <div>
@@ -707,7 +519,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
               <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-gray-900">Recent Transactions</h3>
-                <button onClick={() => showToast('Exporting CSV...', 'info')} className="cursor-pointer flex items-center gap-1.5 text-xs text-blue-600 font-semibold">
+                <button onClick={() => showToast('Exporting...', 'info')} className="cursor-pointer flex items-center gap-1.5 text-xs text-blue-600 font-semibold">
                   <Download className="w-3.5 h-3.5" /> Export CSV
                 </button>
               </div>
@@ -720,7 +532,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                       <th className="p-4">Amount</th>
                       <th className="p-4">Date</th>
                       <th className="p-4">Status</th>
-                      <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -731,11 +542,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <td className="p-4 font-bold text-gray-900">{t.amount}</td>
                         <td className="p-4 text-gray-500">{t.date}</td>
                         <td className="p-4"><StatusBadge status={t.status} /></td>
-                        <td className="p-4 text-right">
-                          <button onClick={() => showToast(`Invoice sent to ${t.user}`, 'success')} className="cursor-pointer text-[10px] text-blue-600 hover:underline font-semibold">
-                            Send Invoice
-                          </button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -745,16 +551,15 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {/* ── CMS ── */}
         {activeTab === 'cms' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Content Management</h2>
-              <p className="text-xs text-gray-500 mt-1">Edit website content without touching code. Changes saved to localStorage and applied on next deploy.</p>
+              <p className="text-xs text-gray-500 mt-1">Edit website content without touching code</p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-700 flex items-start gap-2">
               <Zap className="w-4 h-4 shrink-0 mt-0.5" />
-              <p>Click <strong>Edit</strong> on any field to change it. Click <strong>Save All Changes</strong> at the bottom to apply everything.</p>
+              <p>Use the editors below to update any content on qani.io. Click Edit on any field to change it, then Save.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
@@ -762,47 +567,46 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <Layout className="w-4 h-4 text-blue-600" />
                   <h3 className="text-sm font-bold text-gray-900">Hero Section</h3>
                 </div>
-                <RichTextEditor label="Hero Badge Text" value={cmsContent.heroSubtitle} onChange={v => setCmsContent((p: any) => ({ ...p, heroSubtitle: v }))} />
-                <RichTextEditor label="Hero Main Title" value={cmsContent.heroTitle} onChange={v => setCmsContent((p: any) => ({ ...p, heroTitle: v }))} />
-                <RichTextEditor label="Hero Description" value={cmsContent.heroDescription} onChange={v => setCmsContent((p: any) => ({ ...p, heroDescription: v }))} />
-                <RichTextEditor label="Announcement Bar" value={cmsContent.announcementBar} onChange={v => setCmsContent((p: any) => ({ ...p, announcementBar: v }))} />
+                <RichTextEditor label="Hero Badge Text" value={cmsContent.heroSubtitle} onChange={v => setCmsContent(p => ({ ...p, heroSubtitle: v }))} />
+                <RichTextEditor label="Hero Main Title" value={cmsContent.heroTitle} onChange={v => setCmsContent(p => ({ ...p, heroTitle: v }))} />
+                <RichTextEditor label="Hero Description" value={cmsContent.heroDescription} onChange={v => setCmsContent(p => ({ ...p, heroDescription: v }))} />
+                <RichTextEditor label="Announcement Bar" value={cmsContent.announcementBar} onChange={v => setCmsContent(p => ({ ...p, announcementBar: v }))} />
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
                   <DollarSign className="w-4 h-4 text-green-600" />
                   <h3 className="text-sm font-bold text-gray-900">Pricing</h3>
                 </div>
-                <RichTextEditor label="Starter Plan Price" value={cmsContent.pricingStarterPrice} onChange={v => setCmsContent((p: any) => ({ ...p, pricingStarterPrice: v }))} />
-                <RichTextEditor label="Professional Plan Price" value={cmsContent.pricingProPrice} onChange={v => setCmsContent((p: any) => ({ ...p, pricingProPrice: v }))} />
-                <RichTextEditor label="Enterprise Plan Price" value={cmsContent.pricingEnterprisePrice} onChange={v => setCmsContent((p: any) => ({ ...p, pricingEnterprisePrice: v }))} />
+                <RichTextEditor label="Starter Plan Price" value={cmsContent.pricingStarterPrice} onChange={v => setCmsContent(p => ({ ...p, pricingStarterPrice: v }))} />
+                <RichTextEditor label="Professional Plan Price" value={cmsContent.pricingProPrice} onChange={v => setCmsContent(p => ({ ...p, pricingProPrice: v }))} />
+                <RichTextEditor label="Enterprise Plan Price" value={cmsContent.pricingEnterprisePrice} onChange={v => setCmsContent(p => ({ ...p, pricingEnterprisePrice: v }))} />
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
                   <Globe className="w-4 h-4 text-purple-600" />
                   <h3 className="text-sm font-bold text-gray-900">SEO & Metadata</h3>
                 </div>
-                <RichTextEditor label="Page Title" value={cmsContent.metaTitle} onChange={v => setCmsContent((p: any) => ({ ...p, metaTitle: v }))} />
-                <RichTextEditor label="Meta Description" value={cmsContent.metaDescription} onChange={v => setCmsContent((p: any) => ({ ...p, metaDescription: v }))} />
+                <RichTextEditor label="Page Title" value={cmsContent.metaTitle} onChange={v => setCmsContent(p => ({ ...p, metaTitle: v }))} />
+                <RichTextEditor label="Meta Description" value={cmsContent.metaDescription} onChange={v => setCmsContent(p => ({ ...p, metaDescription: v }))} />
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
                   <Mail className="w-4 h-4 text-orange-600" />
                   <h3 className="text-sm font-bold text-gray-900">Contact & Social</h3>
                 </div>
-                <RichTextEditor label="Contact Email" value={cmsContent.contactEmail} onChange={v => setCmsContent((p: any) => ({ ...p, contactEmail: v }))} />
-                <RichTextEditor label="LinkedIn URL" value={cmsContent.linkedinUrl} onChange={v => setCmsContent((p: any) => ({ ...p, linkedinUrl: v }))} />
-                <RichTextEditor label="Footer Tagline" value={cmsContent.footerTagline} onChange={v => setCmsContent((p: any) => ({ ...p, footerTagline: v }))} />
+                <RichTextEditor label="Contact Email" value={cmsContent.contactEmail} onChange={v => setCmsContent(p => ({ ...p, contactEmail: v }))} />
+                <RichTextEditor label="LinkedIn URL" value={cmsContent.linkedinUrl} onChange={v => setCmsContent(p => ({ ...p, linkedinUrl: v }))} />
+                <RichTextEditor label="Footer Tagline" value={cmsContent.footerTagline} onChange={v => setCmsContent(p => ({ ...p, footerTagline: v }))} />
               </div>
             </div>
             <div className="flex justify-end">
-              <button onClick={saveCMS} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
+              <button onClick={() => showToast('All content saved!', 'success')} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
                 <Save className="w-4 h-4" /> Save All Changes
               </button>
             </div>
           </div>
         )}
 
-        {/* ── SETTINGS ── */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
             <div>
@@ -843,12 +647,12 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                 ))}
               </div>
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bot className="w-4 h-4 text-green-600" /> AI Recruiter Settings</h3>
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Database className="w-4 h-4 text-green-600" /> AI Settings</h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-semibold text-gray-700">AI Model</label>
+                    <label className="text-xs font-semibold text-gray-700">Default AI Model</label>
                     <select className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
-                      <option>gpt-4o (Recommended)</option>
+                      <option>gpt-4o</option>
                       <option>gpt-4o-mini</option>
                       <option>gpt-4-turbo</option>
                     </select>
@@ -860,10 +664,6 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <div>
                     <label className="text-xs font-semibold text-gray-700">Auto-reject threshold (%)</label>
                     <input type="number" defaultValue={50} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Max questions per screening</label>
-                    <input type="number" defaultValue={4} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
                   </div>
                 </div>
               </div>
