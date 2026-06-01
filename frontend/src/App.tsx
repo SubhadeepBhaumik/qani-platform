@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './components/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
@@ -13,7 +13,6 @@ import { AdminPages } from './components/admin/AdminPages';
 import { SupportChatbot } from './components/shared/SupportChatbot';
 import { Check, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
 
-// Route map: internal view name → URL path
 export const ROUTES: Record<string, string> = {
   'landing': '/',
   'auth-login': '/login',
@@ -41,50 +40,49 @@ export const ROUTES: Record<string, string> = {
   'recruiter-candidates': '/recruiter/candidates',
   'admin-dashboard': '/admin',
   'admin-users': '/admin/users',
+  'admin-jobs': '/admin/jobs',
+  'admin-applications': '/admin/applications',
   'admin-finance': '/admin/finance',
   'admin-cms': '/admin/cms',
   'admin-settings': '/admin/settings',
-  'admin-jobs': '/admin/jobs',
-  'admin-applications': '/admin/applications',
 };
 
-// Reverse map: URL path → view name
 const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
   Object.entries(ROUTES).map(([view, path]) => [path, view])
 );
 
 const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'help'];
 
-// Syncs React Router URL with AppContext view state
 const RouterSync: React.FC = () => {
   const { activeView, navigate: appNavigate, activeParams } = useApp();
   const routerNavigate = useNavigate();
   const location = useLocation();
+  const isSyncing = useRef(false);
 
-  // When AppContext view changes → update browser URL
   useEffect(() => {
+    if (isSyncing.current) return;
     const targetPath = ROUTES[activeView] || '/';
-    const params = new URLSearchParams();
-    if (activeParams.jobId) params.set('jobId', activeParams.jobId);
-    if (activeParams.applicationId) params.set('applicationId', activeParams.applicationId);
-    if (activeParams.sessionId) params.set('sessionId', activeParams.sessionId);
-    const search = params.toString() ? `?${params.toString()}` : '';
-    const fullPath = `${targetPath}${search}`;
     if (location.pathname !== targetPath) {
-      routerNavigate(fullPath);
+      const params = new URLSearchParams();
+      if (activeParams.jobId) params.set('jobId', activeParams.jobId);
+      if (activeParams.applicationId) params.set('applicationId', activeParams.applicationId);
+      if (activeParams.sessionId) params.set('sessionId', activeParams.sessionId);
+      const search = params.toString() ? `?${params.toString()}` : '';
+      routerNavigate(`${targetPath}${search}`, { replace: false });
     }
-  }, [activeView, activeParams]);
+  }, [activeView]);
 
-  // When browser URL changes (back/forward) → update AppContext view
   useEffect(() => {
     const view = PATH_TO_VIEW[location.pathname];
     if (view && view !== activeView) {
+      isSyncing.current = true;
       const params = new URLSearchParams(location.search);
       const viewParams: any = {};
       if (params.get('jobId')) viewParams.jobId = params.get('jobId');
       if (params.get('applicationId')) viewParams.applicationId = params.get('applicationId');
       if (params.get('sessionId')) viewParams.sessionId = params.get('sessionId');
       appNavigate(view as any, viewParams);
+      setTimeout(() => { isSyncing.current = false; }, 100);
     }
   }, [location.pathname]);
 
@@ -127,8 +125,13 @@ const AppContent: React.FC = () => {
       case 'recruiter-team': return <RecruiterPages subView="team" />;
       case 'recruiter-settings': return <RecruiterPages subView="settings" />;
       case 'recruiter-candidates': return <CandidatesDirectory />;
-      case 'admin-dashboard': return <AdminPages subView="dashboard" />;
+      case 'admin-dashboard': return <AdminPages subView="overview" />;
       case 'admin-users': return <AdminPages subView="users" />;
+      case 'admin-jobs': return <AdminPages subView="jobs" />;
+      case 'admin-applications': return <AdminPages subView="applications" />;
+      case 'admin-finance': return <AdminPages subView="finance" />;
+      case 'admin-cms': return <AdminPages subView="cms" />;
+      case 'admin-settings': return <AdminPages subView="settings" />;
       default: return <HomePage />;
     }
   };
@@ -144,8 +147,7 @@ const AppContent: React.FC = () => {
             <div className="relative w-full h-full bg-gray-950 rounded-lg border border-gray-800 flex items-center justify-center font-mono font-black text-white text-base">Q</div>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Loading QANI...
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading QANI...
           </div>
         </div>
       </div>
@@ -157,7 +159,7 @@ const AppContent: React.FC = () => {
       <RouterSync />
 
       {toast && (
-        <div className="fixed top-6 right-6 z-50 p-4 border rounded-xl flex items-center gap-3 shadow-2xl bg-white max-w-sm animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-6 right-6 z-50 p-4 border rounded-xl flex items-center gap-3 shadow-2xl bg-white max-w-sm">
           {toast.type === 'success' && <Check className="w-5 h-5 text-green-500 shrink-0" />}
           {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />}
           {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0" />}

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../AppContext';
 import {
   ShieldAlert, Trash2, Activity, Users, Briefcase,
@@ -75,13 +74,20 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   const { user, jobs, applications, logs, navigate, refreshStates, showToast } = useApp();
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-  const routerNavigate = useNavigate();
-  const location = useLocation();
-  const tabFromUrl = location.pathname.replace('/admin/', '').replace('/admin', '') || 'overview';
-  const activeTab = tabFromUrl;
+  const { navigate: appNavigate } = useApp();
+  const activeTab = subView || 'overview';
   const setActiveTab = (tab: string) => {
-    const path = tab === 'overview' ? '/admin' : `/admin/${tab}`;
-    routerNavigate(path);
+    const viewMap: Record<string, string> = {
+      'overview': 'admin-dashboard',
+      'users': 'admin-users',
+      'jobs': 'admin-jobs',
+      'applications': 'admin-applications',
+      'finance': 'admin-finance',
+      'cms': 'admin-cms',
+      'settings': 'admin-settings',
+    };
+    const view = viewMap[tab] || 'admin-dashboard';
+    appNavigate(view as any);
   };
 
   const [cmsContent, setCmsContent] = useState({
@@ -201,7 +207,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
         <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest mr-3 shrink-0">SUPER ADMIN</span>
         {navTabs.map(t => {
           const Icon = t.icon;
-          const isActive = tab === t.id;
+          const isActive = activeTab === t.id;
           return (
             <button key={t.id} onClick={() => setActiveTab(t.id)} className={`cursor-pointer flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition shrink-0 ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
               <Icon className="w-3.5 h-3.5" />{t.label}
@@ -212,7 +218,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
 
-        {tab === 'overview' && (
+        {activeTab === 'overview' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Platform Overview</h2>
@@ -275,7 +281,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {tab === 'users' && (
+        {activeTab === 'users' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
@@ -361,7 +367,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {tab === 'jobs' && (
+        {activeTab === 'jobs' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
@@ -417,7 +423,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {tab === 'applications' && (
+        {activeTab === 'applications' && (
           <div className="space-y-5">
             <div>
               <h2 className="text-xl font-bold text-gray-900">All Applications</h2>
@@ -484,7 +490,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {tab === 'finance' && (
+        {activeTab === 'finance' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Financial Dashboard</h2>
@@ -545,7 +551,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {tab === 'cms' && (
+        {activeTab === 'cms' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Content Management</h2>
@@ -601,7 +607,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         )}
 
-        {tab === 'settings' && (
+        {activeTab === 'settings' && (
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Platform Settings</h2>
