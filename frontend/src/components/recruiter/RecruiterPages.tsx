@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp, AppView } from '../AppContext';
 import { api } from '../../lib/api';
 import { Job, Application, User, ChatMessage } from '../../types';
@@ -80,6 +80,34 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     'What are your compensation expectations and what is your availability for a starting date?'
   ]);
   const [newQuestionText, setNewQuestionText] = useState('');
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  // Load existing job data when editing
+  useEffect(() => {
+    if (activeParams.editJobId && subView === 'create-job') {
+      const existingJob = jobs.find((j: any) => j.id === activeParams.editJobId);
+      if (existingJob) {
+        setJobTitle(existingJob.title || '');
+        setJobDept(existingJob.department || 'Engineering');
+        setJobCategory(existingJob.category || 'Software Engineering');
+        setJobLoc(existingJob.location || '');
+        setJobType((existingJob.employmentType && existingJob.employmentType[0]) || 'Full-time');
+        setJobSalMin(existingJob.salaryMin || 8000);
+        setJobSalMax(existingJob.salaryMax || 12000);
+        setJobDesc(existingJob.description || '');
+        setMustReqString((existingJob.requirementsMust || []).join('\n'));
+        setNiceReqString((existingJob.requirementsNice || []).join('\n'));
+        setScreeningQueries(existingJob.screeningQuestions || []);
+        if (existingJob.qualificationWeights) {
+          setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
+          setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
+          setQualificationsWeight(existingJob.qualificationWeights.qualificationsWeight || 85);
+          setWorkRightsWeight(existingJob.qualificationWeights.workRightsWeight || 95);
+          setSkillsWeight(existingJob.qualificationWeights.skillsWeight || 100);
+        }
+      }
+    }
+  }, [activeParams.editJobId, subView, jobs]);
   
   // Custom Slider Coordinates for Weights
   const [locationWeight, setLocationWeight] = useState(80);
@@ -906,31 +934,66 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
 
               {/* Configure Custom AI Questions List */}
               <div className="space-y-2 pt-4 border-t">
-                <label className="text-xs font-bold text-gray-700 block">Configuration AI Screening Questions list</label>
-                <p className="text-[10px] text-gray-400">Questions our conversational Gemini recruiter agent will ask candidates.</p>
+                <label className="text-xs font-bold text-gray-700 block">AI Screening Questions</label>
+                <p className="text-[10px] text-gray-400">Drag to reorder. These questions are asked by the QANI AI recruiter to every candidate.</p>
                 <div className="space-y-2">
                   {screeningQueries.map((q, idx) => (
-                    <div key={idx} className="flex gap-2 items-center bg-gray-50 p-2.5 rounded-lg border text-xs text-gray-600">
+                    <div
+                      key={idx}
+                      draggable
+                      onDragStart={() => setDragIndex(idx)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if (dragIndex === null || dragIndex === idx) return;
+                        const updated = [...screeningQueries];
+                        const [moved] = updated.splice(dragIndex, 1);
+                        updated.splice(idx, 0, moved);
+                        setScreeningQueries(updated);
+                        setDragIndex(null);
+                      }}
+                      className={`flex gap-2 items-start bg-gray-50 p-2.5 rounded-lg border text-xs text-gray-600 cursor-grab active:cursor-grabbing transition ${dragIndex === idx ? 'opacity-50 border-blue-400' : 'hover:border-blue-300'}`}
+                    >
+                      <span className="text-gray-300 shrink-0 mt-0.5 select-none">⠿</span>
                       <span className="font-bold text-blue-600 shrink-0">Q{idx + 1}:</span>
-                      <span className="flex-1 truncate">{q}</span>
-                      <button 
-                        type="button" 
-                        onClick={() => setScreeningQueries(screeningQueries.filter((_, i) => i !== idx))}
-                        className="text-red-500 font-bold hover:text-red-700 shrink-0"
-                      >
-                        ×
-                      </button>
+                      <span className="flex-1">{q}</span>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...screeningQueries];
+                            if (idx > 0) { [updated[idx-1], updated[idx]] = [updated[idx], updated[idx-1]]; setScreeningQueries(updated); }
+                          }}
+                          className="cursor-pointer text-gray-400 hover:text-blue-600 font-bold px-1"
+                          title="Move up"
+                        >↑</button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...screeningQueries];
+                            if (idx < updated.length-1) { [updated[idx], updated[idx+1]] = [updated[idx+1], updated[idx]]; setScreeningQueries(updated); }
+                          }}
+                          className="cursor-pointer text-gray-400 hover:text-blue-600 font-bold px-1"
+                          title="Move down"
+                        >↓</button>
+                        <button
+                          type="button"
+                          onClick={() => setScreeningQueries(screeningQueries.filter((_, i) => i !== idx))}
+                          className="cursor-pointer text-red-400 font-bold hover:text-red-600 px-1"
+                          title="Remove"
+                        >×</button>
+                      </div>
                     </div>
                   ))}
                   <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="Add screening question..." 
-                      value={newQuestionText} 
-                      onChange={(e) => setNewQuestionText(e.target.value)} 
-                      className="text-xs p-2 flex-grow border rounded-lg"
+                    <input
+                      type="text"
+                      placeholder="Type a new screening question and click Add..."
+                      value={newQuestionText}
+                      onChange={(e) => setNewQuestionText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addQuestionString())}
+                      className="text-xs p-2 flex-grow border rounded-lg outline-none focus:border-blue-500"
                     />
-                    <button type="button" onClick={addQuestionString} className="px-3 bg-gray-900 text-white rounded-lg text-xs font-bold shrink-0">Add</button>
+                    <button type="button" onClick={addQuestionString} className="cursor-pointer px-3 bg-gray-900 text-white rounded-lg text-xs font-bold shrink-0 hover:bg-gray-800 transition">Add</button>
                   </div>
                 </div>
               </div>
