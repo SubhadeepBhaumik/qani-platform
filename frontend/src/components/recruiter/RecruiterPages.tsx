@@ -96,7 +96,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   const [teamRoleInvite, setTeamRoleInvite] = useState('Recruiter');
 
   // Load initial historical applicant listings for dashboard tables
-  const allCandidates = api.getUsers().filter(u => u.role === 'candidate');
+  const allCandidates: any[] = [];
 
   if (!user) return null;
 

@@ -94,18 +94,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshStates = async () => {
     try {
-      const [j, a, s, n, l] = await Promise.all([
+      const [j, a, s, n, l] = await Promise.allSettled([
         api.getJobs(),
         api.getApplications(),
         api.getSessions(),
         api.getNotifications(),
         api.getLogs(),
       ]);
-      setJobs(j);
-      setApplications(a);
-      setSessions(s);
-      setNotifications(n);
-      setLogs(l);
+      if (j.status === 'fulfilled' && Array.isArray(j.value)) setJobs(j.value);
+      if (a.status === 'fulfilled' && Array.isArray(a.value)) setApplications(a.value);
+      if (s.status === 'fulfilled' && Array.isArray(s.value)) setSessions(s.value);
+      if (n.status === 'fulfilled' && Array.isArray(n.value)) setNotifications(n.value);
+      if (l.status === 'fulfilled' && Array.isArray(l.value)) setLogs(l.value);
     } catch (err) {
       console.warn('refreshStates error:', err);
     }

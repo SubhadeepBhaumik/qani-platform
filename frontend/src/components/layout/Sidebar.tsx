@@ -50,7 +50,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Brand */}
       <div className="p-5 border-b border-gray-800 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('landing')}>
+        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => { if (!user) navigate('landing'); }}>
           <div className="relative w-8 h-8">
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg transform rotate-3 group-hover:rotate-6 transition-all duration-300" />
             <div className="relative w-full h-full bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-extrabold text-white text-xs">Q</div>

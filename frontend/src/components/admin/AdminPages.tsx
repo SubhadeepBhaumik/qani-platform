@@ -205,12 +205,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     appNavigate(viewMap[tab] as any || 'admin-dashboard');
   };
 
-  const [cmsContent, setCmsContent] = useState(() => {
-    try {
-      const saved = localStorage.getItem('qani_cms_content');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  } || {
+  const defaultCMS = {
     heroTitle: "Let AI Screen Your Candidates 24/7",
     heroSubtitle: "Australia's #1 AI Recruitment Platform",
     heroDescription: "QANI's AI recruiter interviews every candidate automatically — evaluating skills, salary fit, work rights, and location match.",
@@ -223,6 +218,12 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     contactEmail: 'hello@qani.io',
     linkedinUrl: 'https://linkedin.com/company/qani',
     footerTagline: "Australia's leading AI recruitment platform.",
+  };
+  const [cmsContent, setCmsContent] = useState(() => {
+    try {
+      const saved = localStorage.getItem('qani_cms_content');
+      return saved ? JSON.parse(saved) : defaultCMS;
+    } catch { return defaultCMS; }
   });
 
   const saveCMS = () => {
