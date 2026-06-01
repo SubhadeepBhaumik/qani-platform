@@ -1,3 +1,4 @@
+import { AdminCMS } from './AdminCMS';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import {
@@ -1015,61 +1016,8 @@ Question 1: Describe your most relevant experience for this role.` },
 
         {/* ── CMS ── */}
         {activeTab === 'cms' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Content Management</h2>
-              <p className="text-xs text-gray-500 mt-1">Edit website content without touching code. Changes saved to localStorage and applied on next deploy.</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-700 flex items-start gap-2">
-              <Zap className="w-4 h-4 shrink-0 mt-0.5" />
-              <p>Click <strong>Edit</strong> on any field to change it. Click <strong>Save All Changes</strong> at the bottom to apply everything.</p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                  <Layout className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-sm font-bold text-gray-900">Hero Section</h3>
-                </div>
-                <RichTextEditor label="Hero Badge Text" value={cmsContent.heroSubtitle} onChange={v => setCmsContent((p: any) => ({ ...p, heroSubtitle: v }))} />
-                <RichTextEditor label="Hero Main Title" value={cmsContent.heroTitle} onChange={v => setCmsContent((p: any) => ({ ...p, heroTitle: v }))} />
-                <RichTextEditor label="Hero Description" value={cmsContent.heroDescription} onChange={v => setCmsContent((p: any) => ({ ...p, heroDescription: v }))} />
-                <RichTextEditor label="Announcement Bar" value={cmsContent.announcementBar} onChange={v => setCmsContent((p: any) => ({ ...p, announcementBar: v }))} />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                  <DollarSign className="w-4 h-4 text-green-600" />
-                  <h3 className="text-sm font-bold text-gray-900">Pricing</h3>
-                </div>
-                <RichTextEditor label="Starter Plan Price" value={cmsContent.pricingStarterPrice} onChange={v => setCmsContent((p: any) => ({ ...p, pricingStarterPrice: v }))} />
-                <RichTextEditor label="Professional Plan Price" value={cmsContent.pricingProPrice} onChange={v => setCmsContent((p: any) => ({ ...p, pricingProPrice: v }))} />
-                <RichTextEditor label="Enterprise Plan Price" value={cmsContent.pricingEnterprisePrice} onChange={v => setCmsContent((p: any) => ({ ...p, pricingEnterprisePrice: v }))} />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                  <Globe className="w-4 h-4 text-purple-600" />
-                  <h3 className="text-sm font-bold text-gray-900">SEO & Metadata</h3>
-                </div>
-                <RichTextEditor label="Page Title" value={cmsContent.metaTitle} onChange={v => setCmsContent((p: any) => ({ ...p, metaTitle: v }))} />
-                <RichTextEditor label="Meta Description" value={cmsContent.metaDescription} onChange={v => setCmsContent((p: any) => ({ ...p, metaDescription: v }))} />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                  <Mail className="w-4 h-4 text-orange-600" />
-                  <h3 className="text-sm font-bold text-gray-900">Contact & Social</h3>
-                </div>
-                <RichTextEditor label="Contact Email" value={cmsContent.contactEmail} onChange={v => setCmsContent((p: any) => ({ ...p, contactEmail: v }))} />
-                <RichTextEditor label="LinkedIn URL" value={cmsContent.linkedinUrl} onChange={v => setCmsContent((p: any) => ({ ...p, linkedinUrl: v }))} />
-                <RichTextEditor label="Footer Tagline" value={cmsContent.footerTagline} onChange={v => setCmsContent((p: any) => ({ ...p, footerTagline: v }))} />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button onClick={saveCMS} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
-                <Save className="w-4 h-4" /> Save All Changes
-              </button>
-            </div>
-          </div>
+          <AdminCMS />
         )}
-
         {/* ── SETTINGS ── */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
