@@ -278,16 +278,16 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   ];
 
   const [demoJobs, setDemoJobs] = useState([
-    { id: 'j1', title: 'Senior Full Stack Developer', company: 'Atlassian', location: 'Sydney, NSW', salary: '$130k–$160k', status: 'open', posted: '2026-05-15', apps: 8 },
-    { id: 'j2', title: 'Product Manager — Platform', company: 'Canva', location: 'Melbourne, VIC', salary: '$120k–$150k', status: 'open', posted: '2026-05-18', apps: 5 },
-    { id: 'j3', title: 'DevOps / Platform Engineer', company: 'Seek', location: 'Remote (AU)', salary: '$120k–$145k', status: 'open', posted: '2026-05-20', apps: 6 },
-    { id: 'j4', title: 'UX/UI Product Designer', company: 'REA Group', location: 'Sydney, NSW', salary: '$95k–$125k', status: 'open', posted: '2026-05-22', apps: 4 },
-    { id: 'j5', title: 'Data Scientist — AI/ML', company: 'Afterpay', location: 'Melbourne, VIC', salary: '$130k–$165k', status: 'open', posted: '2026-05-24', apps: 3 },
-    { id: 'j6', title: 'Backend Engineer — Go', company: 'Atlassian', location: 'Brisbane, QLD', salary: '$120k–$150k', status: 'open', posted: '2026-05-26', apps: 2 },
-    { id: 'j7', title: 'QA Automation Engineer', company: 'Canva', location: 'Remote (AU)', salary: '$90k–$110k', status: 'open', posted: '2026-05-28', apps: 3 },
-    { id: 'j8', title: 'Cybersecurity Analyst', company: 'Commonwealth Bank', location: 'Sydney, NSW', salary: '$110k–$140k', status: 'open', posted: '2026-05-29', apps: 4 },
-    { id: 'j9', title: 'ML Engineer — LLM Systems', company: 'Canva', location: 'Sydney, NSW', salary: '$150k–$190k', status: 'open', posted: '2026-05-30', apps: 2 },
-    { id: 'j10', title: 'Growth Engineer', company: 'Seek', location: 'Melbourne, VIC', salary: '$110k–$135k', status: 'draft', posted: '2026-05-31', apps: 0 },
+    { id: 'job-1', title: 'Senior Full Stack Developer', company: 'Atlassian', location: 'Sydney, NSW', salary: '$130k–$160k', status: 'open', posted: '2026-05-15', apps: 8 },
+    { id: 'job-2', title: 'Product Manager — Platform', company: 'Canva', location: 'Melbourne, VIC', salary: '$120k–$150k', status: 'open', posted: '2026-05-18', apps: 5 },
+    { id: 'job-3', title: 'DevOps / Platform Engineer', company: 'Seek', location: 'Remote (AU)', salary: '$120k–$145k', status: 'open', posted: '2026-05-20', apps: 6 },
+    { id: 'job-4', title: 'UX/UI Product Designer', company: 'REA Group', location: 'Sydney, NSW', salary: '$95k–$125k', status: 'open', posted: '2026-05-22', apps: 4 },
+    { id: 'job-5', title: 'Data Scientist — AI/ML', company: 'Afterpay', location: 'Melbourne, VIC', salary: '$130k–$165k', status: 'open', posted: '2026-05-24', apps: 3 },
+    { id: 'job-6', title: 'Backend Engineer — Go', company: 'Atlassian', location: 'Brisbane, QLD', salary: '$120k–$150k', status: 'open', posted: '2026-05-26', apps: 2 },
+    { id: 'job-7', title: 'QA Automation Engineer', company: 'Canva', location: 'Remote (AU)', salary: '$90k–$110k', status: 'open', posted: '2026-05-28', apps: 3 },
+    { id: 'job-8', title: 'Cybersecurity Analyst', company: 'Commonwealth Bank', location: 'Sydney, NSW', salary: '$110k–$140k', status: 'open', posted: '2026-05-29', apps: 4 },
+    { id: 'job-9', title: 'ML Engineer — LLM Systems', company: 'Canva', location: 'Sydney, NSW', salary: '$150k–$190k', status: 'open', posted: '2026-05-30', apps: 2 },
+    { id: 'job-10', title: 'Growth Engineer', company: 'Seek', location: 'Melbourne, VIC', salary: '$110k–$135k', status: 'draft', posted: '2026-05-31', apps: 0 },
   ]);
 
   const finances = {

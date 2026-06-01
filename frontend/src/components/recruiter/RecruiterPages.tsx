@@ -174,7 +174,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     }
 
     const newJob: Job = {
-      id: `job-${Date.now()}`,
+      id: activeParams.editJobId || `job-${Date.now()}`,
       title: jobTitle,
       department: jobDept,
       category: jobCategory,
