@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QANI Platform - Client Testing Guide</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #001f3f 0%, #1a3a52 100%); color: white; padding: 40px 20px; border-radius: 8px; margin-bottom: 30px; text-align: center; }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.1em; opacity: 0.9; }
+        .section { background: white; padding: 30px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .section h2 { color: #001f3f; font-size: 1.8em; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 3px solid #d4a574; }
+        .section h3 { color: #1a3a52; font-size: 1.3em; margin-top: 20px; margin-bottom: 10px; }
+        .feature-box { background: #f8f9fa; border-left: 4px solid #001f3f; padding: 20px; margin: 15px 0; border-radius: 4px; }
+        .feature-box h4 { color: #001f3f; margin-bottom: 10px; font-size: 1.1em; }
+        .steps { background: #f0f4f8; padding: 20px; border-radius: 4px; margin: 15px 0; }
+        .step { margin: 15px 0; padding: 15px; background: white; border-left: 3px solid #d4a574; border-radius: 3px; }
+        .step h5 { color: #001f3f; margin-bottom: 5px; }
+        .step p { color: #555; margin: 5px 0; font-size: 0.95em; }
+        .cta-button { display: inline-block; padding: 12px 24px; background: #001f3f; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; font-weight: bold; }
+        .cta-button:hover { background: #1a3a52; }
+        .success-box { background: #dcfce7; border-left: 4px solid #10b981; padding: 15px; border-radius: 4px; margin: 20px 0; }
+        .info-box { background: #dbeafe; border-left: 4px solid #0066cc; padding: 15px; border-radius: 4px; margin: 20px 0; }
+        .table-container { overflow-x: auto; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        table th { background: #001f3f; color: white; padding: 12px; text-align: left; }
+        table td { padding: 12px; border-bottom: 1px solid #ddd; }
+        table tr:nth-child(even) { background: #f9fafb; }
+        .credential-box { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; font-family: monospace; }
+        footer { background: #001f3f; color: white; padding: 30px; text-align: center; border-radius: 8px; margin-top: 40px; }
+        .toc { background: #f0f4f8; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #d4a574; }
+        .toc ol { margin-left: 20px; }
+        .toc li { margin: 8px 0; }
+        .demo-data { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 4px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 QANI Platform</h1>
+            <p>Complete Client Testing Guide</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">How to test all features of the AI-powered recruitment screening system</p>
+        </header>
+
+        <div class="toc">
+            <h3>Quick Navigation</h3>
+            <ol>
+                <li><a href="#login">Login & Access</a></li>
+                <li><a href="#view-jobs">View Job Openings</a></li>
+                <li><a href="#view-applications">View Candidate Applications</a></li>
+                <li><a href="#screening">AI Screening Process</a></li>
+                <li><a href="#scoring">View Scoring & Results</a></li>
+                <li><a href="#dashboard">Dashboard Analytics</a></li>
+                <li><a href="#demo-data">Demo Data Available</a></li>
+                <li><a href="#support">Support & Next Steps</a></li>
+            </ol>
+        </div>
+
+        <!-- LOGIN SECTION -->
+        <section class="section" id="login">
+            <h2>🔐 Login & Access</h2>
+            
+            <h3>Access the Platform</h3>
+            <p>The QANI platform is now live and ready to test:</p>
+            <div class="info-box">
+                <strong>Platform URL:</strong> http://localhost:3000 (local testing) or qani.io (production)
+            </div>
+
+            <h3>Login Credentials</h3>
+            <p>Use these credentials to access the recruiter dashboard:</p>
+            <div class="credential-box">
+                📧 Email: steve@recruitmentschool.com.au<br>
+                🔑 Password: SecurePass123!
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h5>Step 1: Navigate to Login</h5>
+                    <p>Go to the homepage and click "Login" button in the top right</p>
+                </div>
+                <div class="step">
+                    <h5>Step 2: Enter Your Credentials</h5>
+                    <p>Use the email and password above</p>
+                </div>
+                <div class="step">
+                    <h5>Step 3: Access Dashboard</h5>
+                    <p>After login, you'll see the recruiter dashboard with all features available</p>
+                </div>
+            </div>
+
+            <div class="success-box">
+                ✅ <strong>Expected Result:</strong> You should see the main recruiter dashboard with navigation menu on the left side
+            </div>
+        </section>
+
+        <!-- VIEW JOBS SECTION -->
+        <section class="section" id="view-jobs">
+            <h2>💼 View Job Openings</h2>
+            
+            <h3>What to Test</h3>
+            <p>The system includes 5 sample jobs across different roles. You can view all job postings and their details.</p>
+
+            <div class="feature-box">
+                <h4>📋 Job Listings Feature</h4>
+                <p>View all open positions with details like:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Job title and description</li>
+                    <li>Location and salary range</li>
+                    <li>Employment type (Full-time, Contract, etc.)</li>
+                    <li>Number of applications received</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h5>Step 1: Navigate to Jobs</h5>
+                    <p>Click "Jobs" in the left menu or main navigation</p>
+                </div>
+                <div class="step">
+                    <h5>Step 2: Browse Job List</h5>
+                    <p>You'll see 5 sample jobs:<br>
+                       • Senior React Developer (Sydney)<br>
+                       • Full Stack Engineer (Melbourne)<br>
+                       • DevOps Engineer (Brisbane)<br>
+                       • Data Scientist (Sydney)<br>
+                       • QA Engineer (Melbourne)</p>
+                </div>
+                <div class="step">
+                    <h5>Step 3: Click on a Job</h5>
+                    <p>Click any job to see full details, requirements, and applications</p>
+                </div>
+            </div>
+
+            <div class="success-box">
+                ✅ <strong>Expected Result:</strong> You should see a list of 5 active jobs with their details
+            </div>
+        </section>
+
+        <!-- APPLICATIONS SECTION -->
+        <section class="section" id="view-applications">
+            <h2>📧 View Candidate Applications</h2>
+            
+            <h3>What to Test</h3>
+            <p>The system has 20 sample candidate applications. You can view each application's status and details.</p>
+
+            <div class="feature-box">
+                <h4>📊 Application Tracking</h4>
+                <p>Each application shows:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Candidate name and contact info</li>
+                    <li>Job applied for</li>
+                    <li>Application status (Applied, Screening, Completed, Rejected)</li>
+                    <li>Date applied</li>
+                    <li>Link to AI screening session</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h5>Step 1: Go to Applications</h5>
+                    <p>Click "Applications" or "Candidates" in the menu</p>
+                </div>
+                <div class="step">
+                    <h5>Step 2: View Application List</h5>
+                    <p>You'll see all 20 candidate applications with their status</p>
+                </div>
+                <div class="step">
+                    <h5>Step 3: Filter by Status</h5>
+                    <p>Filter applications by: Applied, Screening, Completed, Rejected</p>
+                </div>
+                <div class="step">
+                    <h5>Step 4: Click on an Application</h5>
+                    <p>Click any application to see full candidate details and screening results</p>
+                </div>
+            </div>
+
+            <div class="success-box">
+                ✅ <strong>Expected Result:</strong> You should see a list of 20 candidate applications with various statuses
+            </div>
+        </section>
+
+        <!-- AI SCREENING SECTION -->
+        <section class="section" id="screening">
+            <h2>🤖 AI Screening Process</h2>
+            
+            <h3>What to Test</h3>
+            <p>QANI uses AI (OpenAI) to conduct conversational screening with candidates. This is the core feature of the platform.</p>
+
+            <div class="feature-box">
+                <h4>💬 Conversational AI Screening</h4>
+                <p>The system:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Asks candidates structured questions naturally</li>
+                    <li>Gathers information on key areas: location, salary, qualifications, work rights, experience</li>
+                    <li>Records all responses</li>
+                    <li>Uses AI to understand candidate answers</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h5>Step 1: Find a Screening Session</h5>
+                    <p>Go to Applications → Find an application with status "Screening" or "Completed"</p>
+                </div>
+                <div class="step">
+                    <h5>Step 2: View Screening Session</h5>
+                    <p>Click on the application to see the screening session details</p>
+                </div>
+                <div class="step">
+                    <h5>Step 3: Review AI Conversation</h5>
+                    <p>See the back-and-forth conversation between AI and candidate</p>
+                </div>
+                <div class="step">
+                    <h5>Step 4: Check Candidate Answers</h5>
+                    <p>View extracted information from the screening (location, salary expectations, qualifications, etc.)</p>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>How it Works:</strong> The AI asks questions in a natural, conversational way. Each answer is recorded and analyzed to understand the candidate's fit for the role.
+            </div>
+
+            <div class="success-box">
+                ✅ <strong>Expected Result:</strong> You should see a conversation transcript with questions and candidate responses
+            </div>
+        </section>
+
+        <!-- SCORING SECTION -->
+        <section class="section" id="scoring">
+            <h2>⚙️ Scoring & Qualification Results</h2>
+            
+            <h3>What to Test</h3>
+            <p>After screening, QANI scores candidates on 5 key areas. You can see scores and final decisions.</p>
+
+            <div class="feature-box">
+                <h4>🎯 5-Area Qualification Scoring</h4>
+                <p>Candidates are scored on:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Location Match</strong> - Does candidate location match job location?</li>
+                    <li><strong>Salary Alignment</strong> - Is candidate salary expectation within budget?</li>
+                    <li><strong>Qualifications</strong> - Does candidate have required skills/education?</li>
+                    <li><strong>Work Rights</strong> - Does candidate have legal work rights?</li>
+                    <li><strong>Experience</strong> - Does candidate have required years of experience?</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h5>Step 1: Open Completed Application</h5>
+                    <p>Go to Applications → Click an application with status "Completed" or "Progressed"</p>
+                </div>
+                <div class="step">
+                    <h5>Step 2: View Scores Section</h5>
+                    <p>Scroll down to see the scoring breakdown</p>
+                </div>
+                <div class="step">
+                    <h5>Step 3: Review Individual Scores</h5>
+                    <p>Each area shows: Raw Score, Weighted Score, and Status (Pass/Fail/Review)</p>
+                </div>
+                <div class="step">
+                    <h5>Step 4: Check Final Decision</h5>
+                    <p>See the overall decision: PROGRESS, REVIEW, or REJECT</p>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Scoring Logic:</strong> Each area is weighted based on importance. The system automatically calculates an overall score and recommends action (Progress/Review/Reject).
+            </div>
+
+            <div class="success-box">
+                ✅ <strong>Expected Result:</strong> You should see scores for each qualification area and an overall recommendation
+            </div>
+        </section>
+
+        <!-- DASHBOARD SECTION -->
+        <section class="section" id="dashboard">
+            <h2>📊 Dashboard Analytics</h2>
+            
+            <h3>What to Test</h3>
+            <p>The dashboard shows real-time insights into your recruiting process.</p>
+
+            <div class="feature-box">
+                <h4>📈 Analytics Available</h4>
+                <p>The dashboard displays:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Total applications received</li>
+                    <li>Applications in screening</li>
+                    <li>Completed screenings</li>
+                    <li>Candidates progressed</li>
+                    <li>Rejection rate</li>
+                    <li>Application pipeline by status</li>
+                    <li>Performance metrics by job role</li>
+                </ul>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <h5>Step 1: Go to Dashboard</h5>
+                    <p>Click "Dashboard" in the main menu</p>
+                </div>
+                <div class="step">
+                    <h5>Step 2: View Statistics</h5>
+                    <p>See summary cards showing key metrics</p>
+                </div>
+                <div class="step">
+                    <h5>Step 3: Check Charts</h5>
+                    <p>View visual representations of application pipeline</p>
+                </div>
+                <div class="step">
+                    <h5>Step 4: Filter by Date</h5>
+                    <p>Filter analytics by date range to see trends</p>
+                </div>
+            </div>
+
+            <div class="success-box">
+                ✅ <strong>Expected Result:</strong> You should see charts and statistics showing recruiting metrics
+            </div>
+        </section>
+
+        <!-- DEMO DATA SECTION -->
+        <section class="section" id="demo-data">
+            <h2>📚 Demo Data Available for Testing</h2>
+            
+            <h3>What's Included</h3>
+            <p>The system comes pre-populated with sample data so you can test immediately:</p>
+
+            <div class="table-container">
+                <table>
+                    <tr>
+                        <th>Data Type</th>
+                        <th>Quantity</th>
+                        <th>Details</th>
+                    </tr>
+                    <tr>
+                        <td>Jobs/Roles</td>
+                        <td>5</td>
+                        <td>Senior Dev, Full Stack, DevOps, Data Scientist, QA Engineer</td>
+                    </tr>
+                    <tr>
+                        <td>Candidates</td>
+                        <td>20</td>
+                        <td>candidate1@example.com to candidate20@example.com</td>
+                    </tr>
+                    <tr>
+                        <td>Applications</td>
+                        <td>20</td>
+                        <td>Various statuses: Applied, Screening, Completed, Rejected</td>
+                    </tr>
+                    <tr>
+                        <td>Screening Sessions</td>
+                        <td>5</td>
+                        <td>Sample AI screening conversations with candidates</td>
+                    </tr>
+                    <tr>
+                        <td>Scoring Rules</td>
+                        <td>15</td>
+                        <td>3 rules per job for qualification evaluation</td>
+                    </tr>
+                    <tr>
+                        <td>Candidate Scores</td>
+                        <td>30</td>
+                        <td>Scores across 5 qualification areas</td>
+                    </tr>
+                    <tr>
+                        <td>Questions</td>
+                        <td>5</td>
+                        <td>Standard screening questions in question bank</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Test Candidate Credentials</h3>
+            <p>To test the candidate side, use these credentials:</p>
+            <div class="credential-box">
+                📧 Email: candidate1@example.com (to candidate20@example.com)<br>
+                🔑 Password: SecurePass123!
+            </div>
+
+            <div class="demo-data">
+                💡 <strong>Tip:</strong> Try logging in as different candidates to see the experience from their perspective. Each candidate has submitted applications and can view their screening results.
+            </div>
+        </section>
+
+        <!-- TESTING CHECKLIST -->
+        <section class="section">
+            <h2>✅ Complete Testing Checklist</h2>
+            
+            <div class="steps">
+                <div class="step">
+                    <h5>□ User Authentication</h5>
+                    <p>Login as recruiter, logout, login as candidate - verify all work correctly</p>
+                </div>
+                <div class="step">
+                    <h5>□ Job Management</h5>
+                    <p>View all 5 jobs, click on each to see details and applications</p>
+                </div>
+                <div class="step">
+                    <h5>□ Application Tracking</h5>
+                    <p>View all 20 applications, filter by status, click on individual applications</p>
+                </div>
+                <div class="step">
+                    <h5>□ AI Screening Review</h5>
+                    <p>Find completed screening sessions and review the AI conversation transcripts</p>
+                </div>
+                <div class="step">
+                    <h5>□ Scoring & Decisions</h5>
+                    <p>Check the 5-area scoring system and final decisions (Progress/Review/Reject)</p>
+                </div>
+                <div class="step">
+                    <h5>□ Dashboard Analytics</h5>
+                    <p>Review dashboard metrics and charts showing recruiting pipeline</p>
+                </div>
+                <div class="step">
+                    <h5>□ Mobile Responsiveness</h5>
+                    <p>Test on mobile device - all features should work on phone/tablet</p>
+                </div>
+                <div class="step">
+                    <h5>□ Performance</h5>
+                    <p>Check page load times - should be fast and responsive</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUPPORT SECTION -->
+        <section class="section" id="support">
+            <h2>🤝 Next Steps & Support</h2>
+            
+            <h3>What's Been Delivered</h3>
+            <div class="success-box">
+                ✅ Fully functional QANI platform with all features<br>
+                ✅ AI-powered screening with OpenAI integration<br>
+                ✅ 5-area qualification scoring system<br>
+                ✅ Recruiter dashboard with analytics<br>
+                ✅ 20 candidate profiles with applications<br>
+                ✅ 5 sample jobs for testing<br>
+                ✅ Complete demo data for immediate testing
+            </div>
+
+            <h3>Platform is Live At</h3>
+            <div class="info-box">
+                <strong>Local Testing:</strong> http://localhost:3000<br>
+                <strong>Production (Coming Soon):</strong> http://qani.io
+            </div>
+
+            <h3>Key Features Ready to Use</h3>
+            <ul style="margin-left: 20px;">
+                <li>🤖 AI Conversational Screening (OpenAI GPT-4)</li>
+                <li>⚙️ Smart Qualification Rules Engine</li>
+                <li>📊 Real-time Dashboard Analytics</li>
+                <li>💼 Job & Application Management</li>
+                <li>📧 Candidate Communication (Email Ready)</li>
+                <li>🔐 Secure Authentication & Authorization</li>
+            </ul>
+
+            <h3>Support & Questions</h3>
+            <p>If you have any questions or need clarification on any features:</p>
+            <ul style="margin-left: 20px;">
+                <li>Check this guide for feature details</li>
+                <li>Review the Technical Documentation for technical details</li>
+                <li>Contact the development team with feedback</li>
+            </ul>
+
+            <h3>Future Enhancements</h3>
+            <p>The following features can be added based on your feedback:</p>
+            <ul style="margin-left: 20px;">
+                <li>Custom branding and theming</li>
+                <li>Integration with your ATS system</li>
+                <li>Advanced reporting and export</li>
+                <li>Team collaboration features</li>
+                <li>Candidate pool management</li>
+                <li>API access for custom integrations</li>
+            </ul>
+        </section>
+
+        <footer>
+            <h2>Ready to Start Using QANI?</h2>
+            <p style="margin: 15px 0;">The platform is ready for full testing and use.</p>
+            <p><strong>Begin testing now and let us know your feedback!</strong></p>
+            <p style="margin-top: 20px; font-size: 0.9em;">QANI Platform © 2026 - AI-Powered Recruitment Screening</p>
+        </footer>
+    </div>
+</body>
+</html>

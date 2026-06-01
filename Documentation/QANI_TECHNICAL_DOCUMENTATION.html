@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QANI Platform - Technical Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Monaco', 'Menlo', monospace; line-height: 1.6; color: #333; background: #1e1e1e; color: #e0e0e0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #001f3f 0%, #1a3a52 100%); color: white; padding: 40px 20px; border-radius: 8px; margin-bottom: 30px; text-align: center; }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        header p { font-size: 1.1em; opacity: 0.9; }
+        .section { background: #2d2d2d; padding: 30px; margin-bottom: 20px; border-radius: 8px; border-left: 4px solid #d4a574; }
+        .section h2 { color: #d4a574; font-size: 1.8em; margin-bottom: 20px; }
+        .section h3 { color: #90caf9; font-size: 1.3em; margin-top: 20px; margin-bottom: 10px; }
+        .section h4 { color: #a5d6ff; font-size: 1.1em; margin-top: 15px; margin-bottom: 8px; }
+        .code-block { background: #1e1e1e; border: 1px solid #444; border-radius: 4px; padding: 15px; margin: 15px 0; overflow-x: auto; }
+        .code-block code { color: #ce9178; font-size: 0.9em; }
+        .endpoint { background: #1a2332; border-left: 4px solid #4caf50; padding: 15px; margin: 15px 0; border-radius: 4px; }
+        .method-get { border-left-color: #4caf50; }
+        .method-post { border-left-color: #2196f3; }
+        .method-put { border-left-color: #ff9800; }
+        .method-delete { border-left-color: #f44336; }
+        .endpoint-title { font-weight: bold; color: #90caf9; margin-bottom: 8px; font-family: 'Courier New', monospace; }
+        .response { background: #1e1e1e; border: 1px solid #444; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .model-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .model-table th { background: #1a2332; color: #90caf9; padding: 12px; text-align: left; border-bottom: 2px solid #444; }
+        .model-table td { padding: 10px; border-bottom: 1px solid #444; }
+        .model-table tr:nth-child(even) { background: #242424; }
+        .architecture { background: #1a2332; padding: 20px; border-radius: 4px; margin: 15px 0; border: 1px solid #444; }
+        .layer { background: #0d1117; padding: 15px; margin: 10px 0; border-left: 4px solid #d4a574; border-radius: 3px; }
+        .tech-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .tech-item { background: #1a2332; padding: 15px; border-radius: 4px; border-left: 4px solid #2196f3; }
+        .tech-item strong { color: #90caf9; }
+        .feature-list { list-style: none; }
+        .feature-list li { padding: 8px 0; padding-left: 25px; position: relative; }
+        .feature-list li:before { content: "✓"; color: #4caf50; font-weight: bold; position: absolute; left: 0; }
+        .warning-box { background: #3a2a1a; border-left: 4px solid #ff9800; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        .success-box { background: #1a3a1a; border-left: 4px solid #4caf50; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        .info-box { background: #1a2a3a; border-left: 4px solid #2196f3; padding: 15px; border-radius: 4px; margin: 15px 0; }
+        footer { background: #001f3f; color: white; padding: 30px; text-align: center; border-radius: 8px; margin-top: 40px; }
+        .toc { background: #2d2d2d; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #d4a574; }
+        .toc ol { margin-left: 20px; }
+        .toc li { margin: 8px 0; }
+        .toc a { color: #90caf9; text-decoration: none; }
+        .toc a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 QANI Platform</h1>
+            <p>Technical Documentation & Architecture</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Complete system architecture, API reference, and database schema</p>
+        </header>
+
+        <div class="toc">
+            <h3>Technical Contents</h3>
+            <ol>
+                <li><a href="#overview">System Overview</a></li>
+                <li><a href="#architecture">Architecture & Stack</a></li>
+                <li><a href="#database">Database Schema</a></li>
+                <li><a href="#api">API Reference</a></li>
+                <li><a href="#ai">AI Integration</a></li>
+                <li><a href="#deployment">Deployment</a></li>
+                <li><a href="#security">Security</a></li>
+            </ol>
+        </div>
+
+        <!-- OVERVIEW SECTION -->
+        <section class="section" id="overview">
+            <h2>📋 System Overview</h2>
+            
+            <h3>What is QANI?</h3>
+            <p>QANI (Qualified AI Neural Intelligence) is an intelligent recruitment screening platform that uses conversational AI to automate candidate qualification.</p>
+
+            <h3>Core Components</h3>
+            <div class="architecture">
+                <div class="layer">
+                    <strong>Frontend (Next.js 14)</strong> - React-based SPA for recruiter dashboard and candidate interface
+                </div>
+                <div class="layer">
+                    <strong>Backend API (Node.js + Express + TypeScript)</strong> - RESTful API handling all business logic
+                </div>
+                <div class="layer">
+                    <strong>Database (PostgreSQL)</strong> - Persistent storage for all application data
+                </div>
+                <div class="layer">
+                    <strong>AI Engine (OpenAI GPT-4)</strong> - Conversational screening and analysis
+                </div>
+                <div class="layer">
+                    <strong>Notifications (SendGrid)</strong> - Email notifications and communications
+                </div>
+            </div>
+
+            <h3>Key Features</h3>
+            <ul class="feature-list">
+                <li>AI-powered conversational screening with OpenAI</li>
+                <li>5-area qualification scoring system</li>
+                <li>Automated decision routing (Progress/Review/Reject)</li>
+                <li>Real-time dashboard with analytics</li>
+                <li>Candidate application management</li>
+                <li>Email notifications integration</li>
+                <li>Audit logging for compliance</li>
+                <li>Role-based access control</li>
+            </ul>
+        </section>
+
+        <!-- ARCHITECTURE SECTION -->
+        <section class="section" id="architecture">
+            <h2>🏗️ Architecture & Technology Stack</h2>
+            
+            <h3>High-Level Architecture</h3>
+            <div class="code-block">
+<code>
+┌─────────────────────────────────────────────────┐
+│         Client Browser (Next.js)                │
+│  Dashboard │ Applications │ Screening │ Reports │
+└────────────────────┬────────────────────────────┘
+                     │ HTTP/REST
+                     ↓
+┌─────────────────────────────────────────────────┐
+│     Node.js + Express API Server                │
+│  Auth │ Jobs │ Applications │ Screening │ Rules │
+└────────────────────┬────────────────────────────┘
+                     │ SQL
+                     ↓
+┌─────────────────────────────────────────────────┐
+│      PostgreSQL Database                        │
+│  Users │ Jobs │ Applications │ Scoring │ Logs   │
+└─────────────────────────────────────────────────┘
+                     
+        External Services
+        ├─ OpenAI (GPT-4o-mini for AI screening)
+        └─ SendGrid (Email notifications)
+</code>
+            </div>
+
+            <h3>Technology Stack</h3>
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <strong>Frontend</strong><br>
+                    • Next.js 14<br>
+                    • React 18<br>
+                    • TypeScript<br>
+                    • Tailwind CSS
+                </div>
+                <div class="tech-item">
+                    <strong>Backend</strong><br>
+                    • Node.js 18+<br>
+                    • Express.js<br>
+                    • TypeScript<br>
+                    • Prisma ORM
+                </div>
+                <div class="tech-item">
+                    <strong>Database</strong><br>
+                    • PostgreSQL 15<br>
+                    • Prisma Migrations<br>
+                    • Connection Pooling<br>
+                    • Full-text Search
+                </div>
+                <div class="tech-item">
+                    <strong>AI & Services</strong><br>
+                    • OpenAI GPT-4o-mini<br>
+                    • SendGrid (Email)<br>
+                    • JWT (Auth)<br>
+                    • bcryptjs (Hashing)
+                </div>
+            </div>
+
+            <h3>Development Environment</h3>
+            <div class="code-block">
+<code>
+Backend Running:  http://localhost:5001
+Frontend Running: http://localhost:3000
+Database:         PostgreSQL on localhost:5432
+</code>
+            </div>
+        </section>
+
+        <!-- DATABASE SECTION -->
+        <section class="section" id="database">
+            <h2>🗄️ Database Schema</h2>
+            
+            <h3>Core Models</h3>
+
+            <h4>Organisation</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>id</td>
+                    <td>String (PK)</td>
+                    <td>Unique identifier</td>
+                </tr>
+                <tr>
+                    <td>name</td>
+                    <td>String</td>
+                    <td>Organization name</td>
+                </tr>
+                <tr>
+                    <td>type</td>
+                    <td>String?</td>
+                    <td>Type (RECRUITMENT_AGENCY, EMPLOYER, etc.)</td>
+                </tr>
+                <tr>
+                    <td>industry</td>
+                    <td>String?</td>
+                    <td>Industry sector</td>
+                </tr>
+                <tr>
+                    <td>subscriptionPlan</td>
+                    <td>String</td>
+                    <td>basic, premium, enterprise</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>String</td>
+                    <td>active, paused, cancelled</td>
+                </tr>
+            </table>
+
+            <h4>User</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>id</td>
+                    <td>String (PK)</td>
+                    <td>Unique identifier</td>
+                </tr>
+                <tr>
+                    <td>organisationId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to organisation</td>
+                </tr>
+                <tr>
+                    <td>email</td>
+                    <td>String (UNIQUE)</td>
+                    <td>User email address</td>
+                </tr>
+                <tr>
+                    <td>passwordHash</td>
+                    <td>String</td>
+                    <td>Bcrypt hashed password</td>
+                </tr>
+                <tr>
+                    <td>firstName, lastName</td>
+                    <td>String</td>
+                    <td>User name</td>
+                </tr>
+                <tr>
+                    <td>role</td>
+                    <td>String</td>
+                    <td>RECRUITER, CANDIDATE, ADMIN</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>String</td>
+                    <td>active, inactive, suspended</td>
+                </tr>
+                <tr>
+                    <td>emailVerified</td>
+                    <td>Boolean</td>
+                    <td>Email verification status</td>
+                </tr>
+            </table>
+
+            <h4>Role (Job Position)</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>id</td>
+                    <td>String (PK)</td>
+                    <td>Unique identifier</td>
+                </tr>
+                <tr>
+                    <td>organisationId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to organisation</td>
+                </tr>
+                <tr>
+                    <td>title</td>
+                    <td>String</td>
+                    <td>Job title (e.g., "Senior Developer")</td>
+                </tr>
+                <tr>
+                    <td>location</td>
+                    <td>String?</td>
+                    <td>Job location</td>
+                </tr>
+                <tr>
+                    <td>salaryMin, salaryMax</td>
+                    <td>Decimal?</td>
+                    <td>Salary range</td>
+                </tr>
+                <tr>
+                    <td>employmentType</td>
+                    <td>String?</td>
+                    <td>full-time, part-time, contract</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>String</td>
+                    <td>draft, active, closed</td>
+                </tr>
+                <tr>
+                    <td>jdFileContent</td>
+                    <td>String?</td>
+                    <td>Job description</td>
+                </tr>
+            </table>
+
+            <h4>Application</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>id</td>
+                    <td>String (PK)</td>
+                    <td>Unique identifier</td>
+                </tr>
+                <tr>
+                    <td>organisationId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to organisation</td>
+                </tr>
+                <tr>
+                    <td>candidateId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to candidate</td>
+                </tr>
+                <tr>
+                    <td>roleId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to job role</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>String</td>
+                    <td>applied, screening, completed, progressed, rejected, review</td>
+                </tr>
+                <tr>
+                    <td>appliedAt</td>
+                    <td>DateTime</td>
+                    <td>Application submission date</td>
+                </tr>
+            </table>
+
+            <h4>ScreeningSession</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>id</td>
+                    <td>String (PK)</td>
+                    <td>Unique identifier</td>
+                </tr>
+                <tr>
+                    <td>applicationId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to application (UNIQUE)</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>String</td>
+                    <td>active, completed, expired, paused</td>
+                </tr>
+                <tr>
+                    <td>sessionToken</td>
+                    <td>String (UNIQUE)</td>
+                    <td>Security token for session</td>
+                </tr>
+                <tr>
+                    <td>startedAt, completedAt</td>
+                    <td>DateTime?</td>
+                    <td>Session timestamps</td>
+                </tr>
+                <tr>
+                    <td>currentStep</td>
+                    <td>Int</td>
+                    <td>Progress in screening (0-5)</td>
+                </tr>
+            </table>
+
+            <h4>CandidateScore</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>applicationId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to application</td>
+                </tr>
+                <tr>
+                    <td>requirementId</td>
+                    <td>String (FK)?</td>
+                    <td>Reference to role requirement</td>
+                </tr>
+                <tr>
+                    <td>qualificationArea</td>
+                    <td>String?</td>
+                    <td>location, salary, qualifications, work_rights, experience</td>
+                </tr>
+                <tr>
+                    <td>rawScore</td>
+                    <td>Decimal</td>
+                    <td>Score before weighting (0-100)</td>
+                </tr>
+                <tr>
+                    <td>weightedScore</td>
+                    <td>Decimal</td>
+                    <td>Score after weighting</td>
+                </tr>
+                <tr>
+                    <td>weight</td>
+                    <td>Decimal</td>
+                    <td>Weight multiplier (0-1)</td>
+                </tr>
+                <tr>
+                    <td>status</td>
+                    <td>String</td>
+                    <td>pass, fail, review, warning</td>
+                </tr>
+            </table>
+
+            <h4>RoutingDecision</h4>
+            <table class="model-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>applicationId</td>
+                    <td>String (FK)</td>
+                    <td>Reference to application (UNIQUE)</td>
+                </tr>
+                <tr>
+                    <td>outcome</td>
+                    <td>String</td>
+                    <td>progress, review, reject</td>
+                </tr>
+                <tr>
+                    <td>overallScore</td>
+                    <td>Decimal</td>
+                    <td>Final qualification score (0-100)</td>
+                </tr>
+                <tr>
+                    <td>reasonSummary</td>
+                    <td>String?</td>
+                    <td>Human-readable decision explanation</td>
+                </tr>
+                <tr>
+                    <td>recruiterOverride</td>
+                    <td>Boolean</td>
+                    <td>Whether recruiter manually changed decision</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- API SECTION -->
+        <section class="section" id="api">
+            <h2>🔌 API Reference</h2>
+            
+            <h3>Base URL</h3>
+            <div class="code-block">
+<code>
+Development: http://localhost:5001/api/v1
+Production:  http://qani.io/api/v1
+</code>
+            </div>
+
+            <h3>Authentication</h3>
+            <p>All protected endpoints require a JWT token in the Authorization header:</p>
+            <div class="code-block">
+<code>
+Authorization: Bearer {jwt_token}
+</code>
+            </div>
+
+            <h3>Core Endpoints</h3>
+
+            <h4>Health Check</h4>
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/health</div>
+                <p>Check API status and connectivity</p>
+                <div class="response">
+<code>
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "uptime": 3600.5,
+  "timestamp": "2026-05-30T11:00:00.000Z",
+  "environment": "production"
+}
+</code>
+                </div>
+            </div>
+
+            <h4>Authentication</h4>
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/auth/register</div>
+                <p>Register new user (candidate or recruiter)</p>
+                <div class="code-block">
+<code>
+Request:
+{
+  "email": "user@example.com",
+  "passwordHash": "hashed_password",
+  "firstName": "John",
+  "lastName": "Doe",
+  "role": "CANDIDATE"
+}
+
+Response:
+{
+  "id": "user_123",
+  "token": "jwt_token_here",
+  "user": { ... }
+}
+</code>
+                </div>
+            </div>
+
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/auth/login</div>
+                <p>Login and get JWT token</p>
+                <div class="code-block">
+<code>
+Request:
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+
+Response:
+{
+  "token": "jwt_token_here",
+  "user": { ... },
+  "expiresIn": 604800
+}
+</code>
+                </div>
+            </div>
+
+            <h4>Jobs/Roles</h4>
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/roles</div>
+                <p>Get all job openings</p>
+                <div class="response">
+<code>
+Response:
+[
+  {
+    "id": "role_123",
+    "title": "Senior Developer",
+    "location": "Sydney",
+    "salaryMin": 120000,
+    "salaryMax": 160000,
+    "status": "active",
+    ...
+  }
+]
+</code>
+                </div>
+            </div>
+
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/roles</div>
+                <p>Create new job opening (recruiter only)</p>
+            </div>
+
+            <h4>Applications</h4>
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/applications</div>
+                <p>Get all applications for recruiter</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/applications</div>
+                <p>Submit new application (candidate)</p>
+            </div>
+
+            <div class="endpoint method-put">
+                <div class="endpoint-title">PUT /api/v1/applications/:id/status</div>
+                <p>Update application status</p>
+            </div>
+
+            <h4>AI Screening</h4>
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/screening/start</div>
+                <p>Start new screening session</p>
+                <div class="code-block">
+<code>
+Request:
+{
+  "applicationId": "app_123",
+  "candidateName": "John Doe"
+}
+
+Response:
+{
+  "sessionId": "session_123",
+  "sessionToken": "token_123",
+  "status": "active"
+}
+</code>
+                </div>
+            </div>
+
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/screening/message</div>
+                <p>Send message in screening session</p>
+                <div class="code-block">
+<code>
+Request:
+{
+  "sessionId": "session_123",
+  "message": "I have 5 years of experience"
+}
+
+Response:
+{
+  "aiResponse": "Great! Tell me more...",
+  "sessionId": "session_123",
+  "step": 2
+}
+</code>
+                </div>
+            </div>
+
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/screening/end</div>
+                <p>End screening session</p>
+            </div>
+
+            <h4>Scoring & Decisions</h4>
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/scoring/scores</div>
+                <p>Get candidate scores for application</p>
+            </div>
+
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/scoring/calculate</div>
+                <p>Calculate qualification score</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/scoring/decision</div>
+                <p>Get routing decision (Progress/Review/Reject)</p>
+            </div>
+
+            <h4>Dashboard</h4>
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/dashboard/stats</div>
+                <p>Get recruiting statistics</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/dashboard/pipeline</div>
+                <p>Get candidate pipeline data</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/dashboard/role-metrics</div>
+                <p>Get metrics by job role</p>
+            </div>
+
+            <h4>Notifications</h4>
+            <div class="endpoint method-post">
+                <div class="endpoint-title">POST /api/v1/notifications/send</div>
+                <p>Send notification to candidate</p>
+            </div>
+
+            <div class="endpoint method-get">
+                <div class="endpoint-title">GET /api/v1/notifications</div>
+                <p>Get notification history</p>
+            </div>
+        </section>
+
+        <!-- AI INTEGRATION SECTION -->
+        <section class="section" id="ai">
+            <h2>🤖 AI Integration (OpenAI)</h2>
+            
+            <h3>OpenAI Configuration</h3>
+            <div class="code-block">
+<code>
+Model: gpt-4o-mini
+Max Tokens: 300
+Temperature: 0.7 (natural conversation)
+System Prompt: Professional recruiter conducting screening interview
+</code>
+            </div>
+
+            <h3>Screening Flow</h3>
+            <div class="code-block">
+<code>
+1. Application submitted
+2. Screening session created
+3. System sends initial greeting via AI
+4. Candidate answers questions in natural language
+5. AI understands context and asks follow-ups
+6. All responses recorded and analyzed
+7. Answers extracted and scored
+8. Final decision calculated
+9. Candidate notified of results
+</code>
+            </div>
+
+            <h3>5-Area Qualification Scoring</h3>
+            <p>The AI screening evaluates candidates on:</p>
+            
+            <h4>1. Location Match</h4>
+            <ul class="feature-list">
+                <li>Does candidate location match job location?</li>
+                <li>Willing to relocate?</li>
+                <li>Remote work preference?</li>
+            </ul>
+
+            <h4>2. Salary Alignment</h4>
+            <ul class="feature-list">
+                <li>What is candidate's salary expectation?</li>
+                <li>Within budget range?</li>
+                <li>Negotiation range?</li>
+            </ul>
+
+            <h4>3. Qualifications</h4>
+            <ul class="feature-list">
+                <li>Does candidate have required certifications?</li>
+                <li>Education level appropriate?</li>
+                <li>Skills match job requirements?</li>
+            </ul>
+
+            <h4>4. Work Rights</h4>
+            <ul class="feature-list">
+                <li>Legal work rights in country?</li>
+                <li>Visa sponsorship needed?</li>
+                <li>Citizenship status?</li>
+            </ul>
+
+            <h4>5. Experience</h4>
+            <ul class="feature-list">
+                <li>Years of relevant experience?</li>
+                <li>Experience in similar roles?</li>
+                <li>Industry background match?</li>
+            </ul>
+
+            <h3>API Call Example</h3>
+            <div class="code-block">
+<code>
+const completion = await openai.chat.completions.create({
+  model: 'gpt-4o-mini',
+  messages: [
+    {
+      role: 'system',
+      content: 'You are a professional recruiter...'
+    },
+    {
+      role: 'user',
+      content: 'Hi, I want to apply for Senior Developer'
+    },
+    ...previousMessages
+  ],
+  max_tokens: 300,
+});
+</code>
+            </div>
+        </section>
+
+        <!-- DEPLOYMENT SECTION -->
+        <section class="section" id="deployment">
+            <h2>🚀 Deployment</h2>
+            
+            <h3>Current Deployment</h3>
+            <div class="info-box">
+                <strong>Server:</strong> Vultr (139.180.181.11)<br>
+                <strong>Location:</strong> Sydney, Australia<br>
+                <strong>OS:</strong> AlmaLinux 8<br>
+                <strong>Domain:</strong> qani.io<br>
+                <strong>Backend Port:</strong> 5001<br>
+                <strong>Frontend Port:</strong> 3000
+            </div>
+
+            <h3>Deployment Architecture</h3>
+            <div class="code-block">
+<code>
+Frontend (Next.js on port 3000)
+          ↓
+Nginx Reverse Proxy (port 80/443)
+          ↓
+Backend (Express on port 5001)
+          ↓
+PostgreSQL Database (port 5432)
+</code>
+            </div>
+
+            <h3>PM2 Process Management</h3>
+            <div class="code-block">
+<code>
+Process: qani-backend
+Port: 5001
+Status: Running
+Node Version: 18+
+Max Memory: 512MB
+Auto Restart: Yes
+
+Start: pm2 start "npm start" --name qani-backend
+Stop: pm2 stop qani-backend
+Restart: pm2 restart qani-backend
+Logs: pm2 logs qani-backend
+</code>
+            </div>
+
+            <h3>GitHub Integration</h3>
+            <div class="code-block">
+<code>
+Repository: https://github.com/SubhadeepBhaumik/qani-platform
+Branch: main
+Deployment: Pull from GitHub, build, restart services
+
+Deploy Steps:
+1. git pull origin main
+2. npm install
+3. npm run build
+4. npx prisma migrate deploy
+5. pm2 restart qani-backend
+</code>
+            </div>
+        </section>
+
+        <!-- SECURITY SECTION -->
+        <section class="section" id="security">
+            <h2>🔐 Security</h2>
+            
+            <h3>Authentication & Authorization</h3>
+            <ul class="feature-list">
+                <li>JWT-based authentication</li>
+                <li>Bcryptjs password hashing (10 rounds)</li>
+                <li>Role-based access control (RECRUITER, CANDIDATE, ADMIN)</li>
+                <li>Secure token expiration (7 days)</li>
+                <li>Email verification for accounts</li>
+            </ul>
+
+            <h3>Data Protection</h3>
+            <ul class="feature-list">
+                <li>HTTPS/SSL encryption in transit</li>
+                <li>PostgreSQL at-rest encryption</li>
+                <li>Database access control with passwords</li>
+                <li>Environment variable management for secrets</li>
+                <li>Rate limiting on API endpoints</li>
+            </ul>
+
+            <h3>API Security</h3>
+            <ul class="feature-list">
+                <li>CORS configured for specific origins</li>
+                <li>Helmet.js for HTTP security headers</li>
+                <li>Express rate limiting</li>
+                <li>Input validation and sanitization</li>
+                <li>CSRF protection</li>
+            </ul>
+
+            <h3>Environment Variables</h3>
+            <div class="code-block">
+<code>
+DATABASE_URL=postgresql://user:pass@localhost/qani_dev
+JWT_SECRET=qani-production-secret-key-2026
+OPENAI_API_KEY=sk-proj-...
+SENDGRID_API_KEY=SG...
+CORS_ORIGIN=http://localhost:3000
+NODE_ENV=production
+</code>
+            </div>
+
+            <h3>Audit Logging</h3>
+            <div class="warning-box">
+                All important actions logged:<br>
+                • User login/logout<br>
+                • Application status changes<br>
+                • Screening completions<br>
+                • Decision routing<br>
+                • Data modifications
+            </div>
+        </section>
+
+        <footer>
+            <h2>QANI Technical Documentation</h2>
+            <p style="margin: 15px 0;">Complete API reference, database schema, and architecture details</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">For API support or technical questions, refer to this documentation or contact the development team</p>
+        </footer>
+    </div>
+</body>
+</html>
