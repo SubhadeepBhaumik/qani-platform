@@ -190,6 +190,11 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [financeFilter, setFinanceFilter] = useState('all');
+  const [financePage, setFinancePage] = useState(1);
+  const financePerPage = 15;
 
   const activeTab = subView || 'overview';
   const setActiveTab = (tab: string) => {
@@ -290,17 +295,41 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'job-10', title: 'Growth Engineer', company: 'Seek', location: 'Melbourne, VIC', salary: '$110k–$135k', status: 'draft', posted: '2026-05-31', apps: 0 },
   ]);
 
+  const allTransactions = [
+    { id: 't1', user: 'Atlassian', email: 'billing@atlassian.com', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-05-01', status: 'paid', inv: 'INV-2026-001' },
+    { id: 't2', user: 'Canva', email: 'billing@canva.com', plan: 'Professional', amount: '$299', raw: 299, date: '2026-05-01', status: 'paid', inv: 'INV-2026-002' },
+    { id: 't3', user: 'Seek', email: 'billing@seek.com.au', plan: 'Professional', amount: '$299', raw: 299, date: '2026-05-03', status: 'paid', inv: 'INV-2026-003' },
+    { id: 't4', user: 'REA Group', email: 'billing@rea.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-05-05', status: 'paid', inv: 'INV-2026-004' },
+    { id: 't5', user: 'Afterpay', email: 'billing@afterpay.com', plan: 'Professional', amount: '$299', raw: 299, date: '2026-05-07', status: 'paid', inv: 'INV-2026-005' },
+    { id: 't6', user: 'TechStartup AU', email: 'admin@techstartup.com.au', plan: 'Starter', amount: '$0', raw: 0, date: '2026-05-10', status: 'trial', inv: 'INV-2026-006' },
+    { id: 't7', user: 'HireNow Agency', email: 'billing@hirenow.com.au', plan: 'Professional', amount: '$299', raw: 299, date: '2026-05-12', status: 'paid', inv: 'INV-2026-007' },
+    { id: 't8', user: 'BuildCorp', email: 'accounts@buildcorp.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-05-15', status: 'failed', inv: 'INV-2026-008' },
+    { id: 't9', user: 'TalentFirst', email: 'billing@talentfirst.com.au', plan: 'Professional', amount: '$299', raw: 299, date: '2026-05-15', status: 'paid', inv: 'INV-2026-009' },
+    { id: 't10', user: 'Westpac HR', email: 'hr@westpac.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-05-16', status: 'paid', inv: 'INV-2026-010' },
+    { id: 't11', user: 'NAB Talent', email: 'talent@nab.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-05-17', status: 'paid', inv: 'INV-2026-011' },
+    { id: 't12', user: 'Xero', email: 'billing@xero.com', plan: 'Professional', amount: '$299', raw: 299, date: '2026-05-18', status: 'paid', inv: 'INV-2026-012' },
+    { id: 't13', user: 'Atlassian', email: 'billing@atlassian.com', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-04-01', status: 'paid', inv: 'INV-2026-013' },
+    { id: 't14', user: 'Canva', email: 'billing@canva.com', plan: 'Professional', amount: '$299', raw: 299, date: '2026-04-01', status: 'paid', inv: 'INV-2026-014' },
+    { id: 't15', user: 'REA Group', email: 'billing@rea.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-04-05', status: 'paid', inv: 'INV-2026-015' },
+    { id: 't16', user: 'Seek', email: 'billing@seek.com.au', plan: 'Professional', amount: '$299', raw: 299, date: '2026-04-08', status: 'paid', inv: 'INV-2026-016' },
+    { id: 't17', user: 'Afterpay', email: 'billing@afterpay.com', plan: 'Professional', amount: '$299', raw: 299, date: '2026-04-10', status: 'paid', inv: 'INV-2026-017' },
+    { id: 't18', user: 'TechRecruit Pro', email: 'billing@techrecruit.com.au', plan: 'Professional', amount: '$299', raw: 299, date: '2026-04-12', status: 'paid', inv: 'INV-2026-018' },
+    { id: 't19', user: 'Westpac HR', email: 'hr@westpac.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-04-16', status: 'paid', inv: 'INV-2026-019' },
+    { id: 't20', user: 'NAB Talent', email: 'talent@nab.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-04-17', status: 'paid', inv: 'INV-2026-020' },
+    { id: 't21', user: 'HireNow Agency', email: 'billing@hirenow.com.au', plan: 'Professional', amount: '$299', raw: 299, date: '2026-03-01', status: 'paid', inv: 'INV-2026-021' },
+    { id: 't22', user: 'Atlassian', email: 'billing@atlassian.com', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-03-01', status: 'paid', inv: 'INV-2026-022' },
+    { id: 't23', user: 'Canva', email: 'billing@canva.com', plan: 'Professional', amount: '$299', raw: 299, date: '2026-03-01', status: 'paid', inv: 'INV-2026-023' },
+    { id: 't24', user: 'StartupAU', email: 'admin@startupau.com', plan: 'Starter', amount: '$0', raw: 0, date: '2026-03-15', status: 'trial', inv: 'INV-2026-024' },
+    { id: 't25', user: 'BuildCorp', email: 'accounts@buildcorp.com.au', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-03-15', status: 'paid', inv: 'INV-2026-025' },
+  ];
   const finances = {
-    transactions: [
-      { id: 't1', user: 'Atlassian', plan: 'Enterprise', amount: '$999', date: '2026-05-01', status: 'paid' },
-      { id: 't2', user: 'Canva', plan: 'Professional', amount: '$299', date: '2026-05-01', status: 'paid' },
-      { id: 't3', user: 'Seek', plan: 'Professional', amount: '$299', date: '2026-05-03', status: 'paid' },
-      { id: 't4', user: 'REA Group', plan: 'Enterprise', amount: '$999', date: '2026-05-05', status: 'paid' },
-      { id: 't5', user: 'Afterpay', plan: 'Professional', amount: '$299', date: '2026-05-07', status: 'paid' },
-      { id: 't6', user: 'TechStartup AU', plan: 'Starter', amount: '$0', date: '2026-05-10', status: 'trial' },
-      { id: 't7', user: 'HireNow Agency', plan: 'Professional', amount: '$299', date: '2026-05-12', status: 'paid' },
-      { id: 't8', user: 'BuildCorp', plan: 'Enterprise', amount: '$999', date: '2026-05-15', status: 'failed' },
-    ]
+    transactions: financeFilter === 'all' ? allTransactions :
+      financeFilter === 'paid' ? allTransactions.filter(t => t.status === 'paid') :
+      financeFilter === 'failed' ? allTransactions.filter(t => t.status === 'failed') :
+      financeFilter === 'trial' ? allTransactions.filter(t => t.status === 'trial') :
+      financeFilter === 'may' ? allTransactions.filter(t => t.date.startsWith('2026-05')) :
+      financeFilter === 'apr' ? allTransactions.filter(t => t.date.startsWith('2026-04')) :
+      allTransactions.filter(t => t.date.startsWith('2026-03'))
   };
 
   useEffect(() => { refreshStates(); }, []);
@@ -370,6 +399,222 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
           onDelete={handleDeleteUser}
           onToggleStatus={handleToggleStatus}
         />
+      )}
+
+      {/* Application Detail Modal */}
+      {selectedApp && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedApp(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg">{selectedApp.candidate}</h3>
+                <p className="text-xs text-gray-500 mt-1">{selectedApp.job}</p>
+              </div>
+              <button onClick={() => setSelectedApp(null)} className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Score + Status + Date */}
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="p-4 bg-blue-50 rounded-xl">
+                  <p className="text-2xl font-extrabold text-blue-600">{selectedApp.score !== undefined ? `${selectedApp.score}/100` : '—'}</p>
+                  <p className="text-xs text-gray-500 mt-1">AI Score</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm font-bold text-gray-900 capitalize">{selectedApp.status}</p>
+                  <p className="text-xs text-gray-500 mt-1">Status</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm font-bold text-gray-900">{selectedApp.date}</p>
+                  <p className="text-xs text-gray-500 mt-1">Applied Date</p>
+                </div>
+              </div>
+
+              {/* Candidate Info */}
+              <div className="space-y-1">
+                <h4 className="text-xs font-bold text-gray-700 uppercase">Candidate Email</h4>
+                <p className="text-sm text-gray-900 font-mono">{selectedApp.email}</p>
+              </div>
+
+              {/* Scorecard breakdown */}
+              {selectedApp.score !== undefined && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-gray-700 uppercase">AI Scorecard Breakdown</h4>
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Australian Work Rights', score: Math.min(100, (selectedApp.score || 80) + 8) },
+                      { label: 'Salary Expectations', score: Math.min(100, (selectedApp.score || 80) + 2) },
+                      { label: 'Technical Skills', score: selectedApp.score },
+                      { label: 'Location Match', score: Math.min(100, (selectedApp.score || 80) + 5) },
+                      { label: 'Qualifications', score: Math.max(50, (selectedApp.score || 80) - 5) },
+                    ].map(item => (
+                      <div key={item.label} className="space-y-1">
+                        <div className="flex justify-between text-xs text-gray-600">
+                          <span>{item.label}</span>
+                          <span className={`font-bold ${item.score >= 85 ? 'text-green-600' : item.score >= 70 ? 'text-orange-500' : 'text-red-500'}`}>{item.score}/100</span>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${item.score >= 85 ? 'bg-green-500' : item.score >= 70 ? 'bg-orange-400' : 'bg-red-500'}`} style={{width: `${item.score}%`}} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Screening Transcript */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-blue-600" /> AI Screening Transcript
+                </h4>
+                <div className="space-y-3 bg-gray-50 rounded-xl p-4 max-h-64 overflow-y-auto border">
+                  {[
+                    { role: 'ai', text: `Hello! Welcome to your AI screening interview for the ${selectedApp.job} position. I'll guide you through ${4} questions. Let's begin!
+
+Question 1: Describe your most relevant experience for this role.` },
+                    { role: 'candidate', text: selectedApp.score >= 85 ? 'I have 6+ years of experience in this domain, having led multiple projects end-to-end. Most recently I delivered a high-impact solution that increased team productivity by 40%.' : 'I have around 3 years of experience and have worked on several related projects in my previous roles.' },
+                    { role: 'ai', text: 'Thank you. Question 2: What are your salary expectations and availability?' },
+                    { role: "candidate", text: selectedApp.score >= 85 ? "I am looking for $140-160k package. I can start within 2 weeks after notice period." : "I am expecting around $180k+ and would need at least 3 months notice period." },
+                    { role: 'ai', text: 'Question 3: Do you have full Australian work rights?' },
+                    { role: 'candidate', text: selectedApp.score >= 85 ? 'Yes, I am an Australian citizen with full unrestricted work rights.' : 'I am on a 457 visa currently being converted to PR.' },
+                    { role: 'ai', text: `Thank you for completing the screening. Your responses have been evaluated. Final score: ${selectedApp.score}/100. ${selectedApp.score >= 85 ? 'You have been marked as Qualified.' : selectedApp.score >= 70 ? 'Your application is under review.' : 'Unfortunately you did not meet the minimum threshold.'}` },
+                  ].map((msg, i) => (
+                    <div key={i} className={`flex gap-2 ${msg.role === 'candidate' ? 'flex-row-reverse' : ''}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${msg.role === 'ai' ? 'bg-blue-600' : 'bg-gray-600'}`}>
+                        {msg.role === 'ai' ? 'AI' : 'C'}
+                      </div>
+                      <div className={`text-xs p-3 rounded-xl max-w-[80%] whitespace-pre-wrap ${msg.role === 'ai' ? 'bg-blue-50 text-blue-900' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Update Status */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold text-gray-700 uppercase">Update Status</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {['qualified', 'review', 'rejected', 'screening'].map(s => (
+                    <button key={s} onClick={() => { setSelectedApp({...selectedApp, status: s}); showToast(`Status updated to ${s}`, 'success'); }} className={`cursor-pointer text-xs font-bold px-3 py-1.5 rounded-lg border transition capitalize ${selectedApp.status === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2 border-t border-gray-100">
+                <button onClick={() => window.open(`mailto:${selectedApp.email}`)} className="cursor-pointer flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
+                  <Mail className="w-3.5 h-3.5" /> Email Candidate
+                </button>
+                <button onClick={() => { setSelectedApp(null); showToast('Application deleted', 'warning'); }} className="cursor-pointer flex items-center gap-2 text-xs bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-semibold px-4 py-2 rounded-lg transition">
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invoice Modal */}
+      {selectedInvoice && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            {/* Invoice Header with QANI branding */}
+            <div className="bg-gray-950 rounded-t-2xl p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl transform rotate-3 shadow-lg" />
+                  <div className="relative w-full h-full bg-gray-900 rounded-lg border border-gray-800 flex items-center justify-center font-mono font-black text-white text-base">Q</div>
+                </div>
+                <div>
+                  <p className="font-extrabold text-white text-sm tracking-wide">QANI Platform</p>
+                  <p className="text-[10px] text-gray-400">AI Recruitment · Australia</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-blue-400 font-bold text-sm">{selectedInvoice.inv}</p>
+                <p className="text-gray-400 text-[10px] mt-0.5">TAX INVOICE</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Company details + Bill to */}
+              <div className="flex justify-between text-xs">
+                <div className="space-y-1">
+                  <p className="font-bold text-gray-900 text-sm">QANI Platform Pty Ltd</p>
+                  <p className="text-gray-500">ABN: 00 000 000 000</p>
+                  <p className="text-gray-500">Level 10, 1 Market Street</p>
+                  <p className="text-gray-500">Sydney NSW 2000, Australia</p>
+                  <p className="text-gray-500">billing@qani.io</p>
+                </div>
+                <div className="text-right space-y-1">
+                  <p className="font-bold text-gray-900 text-sm">Bill To:</p>
+                  <p className="text-gray-700 font-semibold">{selectedInvoice.user}</p>
+                  <p className="text-gray-500">{selectedInvoice.email}</p>
+                  <div className="mt-3">
+                    <p className="text-gray-400">Invoice Date: <span className="font-semibold text-gray-700">{selectedInvoice.date}</span></p>
+                    <p className="text-gray-400">Due Date: <span className="font-semibold text-gray-700">{selectedInvoice.date}</span></p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Line items */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="p-3 text-left font-bold text-gray-600">Description</th>
+                      <th className="p-3 text-center font-bold text-gray-600">Qty</th>
+                      <th className="p-3 text-right font-bold text-gray-600">Amount (AUD)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t">
+                      <td className="p-3 text-gray-700">
+                        <p className="font-semibold text-gray-900">QANI {selectedInvoice.plan} Plan</p>
+                        <p className="text-gray-500 text-[10px]">Monthly Subscription — AI Recruitment Platform</p>
+                      </td>
+                      <td className="p-3 text-center text-gray-700">1</td>
+                      <td className="p-3 text-right font-semibold text-gray-900">{selectedInvoice.amount}</td>
+                    </tr>
+                    <tr className="border-t bg-gray-50">
+                      <td className="p-3 text-gray-500 text-[10px]" colSpan={2}>GST Included (10%)</td>
+                      <td className="p-3 text-right text-gray-500 text-[10px]">Included</td>
+                    </tr>
+                    <tr className="border-t bg-blue-50">
+                      <td className="p-3 font-extrabold text-gray-900" colSpan={2}>Total (AUD incl. GST)</td>
+                      <td className="p-3 text-right font-extrabold text-gray-900 text-base">{selectedInvoice.amount}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Payment status */}
+              <div className={`p-3 rounded-lg text-xs font-bold text-center tracking-wider uppercase ${selectedInvoice.status === 'paid' ? 'bg-green-50 text-green-700 border border-green-200' : selectedInvoice.status === 'failed' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+                {selectedInvoice.status === 'paid' ? '✓ Payment Received' : selectedInvoice.status === 'failed' ? '✗ Payment Failed — Action Required' : 'Free Trial — No Charge'}
+              </div>
+
+              {/* Footer note */}
+              <p className="text-[10px] text-gray-400 text-center">Thank you for choosing QANI Platform. For billing enquiries contact billing@qani.io</p>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end pt-2 border-t border-gray-100">
+                <button onClick={() => setSelectedInvoice(null)} className="cursor-pointer text-xs border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg transition">
+                  Close
+                </button>
+                <button onClick={() => window.open(`mailto:${selectedInvoice.email}?subject=Invoice ${selectedInvoice.inv} — QANI Platform&body=Please find attached your invoice ${selectedInvoice.inv} for QANI ${selectedInvoice.plan} Plan.`)} className="cursor-pointer flex items-center gap-2 text-xs bg-gray-800 hover:bg-gray-900 text-white font-semibold px-4 py-2 rounded-lg transition">
+                  <Mail className="w-3.5 h-3.5" /> Email Invoice
+                </button>
+                <button onClick={() => window.print()} className="cursor-pointer flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
+                  <Download className="w-3.5 h-3.5" /> Download PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Admin top nav */}
@@ -658,7 +903,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <td className="p-4 text-gray-500">{a.date}</td>
                         <td className="p-4">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => showToast(`Viewing ${a.candidate}'s application`, 'info')} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
+                            <button onClick={() => setSelectedApp(a)} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => window.open(`mailto:${a.email}`)} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Email Candidate">
@@ -681,9 +926,18 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
         {/* ── FINANCE ── */}
         {activeTab === 'finance' && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Financial Dashboard</h2>
-              <p className="text-xs text-gray-500 mt-1">Revenue, subscriptions, and billing management</p>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Financial Dashboard</h2>
+                <p className="text-xs text-gray-500 mt-1">Revenue, subscriptions, and billing management</p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {[['all','All'], ['may','May 2026'], ['apr','Apr 2026'], ['mar','Mar 2026'], ['paid','Paid'], ['failed','Failed'], ['trial','Trial']].map(([val, label]) => (
+                  <button key={val} onClick={() => setFinanceFilter(val)} className={`cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${financeFilter === val ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Monthly Recurring Revenue" value="$47,200" icon={<TrendingUp className="w-5 h-5 text-green-600" />} color="bg-green-50" sub="+12% vs last month" />
@@ -725,7 +979,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {finances.transactions.map(t => (
+                    {finances.transactions.slice((financePage-1)*financePerPage, financePage*financePerPage).map(t => (
                       <tr key={t.id} className="hover:bg-gray-50 transition">
                         <td className="p-4 font-semibold text-gray-900">{t.user}</td>
                         <td className="p-4 text-gray-600">{t.plan}</td>
@@ -733,15 +987,28 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <td className="p-4 text-gray-500">{t.date}</td>
                         <td className="p-4"><StatusBadge status={t.status} /></td>
                         <td className="p-4 text-right">
-                          <button onClick={() => showToast(`Invoice sent to ${t.user}`, 'success')} className="cursor-pointer text-[10px] text-blue-600 hover:underline font-semibold">
-                            Send Invoice
-                          </button>
+                          <div className="flex gap-3 justify-end">
+                            <button onClick={() => setSelectedInvoice(t)} className="cursor-pointer text-[10px] text-blue-600 hover:underline font-semibold">View</button>
+                            <button onClick={() => showToast(`Invoice sent to ${t.user}`, 'success')} className="cursor-pointer text-[10px] text-green-600 hover:underline font-semibold">Send</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {finances.transactions.length > financePerPage && (
+                <div className="flex items-center justify-between pt-4 pb-20">
+                  <p className="text-xs text-gray-500">Showing {Math.min((financePage-1)*financePerPage+1, finances.transactions.length)}–{Math.min(financePage*financePerPage, finances.transactions.length)} of {finances.transactions.length}</p>
+                  <div className="flex gap-1">
+                    <button onClick={() => setFinancePage(p => Math.max(1,p-1))} disabled={financePage===1} className="cursor-pointer text-xs font-semibold px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">← Prev</button>
+                    {Array.from({length: Math.ceil(finances.transactions.length/financePerPage)},(_,i)=>(
+                      <button key={i} onClick={()=>setFinancePage(i+1)} className={`cursor-pointer text-xs font-semibold px-3 py-1.5 border rounded-lg ${financePage===i+1?'bg-blue-600 text-white border-blue-600':'border-gray-300 hover:bg-gray-50'}`}>{i+1}</button>
+                    ))}
+                    <button onClick={() => setFinancePage(p => Math.min(Math.ceil(finances.transactions.length/financePerPage),p+1))} disabled={financePage===Math.ceil(finances.transactions.length/financePerPage)} className="cursor-pointer text-xs font-semibold px-3 py-1.5 border border-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50">Next →</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

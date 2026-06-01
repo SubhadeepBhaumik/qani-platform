@@ -212,7 +212,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     setMustReqString('');
     setNiceReqString('');
 
-    navigate('recruiter-jobs');
+    if (user.role === 'admin') { navigate('admin-jobs'); } else { navigate('recruiter-jobs'); }
   };
 
   const addQuestionString = () => {
