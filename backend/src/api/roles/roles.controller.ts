@@ -136,6 +136,17 @@ export class RolesController {
     }
   }
 
+  static async getRoleById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const role = roles.find(r => r.id === id);
+      if (!role) return res.status(404).json({ error: 'Role not found' });
+      return res.json(role);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch role' });
+    }
+  }
+
   static async updateRole(req: Request, res: Response) {
     try {
       const { id } = req.params;

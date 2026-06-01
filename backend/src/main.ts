@@ -44,6 +44,7 @@ app.get('/api/v1/auth/me', AuthController.me);
 // Role routes
 app.post('/api/v1/roles', RolesController.createRole);
 app.get('/api/v1/roles', RolesController.getRoles);
+app.get('/api/v1/roles/:id', RolesController.getRoleById);
 app.put('/api/v1/roles/:id', RolesController.updateRole);
 app.delete('/api/v1/roles/:id', RolesController.deleteRole);
 
