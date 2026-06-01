@@ -34,8 +34,13 @@ export const Sidebar: React.FC = () => {
       ];
     } else {
       return [
-        { id: 'admin-dashboard', label: 'Admin Dashboard', icon: Activity, view: 'admin-dashboard' as AppView },
-        { id: 'admin-users', label: 'All Users', icon: Users, view: 'admin-users' as AppView },
+        { id: 'admin-dashboard', label: 'Overview', icon: Activity, view: 'admin-dashboard' as AppView },
+        { id: 'admin-users', label: 'Users', icon: Users, view: 'admin-users' as AppView },
+        { id: 'admin-jobs', label: 'Jobs', icon: Briefcase, view: 'admin-jobs' as AppView },
+        { id: 'admin-applications', label: 'Applications', icon: FileText, view: 'admin-applications' as AppView },
+        { id: 'admin-finance', label: 'Finance', icon: DollarSign, view: 'admin-finance' as AppView },
+        { id: 'admin-cms', label: 'Content (CMS)', icon: PenTool, view: 'admin-cms' as AppView },
+        { id: 'admin-settings', label: 'Settings', icon: Settings, view: 'admin-settings' as AppView },
       ];
     }
   };
@@ -50,7 +55,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Brand */}
       <div className="p-5 border-b border-gray-800 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => { if (!user) navigate('landing'); }}>
+        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => { /* logo click does nothing when logged in */ }}>
           <div className="relative w-8 h-8">
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg transform rotate-3 group-hover:rotate-6 transition-all duration-300" />
             <div className="relative w-full h-full bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-extrabold text-white text-xs">Q</div>

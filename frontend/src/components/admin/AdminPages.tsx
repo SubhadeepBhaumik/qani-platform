@@ -588,7 +588,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <td className="p-4"><StatusBadge status={j.status} /></td>
                         <td className="p-4">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => navigate('recruiter-create-job', { editJobId: j.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                            <button onClick={() => { navigate('recruiter-create-job', { editJobId: j.id }); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button onClick={() => handleToggleJobStatus(j.id)} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Toggle Status">
