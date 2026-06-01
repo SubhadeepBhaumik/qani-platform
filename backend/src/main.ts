@@ -39,6 +39,7 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
 // Auth routes
 app.post('/api/v1/auth/register', AuthController.register);
 app.post('/api/v1/auth/login', AuthController.login);
+app.get('/api/v1/auth/me', AuthController.me);
 
 // Role routes
 app.post('/api/v1/roles', RolesController.createRole);
@@ -101,6 +102,7 @@ app.get('/api/v1/test', (_req: Request, res: Response) => {
 
 app.use(errorHandler);
 
+AuthController.seedDemoUsers().then(() => console.log('Demo users ready'));
 app.listen(port, () => {
   console.log(`✓ Server running on http://localhost:${port}`);
 });
