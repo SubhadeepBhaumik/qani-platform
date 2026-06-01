@@ -102,6 +102,22 @@ app.get('/api/v1/test', (_req: Request, res: Response) => {
 
 app.use(errorHandler);
 
+
+// Stub endpoints to prevent 404s
+app.get('/api/v1/screening', (_req, res) => res.json([]));
+app.post('/api/v1/screening/start', (_req, res) => res.status(201).json({ id: 'session-' + Date.now(), status: 'active', messages: [] }));
+app.post('/api/v1/screening/message', (_req, res) => res.json({ id: _req.body.sessionId, status: 'active', messages: [] }));
+app.post('/api/v1/screening/end', (_req, res) => res.json({ id: _req.body.sessionId, status: 'completed' }));
+app.get('/api/v1/audit-logs', (_req, res) => res.json([]));
+app.post('/api/v1/audit-logs', (_req, res) => res.status(201).json({}));
+app.get('/api/v1/notifications', (_req, res) => res.json([]));
+app.post('/api/v1/notifications/send', (_req, res) => res.status(201).json({}));
+app.put('/api/v1/notifications/:id', (_req, res) => res.json({}));
+app.get('/api/v1/users', (_req, res) => res.json([]));
+app.get('/api/v1/applications', (_req, res) => res.json([]));
+app.post('/api/v1/applications', (req, res) => res.status(201).json({ id: 'app-' + Date.now(), ...req.body, status: 'applied', appliedDate: new Date().toISOString().split('T')[0] }));
+app.put('/api/v1/applications/:id', (_req, res) => res.json({}));
+
 AuthController.seedDemoUsers().then(() => console.log('Demo users ready'));
 app.listen(port, () => {
   console.log(`✓ Server running on http://localhost:${port}`);

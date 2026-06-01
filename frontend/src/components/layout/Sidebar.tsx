@@ -2,7 +2,8 @@ import React from 'react';
 import { useApp, AppView } from '../AppContext';
 import {
   Home, Briefcase, FileText, User, Settings, Bell, LogOut,
-  HelpCircle, BarChart2, Users, UserCheck, Activity, PlusCircle
+  HelpCircle, BarChart2, Users, UserCheck, Activity, PlusCircle,
+  DollarSign, PenTool
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {

@@ -54,7 +54,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     deleteJob, 
     updateApplicationStatus, 
     showToast,
-    activeParams
+    activeParams,
   goBack,
   } = useApp();
 
@@ -86,29 +86,38 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   // Load existing job data when editing
   useEffect(() => {
     if (activeParams.editJobId && subView === 'create-job') {
-      const existingJob = jobs.find((j: any) => j.id === activeParams.editJobId);
-      if (existingJob) {
-        setJobTitle(existingJob.title || '');
-        setJobDept(existingJob.department || 'Engineering');
-        setJobCategory(existingJob.category || 'Software Engineering');
-        setJobLoc(existingJob.location || '');
-        setJobType((existingJob.employmentType && existingJob.employmentType[0]) || 'Full-time');
-        setJobSalMin(existingJob.salaryMin || 8000);
-        setJobSalMax(existingJob.salaryMax || 12000);
-        setJobDesc(existingJob.description || '');
-        setMustReqString((existingJob.requirementsMust || []).join('\n'));
-        setNiceReqString((existingJob.requirementsNice || []).join('\n'));
-        setScreeningQueries(existingJob.screeningQuestions || []);
-        if (existingJob.qualificationWeights) {
-          setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
-          setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
-          setQualificationsWeight(existingJob.qualificationWeights.qualificationsWeight || 85);
-          setWorkRightsWeight(existingJob.qualificationWeights.workRightsWeight || 95);
-          setSkillsWeight(existingJob.qualificationWeights.skillsWeight || 100);
+      // Try from jobs array first, then fetch directly
+      const loadJob = async () => {
+        let existingJob: any = jobs.find((j: any) => j.id === activeParams.editJobId);
+        if (!existingJob) {
+          try {
+            existingJob = await api.getJobById(activeParams.editJobId);
+          } catch (_) {}
         }
-      }
+        if (existingJob) {
+          setJobTitle(existingJob.title || '');
+          setJobDept(existingJob.department || 'Engineering');
+          setJobCategory(existingJob.category || 'Software Engineering');
+          setJobLoc(existingJob.location || '');
+          setJobType((existingJob.employmentType && existingJob.employmentType[0]) || 'Full-time');
+          setJobSalMin(existingJob.salaryMin || 8000);
+          setJobSalMax(existingJob.salaryMax || 12000);
+          setJobDesc(existingJob.description || '');
+          setMustReqString((existingJob.requirementsMust || []).join('\n'));
+          setNiceReqString((existingJob.requirementsNice || []).join('\n'));
+          setScreeningQueries(existingJob.screeningQuestions || []);
+          if (existingJob.qualificationWeights) {
+            setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
+            setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
+            setQualificationsWeight(existingJob.qualificationWeights.qualificationsWeight || 85);
+            setWorkRightsWeight(existingJob.qualificationWeights.workRightsWeight || 95);
+            setSkillsWeight(existingJob.qualificationWeights.skillsWeight || 100);
+          }
+        }
+      };
+      loadJob();
     }
-  }, [activeParams.editJobId, subView, jobs]);
+  }, [activeParams.editJobId, subView]);
   
   // Custom Slider Coordinates for Weights
   const [locationWeight, setLocationWeight] = useState(80);
