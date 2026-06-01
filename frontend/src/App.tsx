@@ -13,7 +13,7 @@ import { SupportChatbot } from './components/shared/SupportChatbot';
 import { Check, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const { user, activeView, toast, clearToast } = useApp();
+  const { user, activeView, toast, clearToast, isAppLoading } = useApp();
 
   // Handle toast timers
   useEffect(() => {
@@ -94,6 +94,20 @@ const AppContent: React.FC = () => {
   };
 
   const isGuestView = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email'].includes(activeView);
+
+  if (isAppLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative flex items-center justify-center w-12 h-12">
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl transform rotate-3 shadow-lg" />
+            <div className="relative w-10 h-10 bg-gray-950 rounded-lg border border-gray-800 flex items-center justify-center font-mono font-black text-white text-base">Q</div>
+          </div>
+          <p className="text-sm text-gray-500 animate-pulse">Loading QANI...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="qani-root-frame" className="relative min-h-screen font-sans bg-gray-50 flex flex-col text-gray-900 overflow-hidden selection:bg-blue-200">

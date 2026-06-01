@@ -3,13 +3,11 @@ import { api } from '../lib/api';
 import { Job, User, Application, Notification, ScreeningSession, SystemLog } from '../types';
 
 export type AppView = 
-  // Auth
   | 'landing' 
   | 'auth-login' 
   | 'auth-register-candidate-1' 
   | 'auth-register-recruiter'
   | 'verify-email'
-  // Candidate
   | 'candidate-dashboard'
   | 'candidate-jobs'
   | 'candidate-job-detail'
@@ -18,7 +16,6 @@ export type AppView =
   | 'candidate-profile'
   | 'candidate-settings'
   | 'candidate-notifications'
-  // Recruiter
   | 'recruiter-dashboard'
   | 'recruiter-applications'
   | 'recruiter-app-detail'
@@ -29,12 +26,9 @@ export type AppView =
   | 'recruiter-candidates'
   | 'recruiter-team'
   | 'recruiter-settings'
-  // Admin
   | 'admin-dashboard'
   | 'admin-users'
-  // Shared
   | 'help'
-  // Errors
   | 'error-404'
   | 'error-403'
   | 'error-500';
@@ -55,27 +49,24 @@ interface AppContextType {
   sessions: ScreeningSession[];
   notifications: Notification[];
   logs: SystemLog[];
+  isAppLoading: boolean;
   navigate: (view: AppView, params?: ViewParams) => void;
   previousViews: AppView[];
   goBack: () => void;
-  
-  // Handlers
-  login: (email: string, role: User['role']) => boolean;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  registerCandidate: (firstName: string, lastName: string, email: string) => User;
-  registerRecruiter: (companyName: string, firstName: string, lastName: string, email: string, industry: string, size: string) => User;
-  saveJob: (job: Job) => void;
-  deleteJob: (id: string) => void;
-  applyForJob: (jobId: string) => void;
-  startScreening: (appId: string) => ScreeningSession;
+  registerCandidate: (payload: { firstName: string; lastName: string; email: string; password: string; bio?: string; skills?: string[]; linkedinUrl?: string }) => Promise<User>;
+  registerRecruiter: (payload: { companyName: string; firstName: string; lastName: string; email: string; password: string; industry?: string; companySize?: string }) => Promise<User>;
+  saveJob: (job: Job) => Promise<void>;
+  deleteJob: (id: string) => Promise<void>;
+  applyForJob: (jobId: string) => Promise<void>;
+  startScreening: (appId: string) => Promise<ScreeningSession>;
   sendCandidateMessage: (sessionId: string, text: string) => Promise<void>;
-  updateApplicationStatus: (appId: string, status: Application['status'], notes?: { recruiterName: string; content: string }) => void;
-  
-  // UI Helpers
-  refreshStates: () => void;
+  updateApplicationStatus: (appId: string, status: Application['status'], notes?: { recruiterName: string; content: string }) => Promise<void>;
+  refreshStates: () => Promise<void>;
   isGeneratingAI: boolean;
   toast: { message: string; type: 'success' | 'error' | 'info' | 'warning' } | null;
-  showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void;
+  showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
   clearToast: () => void;
 }
 
@@ -86,39 +77,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeView, setActiveView] = useState<AppView>('landing');
   const [activeParams, setActiveParams] = useState<ViewParams>({});
   const [viewHistory, setViewHistory] = useState<AppView[]>(['landing']);
-  
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [sessions, setSessions] = useState<ScreeningSession[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isAppLoading, setIsAppLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
-
-  useEffect(() => {
-    // Initial load
-    refreshStates();
-    const currUser = api.getCurrentUser();
-    if (currUser) {
-      setUser(currUser);
-      // Automatically route logged in users
-      if (currUser.role === 'candidate') {
-        setActiveView('candidate-dashboard');
-      } else if (currUser.role === 'recruiter') {
-        setActiveView('recruiter-dashboard');
-      } else {
-        setActiveView('admin-dashboard');
-      }
-    }
-  }, []);
-
-  const refreshStates = () => {
-    setJobs(api.getJobs());
-    setApplications(api.getApplications());
-    setSessions(api.getSessions());
-    setNotifications(api.getNotifications());
-    setLogs(api.getLogs());
-  };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     setToast({ message, type });
@@ -126,170 +92,163 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearToast = () => setToast(null);
 
+  const refreshStates = async () => {
+    try {
+      const [j, a, s, n, l] = await Promise.all([
+        api.getJobs(),
+        api.getApplications(),
+        api.getSessions(),
+        api.getNotifications(),
+        api.getLogs(),
+      ]);
+      setJobs(j);
+      setApplications(a);
+      setSessions(s);
+      setNotifications(n);
+      setLogs(l);
+    } catch (err) {
+      console.warn('refreshStates error:', err);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      setIsAppLoading(true);
+      try {
+        const savedUser = await api.validateToken();
+        if (savedUser) {
+          setUser(savedUser);
+          await refreshStates();
+          if (savedUser.role === 'candidate') setActiveView('candidate-dashboard');
+          else if (savedUser.role === 'recruiter') setActiveView('recruiter-dashboard');
+          else setActiveView('admin-dashboard');
+        } else {
+          setActiveView('landing');
+        }
+      } catch (_) {
+        setActiveView('landing');
+      } finally {
+        setIsAppLoading(false);
+      }
+    };
+    init();
+  }, []);
+
   const navigate = (view: AppView, params: ViewParams = {}) => {
-    // Prevent standard route leaking, manage history
     setViewHistory(prev => [...prev, activeView]);
     setActiveView(view);
     setActiveParams(params);
-    refreshStates();
   };
 
   const goBack = () => {
-    if (viewHistory.length > 0) {
-      const copy = [...viewHistory];
-      const prev = copy.pop();
-      if (prev) {
-        setActiveView(prev);
-        setViewHistory(copy);
-        setActiveParams({});
-      }
-    } else {
-      setActiveView(user?.role === 'candidate' ? 'candidate-dashboard' : user?.role === 'recruiter' ? 'recruiter-dashboard' : 'landing');
+    const copy = [...viewHistory];
+    const prev = copy.pop();
+    if (prev) {
+      setActiveView(prev);
+      setViewHistory(copy);
+      setActiveParams({});
     }
   };
 
-  const login = (email: string, role: User['role']): boolean => {
-    const list = api.getUsers();
-    let matched = list.find(u => u.email.toLowerCase() === email.toLowerCase() && u.role === role);
-    
-    if (!matched) {
-      // Lazy construct standard user for quick mock evaluations
-      matched = {
-        id: `${role}-${Date.now()}`,
-        email: email.toLowerCase(),
-        firstName: role === 'candidate' ? 'John' : role === 'recruiter' ? 'Sarah' : 'Admin',
-        lastName: role === 'candidate' ? 'Doe' : role === 'recruiter' ? 'Chen' : 'System',
-        role,
-        emailVerified: true,
-        companyName: role === 'recruiter' ? 'Acme Tech Solutions' : undefined,
-        skills: role === 'candidate' ? ['React', 'TypeScript', 'Node.js'] : undefined,
-        privacy: { isPublic: true, showLocation: true, showPhone: true, allowContact: true }
-      };
-      // Save newly resolved mock user
-      api.saveUser(matched);
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { user: loggedUser } = await api.login(email, password);
+      setUser(loggedUser);
+      await refreshStates();
+      showToast(`Welcome back, ${loggedUser.firstName}!`, 'success');
+      if (loggedUser.role === 'candidate') navigate('candidate-dashboard');
+      else if (loggedUser.role === 'recruiter') navigate('recruiter-dashboard');
+      else navigate('admin-dashboard');
+      return true;
+    } catch (err: any) {
+      showToast(err.message || 'Login failed. Check your credentials.', 'error');
+      return false;
     }
-
-    setUser(matched);
-    api.setCurrentUser(matched);
-    showToast(`Logged in successfully as ${matched.firstName}!`, 'success');
-
-    if (role === 'candidate') {
-      navigate('candidate-dashboard');
-    } else if (role === 'recruiter') {
-      navigate('recruiter-dashboard');
-    } else {
-      navigate('admin-dashboard');
-    }
-    return true;
   };
 
   const logout = () => {
+    api.logout();
     setUser(null);
-    api.setCurrentUser(null);
+    setJobs([]);
+    setApplications([]);
+    setSessions([]);
+    setNotifications([]);
+    setLogs([]);
     setActiveView('landing');
     setActiveParams({});
     setViewHistory(['landing']);
-    showToast('Signed out of QANI session.', 'info');
+    showToast('Signed out successfully.', 'info');
   };
 
-  const handNewCandidate = (firstName: string, lastName: string, email: string): User => {
-    const u = api.registerCandidate(firstName, lastName, email, 10);
-    setUser(u);
-    api.setCurrentUser(u);
-    refreshStates();
-    showToast('Verification request generated. Initial user verified automatically.', 'success');
-    return u;
+  const registerCandidate = async (payload: { firstName: string; lastName: string; email: string; password: string; bio?: string; skills?: string[]; linkedinUrl?: string }): Promise<User> => {
+    const newUser = await api.registerCandidate(payload);
+    showToast('Account created! Please verify your email.', 'success');
+    return newUser;
   };
 
-  const handNewRecruiter = (companyName: string, firstName: string, lastName: string, email: string, industry: string, size: string): User => {
-    const u = api.registerRecruiter(companyName, firstName, lastName, email, industry, size);
-    setUser(u);
-    api.setCurrentUser(u);
-    refreshStates();
-    showToast('Recruiter profile registered! Welcome to the workspace.', 'success');
-    return u;
+  const registerRecruiter = async (payload: { companyName: string; firstName: string; lastName: string; email: string; password: string; industry?: string; companySize?: string }): Promise<User> => {
+    const newUser = await api.registerRecruiter(payload);
+    showToast('Recruiter account created! Please verify your email.', 'success');
+    return newUser;
   };
 
-  const handSaveJob = (job: Job) => {
-    api.saveJob(job);
-    refreshStates();
-    showToast(`Job '${job.title}' saved successfully!`, 'success');
+  const saveJob = async (job: Job) => {
+    await api.saveJob(job);
+    await refreshStates();
+    showToast(`Job "${job.title}" saved.`, 'success');
   };
 
-  const handDeleteJob = (id: string) => {
-    api.deleteJob(id);
-    refreshStates();
-    showToast('Job posting has been closed and removed.', 'warning');
+  const deleteJob = async (id: string) => {
+    await api.deleteJob(id);
+    await refreshStates();
+    showToast('Job removed.', 'warning');
   };
 
-  const handApply = (jobId: string) => {
+  const applyForJob = async (jobId: string) => {
     if (!user) {
-      showToast('Please log in as a candidate to apply.', 'error');
+      showToast('Please log in to apply.', 'error');
       navigate('auth-login');
       return;
     }
-    const app = api.applyForJob(jobId, user.id);
-    refreshStates();
-    showToast('Successfully applied to the position! Screening queue unlocked.', 'success');
+    const app = await api.applyForJob(jobId, user.id);
+    await refreshStates();
+    showToast('Applied! Screening queue unlocked.', 'success');
     navigate('candidate-app-detail', { applicationId: app.id });
   };
 
-  const handStartScreening = (appId: string): ScreeningSession => {
-    const session = api.startScreening(appId);
-    refreshStates();
-    showToast('Gemini interview session initiated. Prepare your arguments!', 'info');
+  const startScreening = async (appId: string): Promise<ScreeningSession> => {
+    const session = await api.startScreening(appId);
+    await refreshStates();
+    showToast('AI screening session started. Good luck!', 'info');
     navigate('candidate-screening', { sessionId: session.id, applicationId: appId });
     return session;
   };
 
-  const handSendCandidateMessage = async (sessionId: string, text: string) => {
+  const sendCandidateMessage = async (sessionId: string, text: string) => {
     setIsGeneratingAI(true);
     try {
-      await api.submitResponseToAI(sessionId, text);
-      refreshStates();
-    } catch (e) {
-      showToast('Error getting response from AI recruiter.', 'error');
+      const updated = await api.submitResponseToAI(sessionId, text);
+      setSessions(prev => prev.map(s => s.id === sessionId ? updated : s));
+    } catch (err: any) {
+      showToast(err.message || 'AI response failed. Try again.', 'error');
     } finally {
       setIsGeneratingAI(false);
     }
   };
 
-  const handUpdateAppStatus = (appId: string, status: Application['status'], notes?: { recruiterName: string; content: string }) => {
-    api.updateApplicationStatus(appId, status, notes);
-    refreshStates();
-    showToast(`Applicant status set to: ${status.toUpperCase()}`, 'success');
+  const updateApplicationStatus = async (appId: string, status: Application['status'], notes?: { recruiterName: string; content: string }) => {
+    await api.updateApplicationStatus(appId, status, notes);
+    await refreshStates();
+    showToast(`Status updated to: ${status.toUpperCase()}`, 'success');
   };
 
   return (
     <AppContext.Provider value={{
-      user,
-      activeView,
-      activeParams,
-      jobs,
-      applications,
-      sessions,
-      notifications,
-      logs,
-      navigate,
-      previousViews: viewHistory,
-      goBack,
-      
-      login,
-      logout,
-      registerCandidate: handNewCandidate,
-      registerRecruiter: handNewRecruiter,
-      saveJob: handSaveJob,
-      deleteJob: handDeleteJob,
-      applyForJob: handApply,
-      startScreening: handStartScreening,
-      sendCandidateMessage: handSendCandidateMessage,
-      updateApplicationStatus: handUpdateAppStatus,
-      
-      refreshStates,
-      isGeneratingAI,
-      toast,
-      showToast,
-      clearToast
+      user, activeView, activeParams, jobs, applications, sessions,
+      notifications, logs, isAppLoading, navigate, previousViews: viewHistory,
+      goBack, login, logout, registerCandidate, registerRecruiter,
+      saveJob, deleteJob, applyForJob, startScreening, sendCandidateMessage,
+      updateApplicationStatus, refreshStates, isGeneratingAI, toast, showToast, clearToast
     }}>
       {children}
     </AppContext.Provider>

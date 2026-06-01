@@ -22,7 +22,7 @@ const app: Express = express();
 const port = process.env.API_PORT || 5001;
 
 app.use(helmet());
-app.use(cors({ origin: ['http://localhost:3000'], credentials: true }));
+app.use(cors({ origin: ['http://localhost:3000', 'http://qani.io', 'http://www.qani.io', 'http://139.180.181.11'], credentials: true }));
 app.use(morgan('combined'));
 app.use(express.json());
 

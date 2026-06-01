@@ -62,85 +62,82 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     strength <= 1 ? 'Weak' :
     strength === 3 ? 'Fair' : 'Strong';
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     if (!email || !password) {
-      setErrorMsg('All credential parameters are required.');
+      setErrorMsg('Email and password are required.');
       return;
     }
-
     setIsLoading(true);
-
-    // Dynamic role parsing from suffix for easy sandbox logins
-    let role: 'candidate' | 'recruiter' | 'admin' = 'candidate';
-    if (email.includes('recruiter')) {
-      role = 'recruiter';
-    } else if (email.includes('admin')) {
-      role = 'admin';
-    }
-
-    setTimeout(() => {
+    try {
+      const success = await login(email, password);
+      if (!success) setErrorMsg('Invalid email or password.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Login failed. Please try again.');
+    } finally {
       setIsLoading(false);
-      login(email, role);
-    }, 1200);
+    }
   };
 
-  const handleCandidateRegister = (e: React.FormEvent) => {
+  const handleCandidateRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    
     if (step === 1) {
       if (!firstName || !lastName || !email || !password) {
-        setErrorMsg('Please input all basic details.');
+        setErrorMsg('Please fill in all required fields.');
         return;
       }
       if (!checks.length || !checks.upper || !checks.number) {
-        setErrorMsg('Please satisfy all password complexity thresholds.');
+        setErrorMsg('Password needs 8+ chars, uppercase, and a number.');
         return;
       }
       if (!termsAccepted) {
-        setErrorMsg('You must agree to the QANI terms & guidelines.');
+        setErrorMsg('You must agree to the QANI terms.');
         return;
       }
       setStep(2);
     } else {
-      // Step 2 submit
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        const u = registerCandidate(firstName, lastName, email);
-        if (bio) u.bio = bio;
-        if (skills.length > 0) u.skills = skills;
-        if (linkedin) u.linkedinUrl = linkedin;
+      try {
+        await registerCandidate({
+          firstName, lastName, email, password,
+          bio: bio || undefined,
+          skills: skills.length > 0 ? skills : undefined,
+          linkedinUrl: linkedin || undefined,
+        });
         navigate('verify-email');
-      }, 1000);
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleRecruiterRegister = (e: React.FormEvent) => {
+  const handleRecruiterRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-
     if (!companyName || !firstName || !lastName || !email || !password) {
       setErrorMsg('All fields are required.');
       return;
     }
-    if (!email.includes('@') || email.split('@')[1].length < 3) {
-      setErrorMsg('Please provide a corporate email domain.');
-      return;
-    }
     if (!termsAccepted) {
-      setErrorMsg('Agreement to platform parameters is mandatory.');
+      setErrorMsg('Agreement to platform terms is required.');
       return;
     }
-
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      registerRecruiter(companyName, firstName, lastName, email, industry, size);
+    try {
+      await registerRecruiter({
+        companyName, firstName, lastName, email, password,
+        industry, companySize: size,
+      });
       navigate('verify-email');
-    }, 1200);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addSkill = () => {
