@@ -55,6 +55,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     updateApplicationStatus, 
     showToast,
     activeParams
+  goBack,
   } = useApp();
 
   // Search & sorting state for applications
@@ -840,11 +841,11 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       {subView === 'create-job' && (
         <div className="space-y-6">
           <button 
-            onClick={() => navigate('recruiter-jobs')}
-            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 font-semibold"
+            onClick={() => goBack()}
+            className="cursor-pointer inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 font-semibold"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Cancel</span>
+            <span>← Back</span>
           </button>
 
           <div>
