@@ -1,181 +1,689 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
-import { api } from '../../lib/api';
-import { ShieldAlert, Trash2, ArrowLeft, Activity, Users, FileText, Check, Database } from 'lucide-react';
+import {
+  ShieldAlert, Trash2, Activity, Users, Briefcase,
+  FileText, Settings, BarChart2, Edit3, Save, X, Eye,
+  Plus, Search, Download, DollarSign, TrendingUp,
+  Lock, Unlock, RefreshCw, PenTool, Database, Shield, Bell,
+  Ban, Mail, Layout, Globe, Zap, Package, CreditCard
+} from 'lucide-react';
+
+const RichTextEditor: React.FC<{ value: string; onChange: (v: string) => void; label: string }> = ({ value, onChange, label }) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-bold text-gray-700">{label}</label>
+        {!editing ? (
+          <button onClick={() => { setDraft(value); setEditing(true); }} className="cursor-pointer flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 font-semibold">
+            <Edit3 className="w-3 h-3" /> Edit
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <button onClick={() => { onChange(draft); setEditing(false); }} className="cursor-pointer flex items-center gap-1 text-[11px] text-green-600 font-semibold">
+              <Save className="w-3 h-3" /> Save
+            </button>
+            <button onClick={() => setEditing(false)} className="cursor-pointer flex items-center gap-1 text-[11px] text-gray-500 font-semibold">
+              <X className="w-3 h-3" /> Cancel
+            </button>
+          </div>
+        )}
+      </div>
+      {editing ? (
+        <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={3} className="w-full border border-blue-400 rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-y" autoFocus />
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 min-h-[50px] whitespace-pre-wrap">{value || <span className="text-gray-400 italic">Empty</span>}</div>
+      )}
+    </div>
+  );
+};
+
+const StatCard: React.FC<{ label: string; value: string | number; icon: React.ReactNode; color: string; sub?: string }> = ({ label, value, icon, color, sub }) => (
+  <div className="p-5 rounded-xl border bg-white shadow-sm">
+    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>{icon}</div>
+    <p className="text-2xl font-extrabold text-gray-900 mt-3">{value}</p>
+    <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+    {sub && <p className="text-[10px] text-green-600 font-semibold mt-1">{sub}</p>}
+  </div>
+);
+
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
+  const map: Record<string, string> = {
+    qualified: 'bg-green-50 text-green-700 border-green-200',
+    review: 'bg-orange-50 text-orange-700 border-orange-200',
+    rejected: 'bg-red-50 text-red-700 border-red-200',
+    screening: 'bg-blue-50 text-blue-700 border-blue-200',
+    applied: 'bg-gray-50 text-gray-700 border-gray-200',
+    open: 'bg-green-50 text-green-700 border-green-200',
+    closed: 'bg-red-50 text-red-700 border-red-200',
+    draft: 'bg-gray-50 text-gray-600 border-gray-200',
+    active: 'bg-green-50 text-green-700 border-green-200',
+    suspended: 'bg-red-50 text-red-700 border-red-200',
+    candidate: 'bg-blue-50 text-blue-700 border-blue-200',
+    recruiter: 'bg-purple-50 text-purple-700 border-purple-200',
+    admin: 'bg-red-50 text-red-700 border-red-200',
+    paid: 'bg-green-50 text-green-700 border-green-200',
+    trial: 'bg-blue-50 text-blue-700 border-blue-200',
+    failed: 'bg-red-50 text-red-700 border-red-200',
+  };
+  return <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${map[status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>{status}</span>;
+};
 
 export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
-  const { user, logs, navigate, refreshStates, showToast } = useApp();
-  const [userSearchText, setUserSearchText] = useState('');
+  const { user, jobs, applications, logs, navigate, refreshStates, showToast } = useApp();
+  const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState('all');
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const allUsersList = api.getUsers();
+  const [cmsContent, setCmsContent] = useState({
+    heroTitle: "Let AI Screen Your Candidates 24/7",
+    heroSubtitle: "Australia's #1 AI Recruitment Platform",
+    heroDescription: "QANI's AI recruiter interviews every candidate automatically — evaluating skills, salary fit, work rights, and location match.",
+    announcementBar: "Australia's AI Recruitment Platform — Screen 10x more candidates with zero extra headcount.",
+    pricingStarterPrice: '$0',
+    pricingProPrice: '$299',
+    pricingEnterprisePrice: '$999',
+    metaTitle: 'QANI — AI Recruitment Platform · Australia',
+    metaDescription: 'AI-powered recruitment screening for Australian companies.',
+    contactEmail: 'hello@qani.io',
+    linkedinUrl: 'https://linkedin.com/company/qani',
+    footerTagline: "Australia's leading AI recruitment platform.",
+  });
 
-  const handleHardDeleteUser = (id: string) => {
-    // Simulate user hard deletion
-    api.deleteUser(id);
-    refreshStates();
-    showToast('Platform User hard deleted along with linked database coordinates.', 'warning');
+  const finances = {
+    transactions: [
+      { id: 't1', user: 'Atlassian', plan: 'Enterprise', amount: '$999', date: '2026-05-01', status: 'paid' },
+      { id: 't2', user: 'Canva', plan: 'Professional', amount: '$299', date: '2026-05-01', status: 'paid' },
+      { id: 't3', user: 'Seek', plan: 'Professional', amount: '$299', date: '2026-05-03', status: 'paid' },
+      { id: 't4', user: 'REA Group', plan: 'Enterprise', amount: '$999', date: '2026-05-05', status: 'paid' },
+      { id: 't5', user: 'Afterpay', plan: 'Professional', amount: '$299', date: '2026-05-07', status: 'paid' },
+      { id: 't6', user: 'TechStartup AU', plan: 'Starter', amount: '$0', date: '2026-05-10', status: 'trial' },
+      { id: 't7', user: 'HireNow Agency', plan: 'Professional', amount: '$299', date: '2026-05-12', status: 'paid' },
+      { id: 't8', user: 'BuildCorp', plan: 'Enterprise', amount: '$999', date: '2026-05-15', status: 'failed' },
+    ]
   };
+
+  const demoUsers = [
+    { id: 'u1', firstName: 'Alex', lastName: 'Mercer', email: 'admin@qani.io', role: 'admin', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u2', firstName: 'Sarah', lastName: 'Chen', email: 'recruiter@qani.io', role: 'recruiter', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u3', firstName: 'James', lastName: 'Morrison', email: 'james.hr@techcorp.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u4', firstName: 'Emma', lastName: 'Thompson', email: 'emma.hr@seek.com.au', role: 'recruiter', location: 'Brisbane, QLD', status: 'active', verified: true },
+    { id: 'u5', firstName: 'Michael', lastName: 'Zhang', email: 'michael.hr@rea.com.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u6', firstName: 'Liam', lastName: 'Nguyen', email: 'candidate@qani.io', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u7', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u8', firstName: 'Tom', lastName: 'Williams', email: 'tom.williams@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
+    { id: 'u9', firstName: 'Jessica', lastName: 'Lee', email: 'jessica.lee@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u10', firstName: 'Marcus', lastName: 'Vance', email: 'marcus.vance@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u11', firstName: 'Sophie', lastName: 'Martin', email: 'sophie.martin@gmail.com', role: 'candidate', location: 'Perth, WA', status: 'active', verified: true },
+    { id: 'u12', firstName: 'Natalie', lastName: 'Kim', email: 'natalie.kim@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: false },
+    { id: 'u13', firstName: 'David', lastName: 'Patel', email: 'david.patel@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u14', firstName: 'Ethan', lastName: 'Brown', email: 'ethan.brown@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u15', firstName: 'Ava', lastName: 'Thomas', email: 'ava.thomas@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u16', firstName: 'Noah', lastName: 'Anderson', email: 'noah.anderson@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'suspended', verified: true },
+    { id: 'u17', firstName: 'Grace', lastName: 'White', email: 'grace.white@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u18', firstName: 'Oliver', lastName: 'Harris', email: 'oliver.harris@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u19', firstName: 'Emily', lastName: 'Clark', email: 'emily.clark@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u20', firstName: 'Henry', lastName: 'Robinson', email: 'henry.robinson@gmail.com', role: 'candidate', location: 'Perth, WA', status: 'active', verified: true },
+    { id: 'u21', firstName: 'Charlotte', lastName: 'Lewis', email: 'charlotte.lewis@gmail.com', role: 'candidate', location: 'Adelaide, SA', status: 'active', verified: true },
+    { id: 'u22', firstName: 'Jack', lastName: 'Walker', email: 'jack.walker@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
+    { id: 'u23', firstName: 'Amelia', lastName: 'Hall', email: 'amelia.hall@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
+    { id: 'u24', firstName: 'Lucas', lastName: 'Jackson', email: 'lucas.jackson@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
+    { id: 'u25', firstName: 'William', lastName: 'Young', email: 'william.young@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
+  ];
+
+  const demoApps = [
+    { id: 'a1', candidate: 'Liam Nguyen', job: 'Senior Full Stack Developer', score: 92, status: 'qualified', date: '2026-05-16' },
+    { id: 'a2', candidate: 'Priya Sharma', job: 'Product Manager — Platform', score: 89, status: 'qualified', date: '2026-05-19' },
+    { id: 'a3', candidate: 'Tom Williams', job: 'DevOps / Platform Engineer', score: 94, status: 'qualified', date: '2026-05-21' },
+    { id: 'a4', candidate: 'Jessica Lee', job: 'UX/UI Product Designer', score: 78, status: 'review', date: '2026-05-23' },
+    { id: 'a5', candidate: 'Marcus Vance', job: 'Data Scientist — AI/ML', score: 91, status: 'qualified', date: '2026-05-25' },
+    { id: 'a6', candidate: 'Sophie Martin', job: 'Backend Engineer — Go', score: 88, status: 'qualified', date: '2026-05-27' },
+    { id: 'a7', candidate: 'Noah Anderson', job: 'QA Automation Engineer', score: 87, status: 'qualified', date: '2026-05-28' },
+    { id: 'a8', candidate: 'Natalie Kim', job: 'Cybersecurity Analyst', score: 93, status: 'qualified', date: '2026-05-29' },
+    { id: 'a9', candidate: 'Ava Thomas', job: 'ML Engineer — LLM Systems', score: 82, status: 'review', date: '2026-05-30' },
+    { id: 'a10', candidate: 'David Patel', job: 'Senior Full Stack Developer', score: 76, status: 'review', date: '2026-05-17' },
+    { id: 'a11', candidate: 'James Wilson', job: 'Product Manager — Platform', score: 45, status: 'rejected', date: '2026-05-20' },
+    { id: 'a12', candidate: 'Ethan Brown', job: 'DevOps / Platform Engineer', score: 96, status: 'qualified', date: '2026-05-22' },
+    { id: 'a13', candidate: 'Grace White', job: 'Data Scientist — AI/ML', score: undefined, status: 'screening', date: '2026-05-26' },
+    { id: 'a14', candidate: 'Emily Clark', job: 'UX/UI Product Designer', score: undefined, status: 'applied', date: '2026-05-31' },
+    { id: 'a15', candidate: 'Amelia Hall', job: 'Growth Engineer', score: undefined, status: 'applied', date: '2026-05-31' },
+  ];
+
+  const demoJobs = [
+    { id: 'j1', title: 'Senior Full Stack Developer', company: 'Atlassian', location: 'Sydney, NSW', salary: '$130k–$160k', status: 'open', posted: '2026-05-15', apps: 8 },
+    { id: 'j2', title: 'Product Manager — Platform', company: 'Canva', location: 'Melbourne, VIC', salary: '$120k–$150k', status: 'open', posted: '2026-05-18', apps: 5 },
+    { id: 'j3', title: 'DevOps / Platform Engineer', company: 'Seek', location: 'Remote (AU)', salary: '$120k–$145k', status: 'open', posted: '2026-05-20', apps: 6 },
+    { id: 'j4', title: 'UX/UI Product Designer', company: 'REA Group', location: 'Sydney, NSW', salary: '$95k–$125k', status: 'open', posted: '2026-05-22', apps: 4 },
+    { id: 'j5', title: 'Data Scientist — AI/ML', company: 'Afterpay', location: 'Melbourne, VIC', salary: '$130k–$165k', status: 'open', posted: '2026-05-24', apps: 3 },
+    { id: 'j6', title: 'Backend Engineer — Go', company: 'Atlassian', location: 'Brisbane, QLD', salary: '$120k–$150k', status: 'open', posted: '2026-05-26', apps: 2 },
+    { id: 'j7', title: 'QA Automation Engineer', company: 'Canva', location: 'Remote (AU)', salary: '$90k–$110k', status: 'open', posted: '2026-05-28', apps: 3 },
+    { id: 'j8', title: 'Cybersecurity Analyst', company: 'Commonwealth Bank', location: 'Sydney, NSW', salary: '$110k–$140k', status: 'open', posted: '2026-05-29', apps: 4 },
+    { id: 'j9', title: 'ML Engineer — LLM Systems', company: 'Canva', location: 'Sydney, NSW', salary: '$150k–$190k', status: 'open', posted: '2026-05-30', apps: 2 },
+    { id: 'j10', title: 'Growth Engineer', company: 'Seek', location: 'Melbourne, VIC', salary: '$110k–$135k', status: 'draft', posted: '2026-05-31', apps: 0 },
+  ];
+
+  useEffect(() => { refreshStates(); }, []);
 
   if (!user || user.role !== 'admin') {
     return (
       <div className="p-8 text-center space-y-4">
         <ShieldAlert className="w-12 h-12 text-red-500 mx-auto" />
-        <p className="text-red-500 font-bold">Unauthorised sandbox terminal access detected.</p>
+        <p className="text-red-600 font-bold text-lg">Access Denied</p>
+        <p className="text-sm text-gray-500">Admin credentials required.</p>
+        <button onClick={() => navigate('landing')} className="cursor-pointer text-sm text-blue-600 hover:underline">Return to homepage</button>
       </div>
     );
   }
 
+  const navTabs = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'jobs', label: 'Jobs', icon: Briefcase },
+    { id: 'applications', label: 'Applications', icon: FileText },
+    { id: 'finance', label: 'Finance', icon: DollarSign },
+    { id: 'cms', label: 'Content (CMS)', icon: PenTool },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ];
+
+  const tab = activeTab;
+
   return (
-    <div className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto space-y-6 font-sans">
-      
-      {/* 1. ADMIN DASHBOARD - TERMINAL VIEW */}
-      {subView === 'dashboard' && (
-        <div className="space-y-6">
-          <div>
-            <span className="text-[10px] bg-red-100 text-red-700 font-extrabold py-0.5 px-3 rounded-full border border-red-200">
-              QANI PLATFORM ROOT ADMIN SECTOR
-            </span>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900 mt-2">Core System Metrics Terminal</h2>
-            <p className="text-xs text-gray-500">Track server-side logs, database transactions, and evaluate platform usage variables.</p>
-          </div>
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="bg-gray-950 border-b border-gray-800 px-6 py-3 flex items-center gap-2 overflow-x-auto shrink-0">
+        <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest mr-3 shrink-0">SUPER ADMIN</span>
+        {navTabs.map(t => {
+          const Icon = t.icon;
+          const isActive = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`cursor-pointer flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition shrink-0 ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+              <Icon className="w-3.5 h-3.5" />{t.label}
+            </button>
+          );
+        })}
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="p-4 bg-gray-900 text-white rounded-xl space-y-2 border border-gray-800">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">Total Sandboxed Users</span>
-              <p className="text-2xl font-extrabold">{allUsersList.length}</p>
-            </div>
-            <div className="p-4 bg-gray-900 text-white rounded-xl space-y-2 border border-gray-800">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">Active Job Postings</span>
-              <p className="text-2xl font-extrabold text-blue-400">{api.getJobs().length}</p>
-            </div>
-            <div className="p-4 bg-gray-900 text-white rounded-xl space-y-2 border border-gray-800">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">Evaluation Databases</span>
-              <p className="text-2xl font-extrabold text-green-400">{api.getApplications().length}</p>
-            </div>
-            <div className="p-4 bg-gray-900 text-white rounded-xl space-y-2 border border-gray-800">
-              <span className="text-[10px] text-gray-400 uppercase tracking-widest">System Transactions</span>
-              <p className="text-2xl font-extrabold text-orange-400">{logs.length}</p>
-            </div>
-          </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-2">
-            {/* Realtime API Transaction log ticker on the left */}
-            <div className="lg:col-span-8 bg-white border rounded-xl p-5 space-y-4 shadow-sm flex flex-col justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-gray-900 uppercase">Interactive System Audit Stream</h3>
-                <p className="text-[10px] text-gray-400 mt-1">Real-time local database sync events</p>
+        {tab === 'overview' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Platform Overview</h2>
+              <p className="text-xs text-gray-500 mt-1">Real-time metrics across all QANI systems</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Total Users" value={25} icon={<Users className="w-5 h-5 text-blue-600" />} color="bg-blue-50" sub="+8 this month" />
+              <StatCard label="Active Jobs" value={9} icon={<Briefcase className="w-5 h-5 text-green-600" />} color="bg-green-50" sub="1 draft pending" />
+              <StatCard label="Applications" value={15} icon={<FileText className="w-5 h-5 text-purple-600" />} color="bg-purple-50" sub="3 need review" />
+              <StatCard label="Monthly Revenue" value="$47,200" icon={<DollarSign className="w-5 h-5 text-orange-600" />} color="bg-orange-50" sub="+12% vs last month" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+                <h3 className="text-sm font-bold text-gray-900">Recent Activity</h3>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {[
+                    { event: 'AI Screening Completed', detail: 'Liam Nguyen — Score 92/100 — Qualified', type: 'success', time: '10:28' },
+                    { event: 'New Job Posted', detail: 'Senior Full Stack Developer — Atlassian', type: 'info', time: '09:00' },
+                    { event: 'Application Rejected', detail: 'James Wilson — Score below threshold', type: 'warning', time: '08:45' },
+                    { event: 'New User Registered', detail: 'Priya Sharma — Candidate', type: 'success', time: '08:30' },
+                    { event: 'AI Screening Completed', detail: 'Tom Williams — Score 94/100 — Qualified', type: 'success', time: '08:15' },
+                  ].map((l, i) => (
+                    <div key={i} className="flex items-start gap-3 text-xs">
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${l.type === 'success' ? 'bg-green-500' : l.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'}`} />
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{l.event}</p>
+                        <p className="text-gray-500">{l.detail}</p>
+                      </div>
+                      <span className="text-[10px] text-gray-400 shrink-0">{l.time}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900">Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Manage Users', icon: Users, action: () => setActiveTab('users'), color: 'bg-blue-50 text-blue-700 hover:bg-blue-100' },
+                    { label: 'Post New Job', icon: Plus, action: () => navigate('recruiter-create-job'), color: 'bg-green-50 text-green-700 hover:bg-green-100' },
+                    { label: 'View Finance', icon: DollarSign, action: () => setActiveTab('finance'), color: 'bg-orange-50 text-orange-700 hover:bg-orange-100' },
+                    { label: 'Edit Content', icon: PenTool, action: () => setActiveTab('cms'), color: 'bg-purple-50 text-purple-700 hover:bg-purple-100' },
+                    { label: 'Applications', icon: FileText, action: () => setActiveTab('applications'), color: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' },
+                    { label: 'Settings', icon: Settings, action: () => setActiveTab('settings'), color: 'bg-gray-50 text-gray-700 hover:bg-gray-100' },
+                  ].map(a => (
+                    <button key={a.label} onClick={a.action} className={`cursor-pointer flex items-center gap-2 p-3 rounded-lg text-xs font-semibold transition ${a.color}`}>
+                      <a.icon className="w-4 h-4" />{a.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="pt-2 border-t border-gray-100">
+                  <h4 className="text-xs font-bold text-gray-700 mb-2">Demo Login Credentials</h4>
+                  <div className="space-y-1 font-mono text-[10px] bg-gray-50 rounded-lg p-3 border">
+                    <p><span className="text-red-600 font-bold">ADMIN:</span> admin@qani.io / Admin@QANI2026!</p>
+                    <p><span className="text-purple-600 font-bold">RECRUITER:</span> recruiter@qani.io / Recruit@QANI2026!</p>
+                    <p><span className="text-blue-600 font-bold">CANDIDATE:</span> candidate@qani.io / Candi@QANI2026!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-              <div className="space-y-2 max-h-80 overflow-y-auto divide-y divide-gray-100 font-mono text-[10.5px] text-gray-600 bg-gray-50 p-4 rounded-xl border">
-                {logs.map((log, index) => (
-                  <div key={index} className="pt-2 flex justify-between gap-4">
-                    <span className="text-blue-600 font-bold shrink-0">[{log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'Sandbox Log'}]</span>
-                    <span className="flex-grow">{log.action || log.content}</span>
-                    <span className="text-[9px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">{log.userRole || 'system'}</span>
+        {tab === 'users' && (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">User Management</h2>
+                <p className="text-xs text-gray-500 mt-1">25 candidates · 5 recruiters · 1 admin</p>
+              </div>
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              <div className="relative flex-1 min-w-48">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..." className="w-full h-9 pl-8 pr-3 border border-gray-300 rounded-lg text-xs outline-none focus:border-blue-500" />
+              </div>
+              {['all', 'candidate', 'recruiter', 'admin'].map(r => (
+                <button key={r} onClick={() => setFilterRole(r)} className={`cursor-pointer text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filterRole === r ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                  {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1) + 's'}
+                </button>
+              ))}
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
+                      <th className="p-4">User</th>
+                      <th className="p-4">Email</th>
+                      <th className="p-4">Role</th>
+                      <th className="p-4">Location</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {demoUsers
+                      .filter(u => filterRole === 'all' || u.role === filterRole)
+                      .filter(u => !search || `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(search.toLowerCase()))
+                      .map(u => (
+                        <tr key={u.id} className="hover:bg-gray-50 transition">
+                          <td className="p-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0">
+                                {u.firstName[0]}{u.lastName[0]}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-900">{u.firstName} {u.lastName}</p>
+                                <p className="text-[10px] text-gray-400">{u.verified ? '✓ Verified' : '⚠ Unverified'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4 font-mono text-gray-600">{u.email}</td>
+                          <td className="p-4"><StatusBadge status={u.role} /></td>
+                          <td className="p-4 text-gray-500">{u.location}</td>
+                          <td className="p-4"><StatusBadge status={u.status} /></td>
+                          <td className="p-4">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button onClick={() => showToast(`Viewing ${u.firstName}'s profile`, 'info')} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => showToast(`Email sent to ${u.email}`, 'success')} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Email">
+                                <Mail className="w-3.5 h-3.5" />
+                              </button>
+                              {u.status === 'active' ? (
+                                <button onClick={() => showToast(`${u.firstName} suspended`, 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Suspend">
+                                  <Ban className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button onClick={() => showToast(`${u.firstName} reactivated`, 'success')} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition" title="Reactivate">
+                                  <Unlock className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {u.id !== 'u1' && (
+                                <button onClick={() => showToast(`${u.firstName} deleted`, 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'jobs' && (
+          <div className="space-y-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Job Management</h2>
+                <p className="text-xs text-gray-500 mt-1">9 active · 1 draft</p>
+              </div>
+              <button onClick={() => navigate('recruiter-create-job')} className="cursor-pointer flex items-center gap-2 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
+                <Plus className="w-3.5 h-3.5" /> Post New Job
+              </button>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
+                      <th className="p-4">Job Title</th>
+                      <th className="p-4">Company</th>
+                      <th className="p-4">Location</th>
+                      <th className="p-4">Salary</th>
+                      <th className="p-4">Apps</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {demoJobs.map(j => (
+                      <tr key={j.id} className="hover:bg-gray-50 transition">
+                        <td className="p-4 font-semibold text-gray-900">{j.title}</td>
+                        <td className="p-4 text-gray-600">{j.company}</td>
+                        <td className="p-4 text-gray-600">{j.location}</td>
+                        <td className="p-4 font-medium text-gray-700">{j.salary}</td>
+                        <td className="p-4 text-gray-600">{j.apps}</td>
+                        <td className="p-4"><StatusBadge status={j.status} /></td>
+                        <td className="p-4">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button onClick={() => navigate('recruiter-create-job', { editJobId: j.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => showToast('Job status toggled', 'info')} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition" title="Toggle">
+                              {j.status === 'open' ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                            </button>
+                            <button onClick={() => showToast('Job deleted', 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'applications' && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">All Applications</h2>
+              <p className="text-xs text-gray-500 mt-1">Every candidate application and AI screening result</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {[
+                { label: 'Total', value: 15, color: 'bg-gray-50 border-gray-200' },
+                { label: 'Qualified', value: 9, color: 'bg-green-50 border-green-200' },
+                { label: 'Review', value: 3, color: 'bg-orange-50 border-orange-200' },
+                { label: 'Screening', value: 1, color: 'bg-blue-50 border-blue-200' },
+                { label: 'Rejected', value: 2, color: 'bg-red-50 border-red-200' },
+              ].map(s => (
+                <div key={s.label} className={`p-3 rounded-xl border text-center ${s.color}`}>
+                  <p className="text-xl font-extrabold text-gray-900">{s.value}</p>
+                  <p className="text-[10px] text-gray-500 font-semibold uppercase">{s.label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
+                      <th className="p-4">Candidate</th>
+                      <th className="p-4">Job</th>
+                      <th className="p-4">AI Score</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {demoApps.map(a => (
+                      <tr key={a.id} className="hover:bg-gray-50 transition">
+                        <td className="p-4 font-semibold text-gray-900">{a.candidate}</td>
+                        <td className="p-4 text-gray-600">{a.job}</td>
+                        <td className="p-4">
+                          {a.score !== undefined ? (
+                            <span className={`font-bold ${a.score >= 85 ? 'text-green-600' : a.score >= 70 ? 'text-orange-500' : 'text-red-500'}`}>{a.score}/100</span>
+                          ) : <span className="text-gray-400">—</span>}
+                        </td>
+                        <td className="p-4"><StatusBadge status={a.status} /></td>
+                        <td className="p-4 text-gray-500">{a.date}</td>
+                        <td className="p-4">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button onClick={() => navigate('recruiter-app-detail', { applicationId: a.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => showToast('Status updated', 'success')} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition">
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => showToast('Application deleted', 'warning')} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'finance' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Financial Dashboard</h2>
+              <p className="text-xs text-gray-500 mt-1">Revenue, subscriptions, and billing management</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard label="Monthly Recurring Revenue" value="$47,200" icon={<TrendingUp className="w-5 h-5 text-green-600" />} color="bg-green-50" sub="+12% vs last month" />
+              <StatCard label="Annual Recurring Revenue" value="$566,400" icon={<DollarSign className="w-5 h-5 text-blue-600" />} color="bg-blue-50" />
+              <StatCard label="Active Subscriptions" value={47} icon={<Package className="w-5 h-5 text-purple-600" />} color="bg-purple-50" sub="12 on free trial" />
+              <StatCard label="Avg Revenue Per User" value="$1,004" icon={<CreditCard className="w-5 h-5 text-orange-600" />} color="bg-orange-50" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { plan: 'Starter (Free)', users: 18, revenue: '$0/mo', color: 'bg-gray-50 border-gray-200' },
+                { plan: 'Professional ($299/mo)', users: 24, revenue: '$7,176/mo', color: 'bg-blue-50 border-blue-200' },
+                { plan: 'Enterprise ($999/mo)', users: 5, revenue: '$4,995/mo', color: 'bg-purple-50 border-purple-200' },
+              ].map(p => (
+                <div key={p.plan} className={`p-4 rounded-xl border ${p.color}`}>
+                  <p className="text-xs font-bold text-gray-900">{p.plan}</p>
+                  <p className="text-2xl font-extrabold text-gray-900 mt-2">{p.users}</p>
+                  <p className="text-[10px] text-gray-500">active accounts</p>
+                  <p className="text-sm font-bold text-green-600 mt-1">{p.revenue}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900">Recent Transactions</h3>
+                <button onClick={() => showToast('Exporting...', 'info')} className="cursor-pointer flex items-center gap-1.5 text-xs text-blue-600 font-semibold">
+                  <Download className="w-3.5 h-3.5" /> Export CSV
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
+                      <th className="p-4">Company</th>
+                      <th className="p-4">Plan</th>
+                      <th className="p-4">Amount</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {finances.transactions.map(t => (
+                      <tr key={t.id} className="hover:bg-gray-50 transition">
+                        <td className="p-4 font-semibold text-gray-900">{t.user}</td>
+                        <td className="p-4 text-gray-600">{t.plan}</td>
+                        <td className="p-4 font-bold text-gray-900">{t.amount}</td>
+                        <td className="p-4 text-gray-500">{t.date}</td>
+                        <td className="p-4"><StatusBadge status={t.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'cms' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Content Management</h2>
+              <p className="text-xs text-gray-500 mt-1">Edit website content without touching code</p>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-700 flex items-start gap-2">
+              <Zap className="w-4 h-4 shrink-0 mt-0.5" />
+              <p>Use the editors below to update any content on qani.io. Click Edit on any field to change it, then Save.</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+                  <Layout className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Hero Section</h3>
+                </div>
+                <RichTextEditor label="Hero Badge Text" value={cmsContent.heroSubtitle} onChange={v => setCmsContent(p => ({ ...p, heroSubtitle: v }))} />
+                <RichTextEditor label="Hero Main Title" value={cmsContent.heroTitle} onChange={v => setCmsContent(p => ({ ...p, heroTitle: v }))} />
+                <RichTextEditor label="Hero Description" value={cmsContent.heroDescription} onChange={v => setCmsContent(p => ({ ...p, heroDescription: v }))} />
+                <RichTextEditor label="Announcement Bar" value={cmsContent.announcementBar} onChange={v => setCmsContent(p => ({ ...p, announcementBar: v }))} />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Pricing</h3>
+                </div>
+                <RichTextEditor label="Starter Plan Price" value={cmsContent.pricingStarterPrice} onChange={v => setCmsContent(p => ({ ...p, pricingStarterPrice: v }))} />
+                <RichTextEditor label="Professional Plan Price" value={cmsContent.pricingProPrice} onChange={v => setCmsContent(p => ({ ...p, pricingProPrice: v }))} />
+                <RichTextEditor label="Enterprise Plan Price" value={cmsContent.pricingEnterprisePrice} onChange={v => setCmsContent(p => ({ ...p, pricingEnterprisePrice: v }))} />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+                  <Globe className="w-4 h-4 text-purple-600" />
+                  <h3 className="text-sm font-bold text-gray-900">SEO & Metadata</h3>
+                </div>
+                <RichTextEditor label="Page Title" value={cmsContent.metaTitle} onChange={v => setCmsContent(p => ({ ...p, metaTitle: v }))} />
+                <RichTextEditor label="Meta Description" value={cmsContent.metaDescription} onChange={v => setCmsContent(p => ({ ...p, metaDescription: v }))} />
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
+                  <Mail className="w-4 h-4 text-orange-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Contact & Social</h3>
+                </div>
+                <RichTextEditor label="Contact Email" value={cmsContent.contactEmail} onChange={v => setCmsContent(p => ({ ...p, contactEmail: v }))} />
+                <RichTextEditor label="LinkedIn URL" value={cmsContent.linkedinUrl} onChange={v => setCmsContent(p => ({ ...p, linkedinUrl: v }))} />
+                <RichTextEditor label="Footer Tagline" value={cmsContent.footerTagline} onChange={v => setCmsContent(p => ({ ...p, footerTagline: v }))} />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button onClick={() => showToast('All content saved!', 'success')} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
+                <Save className="w-4 h-4" /> Save All Changes
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tab === 'settings' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Platform Settings</h2>
+              <p className="text-xs text-gray-500 mt-1">Security, notifications, AI configuration</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Shield className="w-4 h-4 text-blue-600" /> Security</h3>
+                {[
+                  { label: 'Require email verification for new accounts', on: true },
+                  { label: 'Two-factor authentication for admins', on: true },
+                  { label: 'Rate limiting on API endpoints', on: true },
+                  { label: 'Auto-lockout after 5 failed logins', on: false },
+                ].map(s => (
+                  <div key={s.label} className="flex items-center justify-between py-2 border-b border-gray-50">
+                    <span className="text-xs text-gray-700">{s.label}</span>
+                    <button onClick={() => showToast('Setting updated', 'success')} className={`cursor-pointer w-10 h-5 rounded-full transition relative ${s.on ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${s.on ? 'left-5' : 'left-0.5'}`} />
+                    </button>
                   </div>
                 ))}
-                {logs.length === 0 && (
-                  <div className="text-center py-6 italic text-gray-400">Transaction logs empty. Perform dashboard actions to record log coordinate data points.</div>
-                )}
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bell className="w-4 h-4 text-orange-600" /> Notifications</h3>
+                {[
+                  { label: 'Email alerts for new applications', on: true },
+                  { label: 'Email alerts when AI screening completes', on: true },
+                  { label: 'Weekly digest to recruiters', on: false },
+                  { label: 'Candidate status update notifications', on: true },
+                ].map(s => (
+                  <div key={s.label} className="flex items-center justify-between py-2 border-b border-gray-50">
+                    <span className="text-xs text-gray-700">{s.label}</span>
+                    <button onClick={() => showToast('Setting updated', 'success')} className={`cursor-pointer w-10 h-5 rounded-full transition relative ${s.on ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${s.on ? 'left-5' : 'left-0.5'}`} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Database className="w-4 h-4 text-green-600" /> AI Settings</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Default AI Model</label>
+                    <select className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
+                      <option>gemini-2.0-flash</option>
+                      <option>gemini-1.5-pro</option>
+                      <option>gemini-1.5-flash</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Auto-qualify threshold (%)</label>
+                    <input type="number" defaultValue={80} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Auto-reject threshold (%)</label>
+                    <input type="number" defaultValue={50} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Platform Info</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Platform Name</label>
+                    <input type="text" defaultValue="QANI Platform" className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Support Email</label>
+                    <input type="email" defaultValue="support@qani.io" className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Region</label>
+                    <select className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
+                      <option>Australia (ap-southeast-2)</option>
+                      <option>Singapore (ap-southeast-1)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Admin utilities sidebar right */}
-            <div className="lg:col-span-4 bg-white border rounded-xl p-5 space-y-4 shadow-sm h-fit">
-              <span className="text-xs font-bold text-gray-900 uppercase block">Root SuperUser Actions</span>
-              <div className="space-y-2">
-                <button 
-                  onClick={() => navigate('admin-users')}
-                  className="w-full text-xs font-bold py-2.5 px-4 bg-gray-950 text-white rounded-lg hover:bg-gray-900 transition text-left"
-                >
-                  Manage Sandboxed Users Directory
-                </button>
-                <p className="text-[10px] text-gray-400 leading-normal pt-1">Admin features allow hard purging credentials or logging specific pipeline metrics.</p>
-              </div>
+            <div className="flex justify-end">
+              <button onClick={() => showToast('Settings saved!', 'success')} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
+                <Save className="w-4 h-4" /> Save Settings
+              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 2. ADMIN USER MANAGEMENT DIRECTORY */}
-      {subView === 'users' && (
-        <div className="space-y-6">
-          <button 
-            onClick={() => navigate('admin-dashboard')}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-950 font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Profile Root Dashboard</span>
-          </button>
-
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Sandbox Users Directory</h2>
-            <p className="text-xs text-gray-500">Trace registered user handles, manage permissions, and hard purge mock profiles.</p>
-          </div>
-
-          <div className="bg-white border rounded-xl p-4 flex gap-4 w-full shadow-sm">
-            <input 
-              type="text" 
-              placeholder="Filter names, role credentials, or profiles..."
-              value={userSearchText}
-              onChange={(e) => setUserSearchText(e.target.value)}
-              className="text-xs p-2 flex-grow border bg-gray-50 focus:bg-white rounded-lg outline-none"
-            />
-          </div>
-
-          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
-                  <th className="p-4">Name Coordinate</th>
-                  <th className="p-4">Primary Email Handle</th>
-                  <th className="p-4">Sandbox Role Permissions</th>
-                  <th className="p-4 text-right">Delete Profile</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-gray-600">
-                {allUsersList
-                  .filter(u => {
-                    const name = `${u.firstName} ${u.lastName}`.toLowerCase();
-                    return name.includes(userSearchText.toLowerCase()) || u.email.toLowerCase().includes(userSearchText.toLowerCase());
-                  })
-                  .map(targetUser => (
-                    <tr key={targetUser.id} className="hover:bg-gray-50">
-                      <td className="p-4">
-                        <span className="font-bold text-gray-900 block">{targetUser.firstName} {targetUser.lastName}</span>
-                        <span className="text-[10px] text-gray-400">ID: {targetUser.id}</span>
-                      </td>
-                      <td className="p-4 font-mono">{targetUser.email}</td>
-                      <td className="p-4 capitalize">
-                        <span className={`inline-block py-0.5 px-2 rounded-full text-[10px] font-bold border ${
-                          targetUser.role === 'admin' ? 'bg-red-50 text-red-600 border-red-200' :
-                          targetUser.role === 'recruiter' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                          'bg-green-50 text-green-600 border-green-200'
-                        }`}>
-                          {targetUser.role}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        {targetUser.id !== user.id ? (
-                          <button 
-                            onClick={() => handleHardDeleteUser(targetUser.id)}
-                            className="p-1 text-gray-400 hover:text-red-600 rounded"
-                            title="Hard Purge User"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <span className="text-[10px] text-gray-400 italic">Static Admin</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
+      </div>
     </div>
   );
 };
