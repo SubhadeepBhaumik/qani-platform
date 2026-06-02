@@ -126,7 +126,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-xs">
                     {applications.filter(a => a.candidateId === user.id).map(app => {
-                      const job = jobs.find(j => j.id === app.jobId ?? app.roleId);
+                      const job = jobs.find(j => j.id === app.jobId);
                       return (
                         <tr key={app.id} className="hover:bg-gray-50">
                           <td className="p-4">
@@ -186,7 +186,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           </span>
                         )}
                       </div>
-                      <button className="w-full text-xs font-semibold py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                      <button className="w-full text-xs font-semibold py-2 bg-gray-50 text-gray-800 border border-gray-200 rounded-lg hover:bg-gray-100 transition">
                         View Details
                       </button>
                     </div>
@@ -198,9 +198,9 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             {/* Sidebar activities */}
             <div className="lg:col-span-4 space-y-6">
               <div className="p-6 bg-blue-50/50 border border-blue-200/50 rounded-xl space-y-4">
-                <span className="text-xs bg-blue-600 text-white font-bold py-1 px-2.5 rounded-full uppercase tracking-wider">About QANI AI Screening</span>
+                <span className="text-xs bg-blue-600 text-white font-bold py-1 px-2.5 rounded-full uppercase tracking-wider">AI Integration Info</span>
                 <p className="text-xs text-gray-700 leading-relaxed">
-                  QANI uses real GPT-4o-mini AI to conduct conversational screening, score candidates, and deliver ranked shortlists to recruiters 24/7.
+                  Screening evaluations and follow-on assessments utilize real Gemini endpoints, ensuring strict alignment matching.
                 </p>
                 <div className="pt-2">
                   <button onClick={() => navigate('help')} className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
@@ -220,12 +220,12 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <div className="space-y-1 relative">
                     <div className="absolute -left-6 top-1 w-2.5 h-2.5 bg-green-500 rounded-full ring-4 ring-white" />
                     <span className="text-gray-400 text-[10px] font-mono">TODAY</span>
-                    <p className="font-semibold text-gray-900">Logged into QANI Platform</p>
+                    <p className="font-semibold text-gray-900">Registered on QANI Sandbox</p>
                   </div>
                   <div className="space-y-1 relative">
                     <div className="absolute -left-6 top-1 w-2.5 h-2.5 bg-blue-500 rounded-full ring-4 ring-white" />
                     <span className="text-gray-400 text-[10px] font-mono">YESTERDAY</span>
-                    <p className="font-semibold text-gray-900">Profile available to recruiters</p>
+                    <p className="font-semibold text-gray-900">Updated skills array coordinates</p>
                   </div>
                 </div>
               </div>
@@ -281,8 +281,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             {jobs
               .filter(j => j.status === 'open')
               .filter(j => {
-                if (!searchQuery && filterType === 'All' && filterLocation === 'All') return true;
-                const matchesSearch = !searchQuery || j.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                const matchesSearch = j.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                      j.skillsRequired.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
                 const matchesDept = filterType === 'All' || j.department === filterType;
                 const matchesLoc = filterLocation === 'All' || j.location.includes(filterLocation);
@@ -300,12 +299,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
                         {job.department}
                       </span>
-                      <div className="flex items-center gap-2">
-                        {applications.some(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id) && (
-                          <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-green-50 text-green-700 rounded-full border border-green-200">Applied</span>
-                        )}
-                        <span className="text-[10px] font-semibold text-gray-500 uppercase">{job.experienceLevel} Level</span>
-                      </div>
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase">{job.experienceLevel} Level</span>
                     </div>
 
                     <h3 className="text-lg font-bold text-gray-950 leading-tight">{job.title}</h3>
@@ -323,7 +317,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
 
                   <div className="border-t border-gray-100 pt-4 flex items-center justify-between text-xs text-gray-500">
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
-                    <button className="text-xs font-semibold py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition cursor-pointer">
+                    <button className="text-xs font-semibold py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
                       View details
                     </button>
                   </div>
@@ -343,7 +337,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const job = jobs.find(j => j.id === jobId);
         if (!job) return <p className="text-red-500">Job context not existing.</p>;
 
-        const alreadyApplied = applications.some(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id);
+        const alreadyApplied = applications.some(a => a.jobId === job.id && a.candidateId === user.id);
 
         return (
           <div className="space-y-6">
@@ -388,27 +382,14 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   </ul>
                 </div>
 
-                {job.requirementsNiceToHave && job.requirementsNiceToHave.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Nice to Have</h3>
-                    <ul className="space-y-2 text-xs text-gray-700">
-                      {job.requirementsNiceToHave.map((req, i) => (
-                        <li key={i} className="flex gap-2 items-start">
-                          <span className="text-blue-400 shrink-0 mt-0.5">◦</span>
-                          <span>{req}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Screening Dimensions</h3>
-                  <p className="text-xs text-gray-600 leading-relaxed">During AI screening, you will be evaluated across these dimensions:</p>
+                  <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Core Evaluation Sliders</h3>
+                  <p className="text-xs text-gray-600 leading-relaxed">During screening, you will be evaluated across 5 primary parameters:</p>
                   <div className="grid grid-cols-2 gap-4 text-[11px] text-gray-700">
-                    <span className="p-3 bg-gray-50 rounded-lg">✓ Work Rights & Location</span>
-                    <span className="p-3 bg-gray-50 rounded-lg">✓ Salary Alignment</span>
-                    <span className="p-3 bg-gray-50 rounded-lg">✓ Technical Skills Match</span>
-                    <span className="p-3 bg-gray-50 rounded-lg">✓ Experience & Qualifications</span>
+                    <span className="p-3 bg-gray-50 rounded-lg">✓ Work Location Compliances</span>
+                    <span className="p-3 bg-gray-50 rounded-lg">✓ Salary Match Projections</span>
+                    <span className="p-3 bg-gray-50 rounded-lg">✓ Mandatory Cert Verification</span>
+                    <span className="p-3 bg-gray-50 rounded-lg">✓ Visa / Availability parameters</span>
                   </div>
                 </div>
               </div>
@@ -425,7 +406,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     </div>
                     <button 
                       onClick={() => {
-                        const app = applications.find(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id);
+                        const app = applications.find(a => a.jobId === job.id && a.candidateId === user.id);
                         if (app) navigate('candidate-app-detail', { applicationId: app.id });
                       }}
                       className="w-full py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-lg text-xs"
@@ -437,7 +418,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <button 
                     id="apply-job-btn-trigger"
                     onClick={() => applyForJob(job.id)}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-blue-500/15 cursor-pointer"
+                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-blue-500/15"
                   >
                     Apply Now via QANI
                   </button>
@@ -459,7 +440,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const app = applications.find(a => a.id === appId);
         if (!app) return <p className="text-red-500">Application context not existing.</p>;
 
-        const job = jobs.find(j => j.id === app.jobId ?? app.roleId);
+        const job = jobs.find(j => j.id === app.jobId);
 
         return (
           <div className="space-y-6">
@@ -491,35 +472,27 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       {app.status}
                     </span>
                   </div>
-                  {(app.status === 'applied' || app.status === 'screening') && (() => {
-                    const existingSession = sessions.find(s => s.applicationId === app.id);
-                    if (existingSession && existingSession.status === 'active') {
-                      return (
-                        <button
-                          onClick={() => navigate('candidate-screening', { sessionId: existingSession.id, applicationId: app.id })}
-                          className="py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer"
-                        >
-                          Resume AI Screening
-                        </button>
-                      );
-                    }
-                    if (existingSession && existingSession.status === 'completed') {
-                      return (
-                        <div className="p-3 bg-gray-100 border border-gray-200 rounded-lg text-xs text-gray-600 font-semibold">
-                          ✓ AI Screening Already Completed
-                        </div>
-                      );
-                    }
-                    return (
-                      <button
-                        id="app-start-screen-btn"
-                        onClick={() => startScreening(app.id)}
-                        className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer"
-                      >
-                        Start AI Screening Conversation
-                      </button>
-                    );
-                  })()}
+                  {app.status === 'applied' && (
+                    <button 
+                      id="app-start-screen-btn"
+                      onClick={() => startScreening(app.id)}
+                      className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition"
+                    >
+                      Start AI Screening Conversation
+                    </button>
+                  )}
+                  {app.status === 'screening' && (
+                    <button 
+                      onClick={() => {
+                        const session = sessions.find(s => s.applicationId === app.id);
+                        if (session) navigate('candidate-screening', { sessionId: session.id, applicationId: app.id });
+                        else startScreening(app.id);
+                      }}
+                      className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition"
+                    >
+                      Resume active Screen
+                    </button>
+                  )}
                 </div>
 
                 {/* score details panel */}
@@ -594,22 +567,18 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <h4 className="text-xs font-bold text-gray-900 uppercase">Application Coordinates</h4>
                   <div className="space-y-2 text-xs text-gray-600">
                     <p><strong>Date Applied:</strong> {app.appliedDate}</p>
-                    <p><strong>Position:</strong> {job?.title || 'N/A'}</p>
-                    <p><strong>Status:</strong> <span className="capitalize font-semibold">{app.status}</span></p>
+                    <p><strong>Required Suffix:</strong> Singapore Regional Node</p>
                   </div>
                 </div>
 
                 {app.screeningSessionId && (
                   <button 
                     onClick={() => {
-                      const session = sessions.find(s => s.applicationId === app.id || s.id === app.screeningSessionId);
-                      if (session) {
-                        navigate('candidate-screening', { sessionId: session.id, applicationId: app.id });
-                      } else {
-                        showToast('Screening transcript not available in this session.', 'info');
-                      }
+                      // Navigate to corresponding completed interview transcripts
+                      navigate('candidate-profile'); // fallback or trigger modal
+                      showToast('Detail screening transcripts are also viewable inside candidate profiles.', 'info');
                     }}
-                    className="w-full py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-lg text-xs cursor-pointer"
+                    className="w-full py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-lg text-xs"
                   >
                     View Interview Transcript
                   </button>
@@ -629,9 +598,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const app = applications.find(a => a.id === session.applicationId);
         const job = jobs.find(j => j.id === app?.jobId);
 
-        const totalQuestions = job?.screeningQuestions?.length || 5;
-        const answeredCount = session.messages.filter(m => m.role === 'user').length;
-        const progressPercent = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
+        const progressPercent = Math.round(((session.currentQuestionIdx) / (job?.screeningQuestions.length || 4)) * 100);
 
         const handleChatSubmit = (e: React.FormEvent) => {
           e.preventDefault();
@@ -695,7 +662,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-100" />
                       <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce delay-200" />
                     </div>
-                    <span className="text-[11px] text-gray-400 font-medium">QANI AI is processing your response...</span>
+                    <span className="text-[11px] text-gray-400 font-medium">Gemini Recruiter is analyzing response...</span>
                   </div>
                 </div>
               )}
@@ -703,31 +670,6 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
 
             {/* Text input prompt */}
             {session.status === 'active' ? (
-              <div className="space-y-2">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!window.confirm('End this screening session? Your responses will be scored.')) return;
-                      try {
-                        const res = await fetch('/api/v1/screening/end', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ sessionId: session.id, decision: 'review' })
-                        });
-                        const ended = await res.json();
-                        await refreshStates();
-                        navigate('candidate-app-detail', { applicationId: session.applicationId });
-                        showToast('Screening complete! View your results below.', 'success');
-                      } catch(e) {
-                        showToast('Failed to end screening. Try again.', 'error');
-                      }
-                    }}
-                    className="text-xs font-semibold py-1.5 px-4 bg-gray-100 hover:bg-red-50 hover:text-red-600 border border-gray-200 rounded-lg transition cursor-pointer"
-                  >
-                    End Screening
-                  </button>
-                </div>
               <form onSubmit={handleChatSubmit} className="flex gap-2 items-center bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm">
                 <input 
                   type="text"
@@ -741,13 +683,12 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   id="screening-submit-msg-btn"
                   type="submit"
                   disabled={isGeneratingAI || !userAnswer.trim()}
-                  className="py-2.5 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  className="py-2.5 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Submit Response</span>
                 </button>
               </form>
-              </div>
             ) : (
               <div className="p-4 bg-green-50 rounded-xl border border-green-200 text-center space-y-2">
                 <span className="text-xs font-bold text-green-700 block">AI Conversational Screening Concluded</span>

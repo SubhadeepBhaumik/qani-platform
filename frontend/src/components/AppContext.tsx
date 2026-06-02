@@ -217,8 +217,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const startScreening = async (appId: string): Promise<ScreeningSession> => {
-    const session = await api.startScreening(appId);
-    await refreshStates();
+    const candidateName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Candidate';
+    const session = await api.startScreening(appId, candidateName);
+    setSessions(prev => [...prev.filter(s => s.applicationId !== appId), session]);
     showToast('AI screening session started. Good luck!', 'info');
     navigate('candidate-screening', { sessionId: session.id, applicationId: appId });
     return session;

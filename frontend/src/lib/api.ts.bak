@@ -149,7 +149,7 @@ export const api = {
   applyForJob: async (jobId: string, candidateId: string): Promise<Application> => {
     return call<Application>('/applications', {
       method: 'POST',
-      body: JSON.stringify({ roleId: jobId, candidateId, status: 'applied' }),
+      body: JSON.stringify({ jobId, candidateId, status: 'applied' }),
     });
   },
 
@@ -172,10 +172,10 @@ export const api = {
     try { return await call<ScreeningSession>(`/screening/${id}`); } catch (_) { return null; }
   },
 
-  startScreening: async (applicationId: string, candidateName?: string): Promise<ScreeningSession> => {
+  startScreening: async (applicationId: string): Promise<ScreeningSession> => {
     return call<ScreeningSession>('/screening/start', {
       method: 'POST',
-      body: JSON.stringify({ applicationId, candidateName }),
+      body: JSON.stringify({ applicationId }),
     });
   },
 
