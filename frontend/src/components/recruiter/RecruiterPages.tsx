@@ -54,6 +54,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     deleteJob, 
     updateApplicationStatus, 
     showToast,
+    refreshStates,
     activeParams,
   goBack,
   } = useApp();
@@ -768,38 +769,121 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       {/* 4. SCREENING QUEUE */}
       {subView === 'queue' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Active Screening Queue</h2>
-            <p className="text-xs text-gray-500">Unlocking automatic pipeline tracking for candidates undergoing Gemini evaluation sessions.</p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900">AI Screening Queue</h2>
+              <p className="text-xs text-gray-500 mt-1">Manage candidate screening sessions. Invite unscreened applicants or monitor live AI interviews in progress.</p>
+            </div>
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse inline-block" />
+              AI Recruiter Online
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {applications.filter(a => a.status === 'screening').map(app => {
-              const candidate = allCandidates.find(c => c.id === app.candidateId) || allCandidates[0];
-              const job = jobs.find(j => j.id === app.jobId);
-              return (
-                <div key={app.id} id={`queue-item-${app.id}`} className="bg-white border hover:border-blue-500 p-5 rounded-xl flex items-center justify-between gap-4 shadow-sm transition">
+          {/* Active Screenings */}
+          <div>
+            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-3">🔴 In Progress ({applications.filter(a => a.status === 'screening').length})</h3>
+            <div className="space-y-3">
+              {applications.filter(a => a.status === 'screening').length === 0 && (
+                <div className="text-center py-8 text-gray-400 bg-white border border-dashed border-gray-200 rounded-xl text-xs italic">No active screenings right now.</div>
+              )}
+              {applications.filter(a => a.status === 'screening').map(app => {
+                const elapsed = app.screeningStartedAt ? Math.round((Date.now() - new Date(app.screeningStartedAt).getTime()) / 60000) : null;
+                const questionsAnswered = app.transcript ? app.transcript.filter((m: any) => m.role === 'candidate').length : 0;
+                const lastMessage = app.transcript && app.transcript.length > 0 ? app.transcript[app.transcript.length - 1] : null;
+                return (
+                  <div key={app.id} className="bg-white border border-orange-200 rounded-xl p-5 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-100 border border-orange-200 flex items-center justify-center font-bold text-orange-600 text-sm">
+                          {(app.candidateName || 'C').charAt(0)}
+                        </div>
+                        <div>
+                          <span className="font-bold text-gray-950 block text-sm">{app.candidateName || 'Unknown Candidate'}</span>
+                          <span className="text-[10px] text-gray-400 block">{app.jobTitle || 'Unknown Role'} · {app.company || ''}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        {elapsed !== null && <span className="bg-orange-50 border border-orange-200 text-orange-700 px-2 py-1 rounded-full font-semibold">⏱ {elapsed}m elapsed</span>}
+                        <span className="bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 rounded-full font-semibold">💬 {questionsAnswered} answers</span>
+                        <button onClick={() => navigate('recruiter-app-detail', { applicationId: app.id })} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">View Live</button>
+                      </div>
+                    </div>
+                    {lastMessage && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 italic truncate">
+                        Last: "{lastMessage.message}"
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Awaiting Invite */}
+          <div>
+            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-3">⏳ Awaiting Screening Invite ({applications.filter(a => a.status === 'applied').length})</h3>
+            <div className="space-y-3">
+              {applications.filter(a => a.status === 'applied').length === 0 && (
+                <div className="text-center py-8 text-gray-400 bg-white border border-dashed border-gray-200 rounded-xl text-xs italic">No candidates awaiting invite.</div>
+              )}
+              {applications.filter(a => a.status === 'applied').map(app => (
+                <div key={app.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <img src={candidate?.avatar} className="w-10 h-10 rounded-full object-cover" alt="User" />
+                    <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-gray-500 text-sm">
+                      {(app.candidateName || 'C').charAt(0)}
+                    </div>
                     <div>
-                      <span className="font-bold text-gray-950 block">{candidate?.firstName} {candidate?.lastName}</span>
-                      <span className="text-[10px] text-gray-400 font-mono block">Expected: {job?.title}</span>
+                      <span className="font-bold text-gray-950 block text-sm">{app.candidateName || 'Unknown Candidate'}</span>
+                      <span className="text-[10px] text-gray-400 block">{app.jobTitle || 'Unknown Role'} · Applied {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('en-AU') : ''}</span>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => navigate('recruiter-app-detail', { applicationId: app.id })}
-                    className="text-xs font-semibold py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
-                  >
-                    Assess Real-time dialogue
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => {
+                        await fetch('/api/v1/applications/' + app.id + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'screening' }) });
+                        await fetch('/api/v1/notifications/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: app.candidateEmail, subject: 'You have been invited to screen for ' + (app.jobTitle || 'a role'), message: 'Hi ' + (app.candidateName || 'there') + ', you have been invited to complete your AI screening interview for the role of ' + (app.jobTitle || 'a position') + ' at ' + (app.company || 'our company') + '. Please login to QANI to begin.' }) });
+                        showToast('Screening invite sent to ' + app.candidateName, 'success');
+                        refreshStates();
+                      }}
+                      className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg"
+                    >
+                      Invite to Screen
+                    </button>
+                    <button onClick={() => navigate('recruiter-app-detail', { applicationId: app.id })} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg">View</button>
+                  </div>
                 </div>
-              );
-            })}
-            {applications.filter(a => a.status === 'screening').length === 0 && (
-              <div className="col-span-2 text-center py-12 text-gray-400 bg-white border border-gray-200 rounded-xl space-y-2">
-                <p className="text-xs italic">The screening pipeline queue is empty! All current matching slots are finalized.</p>
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
+
+          {/* Completed */}
+          <div>
+            <h3 className="text-xs font-bold uppercase text-gray-500 tracking-wider mb-3">✅ Completed ({applications.filter(a => ['qualified','review','rejected','hired'].includes(a.status)).length})</h3>
+            <div className="space-y-3">
+              {applications.filter(a => ['qualified','review','rejected','hired'].includes(a.status)).length === 0 && (
+                <div className="text-center py-8 text-gray-400 bg-white border border-dashed border-gray-200 rounded-xl text-xs italic">No completed screenings yet.</div>
+              )}
+              {applications.filter(a => ['qualified','review','rejected','hired'].includes(a.status)).map(app => (
+                <div key={app.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-green-100 border border-green-200 flex items-center justify-center font-bold text-green-600 text-xs">
+                      {(app.candidateName || 'C').charAt(0)}
+                    </div>
+                    <div>
+                      <span className="font-bold text-gray-900 block text-sm">{app.candidateName}</span>
+                      <span className="text-[10px] text-gray-400 block">{app.jobTitle} · Score: {app.aiScore ?? app.score ?? 'N/A'}{(app.aiScore || app.score) ? '%' : ''}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${app.status === 'qualified' || app.status === 'hired' ? 'bg-green-50 border-green-200 text-green-700' : app.status === 'review' ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                      {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                    </span>
+                    <button onClick={() => navigate('recruiter-app-detail', { applicationId: app.id })} className="cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg">View Results</button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
