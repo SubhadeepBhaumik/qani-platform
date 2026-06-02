@@ -45,6 +45,83 @@ import {
   Edit3
 } from 'lucide-react';
 
+const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: any; deleteJob: any; saveJob: any; showToast: any; refreshStates: any }> = ({ jobs, applications, navigate, deleteJob, saveJob, showToast, refreshStates }) => {
+  const [jobSearch, setJobSearch] = React.useState("");
+  const [jobStatusFilter, setJobStatusFilter] = React.useState("all");
+  const filteredJobs = jobs.filter(j => {
+    const matchSearch = !jobSearch || j.title.toLowerCase().includes(jobSearch.toLowerCase()) || (j.department||"").toLowerCase().includes(jobSearch.toLowerCase());
+    const matchStatus = jobStatusFilter === "all" || (j.status||"active") === jobStatusFilter;
+    return matchSearch && matchStatus;
+  });
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900">My Job Postings</h2>
+          <p className="text-xs text-gray-500">{jobs.length} total · {jobs.filter(j => (j.status||"active")==="active").length} active</p>
+        </div>
+        <button onClick={() => navigate("recruiter-create-job")} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          <Plus className="w-4 h-4" /><span>Create a New Job</span>
+        </button>
+      </div>
+      <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row gap-3 shadow-sm">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+          <input type="text" placeholder="Search jobs by title or department..." value={jobSearch} onChange={e => setJobSearch(e.target.value)}
+            className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg pl-10 text-xs focus:bg-white outline-none focus:border-blue-500 transition" />
+        </div>
+        <select value={jobStatusFilter} onChange={e => setJobStatusFilter(e.target.value)}
+          className="cursor-pointer h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full sm:w-40">
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      {filteredJobs.length === 0 && <div className="text-center py-12 text-gray-400 text-xs bg-white border border-dashed border-gray-200 rounded-xl">No jobs found.</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {filteredJobs.map(job => {
+          const appCount = applications.filter(a => a.jobId === job.id || a.roleId === job.id).length;
+          const qualCount = applications.filter(a => (a.jobId === job.id || a.roleId === job.id) && ["qualified","hired"].includes(a.status)).length;
+          const isHot = appCount >= 3;
+          const jobStatus = job.status || "active";
+          return (
+            <div key={job.id} className={`bg-white border rounded-xl p-6 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition ${jobStatus === "closed" ? "opacity-60" : jobStatus === "paused" ? "border-orange-200" : "border-gray-200"}`}>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded border border-blue-100">{job.department}</span>
+                    {isHot && <span className="text-[10px] font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-100">🔥 Hot</span>}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${jobStatus === "active" ? "bg-green-50 text-green-700 border-green-200" : jobStatus === "paused" ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>{jobStatus.charAt(0).toUpperCase()+jobStatus.slice(1)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => { const u = {...job, status: jobStatus==="active"?"paused":"active"}; saveJob(u); showToast(`Job ${jobStatus==="active"?"paused":"activated"}.`,"success"); refreshStates(); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-500 rounded-lg hover:bg-orange-50 transition" title={jobStatus==="active"?"Pause":"Activate"}>{jobStatus==="active" ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
+                    <button onClick={() => { const clone = {...job, id:"job-"+Date.now(), title:job.title+" (Copy)", status:"active"}; saveJob(clone); showToast("Job duplicated.","success"); refreshStates(); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition" title="Duplicate"><Copy className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => navigate("recruiter-create-job", { editJobId: job.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 transition" title="Edit"><Edit3 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => deleteJob(job.id)} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                </div>
+                <h3 className="text-base font-bold text-gray-950 leading-tight">{job.title}</h3>
+                <p className="text-xs text-gray-500 flex items-center gap-3"><span>📍 {job.location}</span>{job.salaryMin && <span>💰 ${Math.round(job.salaryMin/1000)}k–${Math.round(job.salaryMax/1000)}k</span>}</p>
+                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{job.description}</p>
+              </div>
+              <div className="border-t border-gray-100 pt-3 grid grid-cols-4 gap-2 text-center text-xs text-gray-500">
+                <div className="p-2 bg-gray-50 rounded-lg"><span className="font-extrabold text-gray-900 block">{appCount}</span><span>Applied</span></div>
+                <div className="p-2 bg-gray-50 rounded-lg"><span className="font-extrabold text-green-600 block">{qualCount}</span><span>Qualified</span></div>
+                <div className="p-2 bg-gray-50 rounded-lg col-span-2 flex items-center justify-center gap-3">
+                  <button onClick={() => navigate("recruiter-applications", { filterJobId: job.id })} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">View Applicants</button>
+                  <span className="text-gray-300">|</span>
+                  <button onClick={() => { saveJob({...job, status:"closed"}); showToast("Job closed.","success"); refreshStates(); }} className="cursor-pointer text-xs font-semibold text-gray-400 hover:text-red-500 hover:underline">Close</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const RecruiterSettings: React.FC<{ user: any; showToast: any }> = ({ user, showToast }) => {
   const [settingsTab, setSettingsTab] = React.useState<'profile'|'email'|'phone'>('profile');
   const [newEmail, setNewEmail] = React.useState('');
@@ -1014,111 +1091,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       )}
 
       {/* 5. JOBS MANAGEMENT */}
-      {subView === 'jobs' && (() => {
-        const [jobSearch, setJobSearch] = React.useState('');
-        const [jobStatusFilter, setJobStatusFilter] = React.useState('all');
-        const filteredJobs = jobs.filter(j => {
-          const matchSearch = !jobSearch || j.title.toLowerCase().includes(jobSearch.toLowerCase()) || (j.department||'').toLowerCase().includes(jobSearch.toLowerCase());
-          const matchStatus = jobStatusFilter === 'all' || (j.status||'active') === jobStatusFilter;
-          return matchSearch && matchStatus;
-        });
-        return (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-gray-900">My Job Postings</h2>
-              <p className="text-xs text-gray-500">{jobs.length} total positions · {jobs.filter(j => (j.status||'active')==='active').length} active</p>
-            </div>
-            <button id="job-list-new-job-btn" onClick={() => navigate('recruiter-create-job')}
-              className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              <Plus className="w-4 h-4" /><span>Create a New Job</span>
-            </button>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row gap-3 shadow-sm">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-              <input type="text" placeholder="Search jobs by title or department..." value={jobSearch} onChange={e => setJobSearch(e.target.value)}
-                className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg pl-10 text-xs focus:bg-white outline-none focus:border-blue-500 transition" />
-            </div>
-            <select value={jobStatusFilter} onChange={e => setJobStatusFilter(e.target.value)}
-              className="cursor-pointer h-10 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full sm:w-40">
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-          {filteredJobs.length === 0 && (
-            <div className="text-center py-12 text-gray-400 text-xs bg-white border border-dashed border-gray-200 rounded-xl">No jobs found.</div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredJobs.map(job => {
-              const appCount = applications.filter(a => a.jobId === job.id || a.roleId === job.id).length;
-              const qualCount = applications.filter(a => (a.jobId === job.id || a.roleId === job.id) && (a.status === 'qualified' || a.status === 'hired')).length;
-              const isHot = appCount >= 3;
-              const jobStatus = job.status || 'active';
-              return (
-                <div key={job.id} className={`bg-white border rounded-xl p-6 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition ${jobStatus === 'closed' ? 'opacity-60' : jobStatus === 'paused' ? 'border-orange-200' : 'border-gray-200'}`}>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded border border-blue-100">{job.department}</span>
-                        {isHot && <span className="text-[10px] font-bold bg-red-50 text-red-600 px-2 py-0.5 rounded border border-red-100">🔥 Hot</span>}
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${jobStatus === 'active' ? 'bg-green-50 text-green-700 border-green-200' : jobStatus === 'paused' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
-                          {jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => { const updated = {...job, status: jobStatus === 'active' ? 'paused' : 'active'}; saveJob(updated); showToast(`Job ${jobStatus === 'active' ? 'paused' : 'activated'}.`, 'success'); }}
-                          className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-500 rounded-lg hover:bg-orange-50 transition" title={jobStatus === 'active' ? 'Pause job' : 'Activate job'}>
-                          {jobStatus === 'active' ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <button onClick={() => { const clone = {...job, id: 'job-'+Date.now(), title: job.title+' (Copy)', status: 'active'}; saveJob(clone); showToast('Job duplicated.', 'success'); refreshStates(); }}
-                          className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition" title="Duplicate job">
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => navigate('recruiter-create-job', { editJobId: job.id })}
-                          className="cursor-pointer p-1.5 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 transition" title="Edit job">
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => deleteJob(job.id)}
-                          className="cursor-pointer p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition" title="Delete job">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                    <h3 className="text-base font-bold text-gray-950 leading-tight">{job.title}</h3>
-                    <p className="text-xs text-gray-500 flex items-center gap-2">
-                      <span>📍 {job.location}</span>
-                      {job.salaryMin && <span>💰 ${(job.salaryMin/1000).toFixed(0)}k–${(job.salaryMax/1000).toFixed(0)}k</span>}
-                    </p>
-                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{job.description}</p>
-                  </div>
-                  <div className="border-t border-gray-100 pt-3 grid grid-cols-4 gap-2 text-center text-xs text-gray-500">
-                    <div className="p-2 bg-gray-50 rounded-lg">
-                      <span className="font-extrabold text-gray-900 block">{appCount}</span>
-                      <span>Applied</span>
-                    </div>
-                    <div className="p-2 bg-gray-50 rounded-lg">
-                      <span className="font-extrabold text-green-600 block">{qualCount}</span>
-                      <span>Qualified</span>
-                    </div>
-                    <div className="p-2 bg-gray-50 rounded-lg col-span-2 flex items-center justify-center gap-2">
-                      <button onClick={() => navigate('recruiter-applications', { filterJobId: job.id })} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">View Applicants</button>
-                      <span className="text-gray-300">|</span>
-                      <button onClick={() => { const updated = {...job, status: 'closed'}; saveJob(updated); showToast('Job closed.', 'success'); }}
-                        className="cursor-pointer text-xs font-semibold text-gray-400 hover:text-red-500 hover:underline">Close</button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        );
-      })()}
-
-      {/* 6. CREATE JOB OPENING */}
+      {subView === 'jobs' && <RecruiterJobsList jobs={jobs} applications={applications} navigate={navigate} deleteJob={deleteJob} saveJob={saveJob} showToast={showToast} refreshStates={refreshStates} />}
       {subView === 'create-job' && (
         <div className="space-y-6">
           <button 
