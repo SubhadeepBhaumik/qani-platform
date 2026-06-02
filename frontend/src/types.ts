@@ -122,11 +122,17 @@ export interface ScreeningSession {
 
 export interface Notification {
   id: string;
+  recipientId?: string;
+  recipientEmail?: string;
+  type: 'new_application' | 'screening_complete' | 'job_expiring' | 'candidate_qualified' | 'invite_sent' | 'system' | 'job' | 'message' | 'screening';
   title: string;
-  content: string;
-  date: string;
+  content?: string;
+  message?: string;
   status: 'unread' | 'read' | 'archived';
-  type: 'job' | 'message' | 'screening' | 'system';
+  date?: string;
+  createdAt?: string;
+  relatedJobId?: string;
+  relatedApplicationId?: string;
 }
 
 export interface HelpArticle {

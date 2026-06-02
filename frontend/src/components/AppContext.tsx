@@ -98,7 +98,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         api.getJobs(),
         api.getApplications(),
         api.getSessions(),
-        api.getNotifications(),
+        api.getNotifications(user?.email),
         api.getLogs(),
       ]);
       if (j.status === 'fulfilled' && Array.isArray(j.value)) setJobs(j.value);

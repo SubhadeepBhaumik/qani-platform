@@ -187,8 +187,11 @@ export const api = {
   },
 
   // ── NOTIFICATIONS ─────────────────────────────────────────
-  getNotifications: async (): Promise<Notification[]> => {
-    try { return await call<Notification[]>('/notifications'); } catch (_) { return []; }
+  getNotifications: async (email?: string): Promise<Notification[]> => {
+    try {
+      const qs = email ? `?recipientEmail=${encodeURIComponent(email)}` : '';
+      return await call<Notification[]>(`/notifications${qs}`);
+    } catch (_) { return []; }
   },
 
   addNotification: async (title: string, content: string, type: Notification['type']): Promise<void> => {
@@ -199,7 +202,7 @@ export const api = {
   },
 
   markNotificationAsRead: async (id: string): Promise<void> => {
-    await call(`/notifications/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'read' }) });
+    await call(`/notifications/${id}/read`, { method: 'PUT' });
   },
 
   markAllNotificationsRead: async (): Promise<void> => {

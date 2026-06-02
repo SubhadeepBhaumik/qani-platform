@@ -95,6 +95,8 @@ app.get('/api/v1/notifications', NotificationsController.getNotifications);
 app.post('/api/v1/notifications/application-status', NotificationsController.sendApplicationStatusEmail);
 app.post('/api/v1/notifications/recruiter-alert', NotificationsController.sendRecruiterAlert);
 app.get('/api/v1/notifications/history', NotificationsController.getNotificationHistory);
+app.put('/api/v1/notifications/:id/read', NotificationsController.markRead);
+app.post('/api/v1/notifications/mark-all-read', NotificationsController.markAllRead);
 
 // Test route
 app.get('/api/v1/test', (_req: Request, res: Response) => {
