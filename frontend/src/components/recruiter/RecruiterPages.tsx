@@ -1269,79 +1269,155 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       )}
 
       {/* 7. REPORTS & ANALYTICS */}
-      {subView === 'reports' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-gray-900">Analytics & Conversion Funnels</h2>
-              <p className="text-xs text-gray-500">Synthesizing conversion funnels, historical score distributions, and recruiter speed metrics.</p>
-            </div>
-            <button onClick={() => showToast('CSV Exporter triggered.', 'success')} className="cursor-pointer text-xs font-semibold py-2 px-4 bg-gray-900 border text-white rounded-lg hover:bg-gray-800 flex items-center gap-1">
-              <Download className="w-4 h-4" />
-              <span>Export CSV</span>
-            </button>
-          </div>
+      {subView === 'reports' && (() => {
+        const total = applications.length;
+        const screened = applications.filter(a => ['screening','qualified','review','rejected','hired'].includes(a.status)).length;
+        const qualified = applications.filter(a => a.status === 'qualified' || a.status === 'hired').length;
+        const rejected = applications.filter(a => a.status === 'rejected').length;
+        const review = applications.filter(a => a.status === 'review').length;
+        const inProgress = applications.filter(a => a.status === 'screening').length;
+        const avgScore = applications.filter(a => a.aiScore || a.score).length > 0
+          ? Math.round(applications.filter(a => a.aiScore || a.score).reduce((s, a) => s + (a.aiScore ?? a.score ?? 0), 0) / applications.filter(a => a.aiScore || a.score).length)
+          : 0;
+        const conversionRate = total > 0 ? Math.round((qualified / total) * 100) : 0;
+        const screeningRate = total > 0 ? Math.round((screened / total) * 100) : 0;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border rounded-xl p-5 shadow-sm space-y-4">
-              <span className="text-xs font-bold text-gray-900 uppercase">Hiring Funnel Conversions</span>
-              <p className="text-[10px] text-gray-400">Yield conversion percentage indicators</p>
-              
-              <div className="space-y-4 text-xs text-gray-700 pt-2">
-                <div className="space-y-1">
-                  <div className="flex justify-between font-semibold">
-                    <span>1. Applied (Unscreened)</span>
-                    <span>100%</span>
-                  </div>
-                  <div className="h-4 bg-blue-100 rounded flex items-center px-2 text-[10px] font-bold text-blue-700">145 candidates</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between font-semibold">
-                    <span>2. Conversational Screen complete</span>
-                    <span>32%</span>
-                  </div>
-                  <div className="h-4 bg-blue-200 rounded flex items-center px-2 text-[10px] font-bold text-blue-700 w-[32%]">46 candidates</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between font-semibold">
-                    <span>3. Qualified Status Match</span>
-                    <span>12%</span>
-                  </div>
-                  <div className="h-4 bg-green-200 rounded flex items-center px-2 text-[10px] font-bold text-green-700 w-[12%]">18 candidates</div>
-                </div>
-              </div>
-            </div>
+        const funnelStages = [
+          { label: 'Applied', count: total, pct: 100, color: 'bg-blue-200 text-blue-800' },
+          { label: 'Screened by AI', count: screened, pct: total > 0 ? Math.round((screened/total)*100) : 0, color: 'bg-blue-400 text-white' },
+          { label: 'Qualified', count: qualified, pct: total > 0 ? Math.round((qualified/total)*100) : 0, color: 'bg-green-400 text-white' },
+          { label: 'Review Needed', count: review, pct: total > 0 ? Math.round((review/total)*100) : 0, color: 'bg-orange-300 text-white' },
+          { label: 'Rejected', count: rejected, pct: total > 0 ? Math.round((rejected/total)*100) : 0, color: 'bg-red-300 text-white' },
+        ];
 
-            <div className="bg-white border rounded-xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+        const jobMetrics = jobs.map(job => {
+          const jobApps = applications.filter(a => a.roleId === job.id || a.jobId === job.id);
+          const jobQual = jobApps.filter(a => a.status === 'qualified' || a.status === 'hired').length;
+          const jobAvg = jobApps.filter(a => a.aiScore || a.score).length > 0
+            ? Math.round(jobApps.filter(a => a.aiScore || a.score).reduce((s, a) => s + (a.aiScore ?? a.score ?? 0), 0) / jobApps.filter(a => a.aiScore || a.score).length)
+            : null;
+          return { job, total: jobApps.length, qualified: jobQual, avgScore: jobAvg };
+        }).filter(m => m.total > 0);
+
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-gray-900 uppercase">Average Match Assessment Parameters</span>
-                <p className="text-[10px] text-gray-400">Average alignment ratings reached inside company vacancies</p>
+                <h2 className="text-2xl font-bold tracking-tight text-gray-900">Reports & Analytics</h2>
+                <p className="text-xs text-gray-500 mt-1">Real-time pipeline metrics, conversion rates and AI screening performance.</p>
+              </div>
+              <button onClick={() => showToast('CSV export coming in production phase.', 'info')} className="cursor-pointer text-xs font-semibold py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 flex items-center gap-1.5">
+                <Download className="w-4 h-4" /> Export CSV
+              </button>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Total Applications', value: total, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
+                { label: 'Avg AI Score', value: avgScore ? `${avgScore}%` : 'N/A', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
+                { label: 'Qualified Rate', value: `${conversionRate}%`, color: 'text-green-600', bg: 'bg-green-50 border-green-200' },
+                { label: 'Screening Rate', value: `${screeningRate}%`, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
+              ].map(kpi => (
+                <div key={kpi.label} className={`border rounded-xl p-4 ${kpi.bg}`}>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">{kpi.label}</p>
+                  <p className={`text-3xl font-extrabold ${kpi.color}`}>{kpi.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Hiring Funnel */}
+              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Hiring Funnel</h3>
+                <div className="space-y-3">
+                  {funnelStages.map((stage, i) => (
+                    <div key={stage.label} className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold text-gray-700">
+                        <span>{i + 1}. {stage.label}</span>
+                        <span>{stage.count} · {stage.pct}%</span>
+                      </div>
+                      <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full flex items-center px-2 text-[10px] font-bold transition-all ${stage.color}`} style={{ width: `${Math.max(stage.pct, 5)}%` }}>
+                          {stage.pct > 10 ? `${stage.pct}%` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="space-y-2 text-xs pt-4 flex-1 justify-center flex flex-col">
-                <div className="flex justify-between">
-                  <span>Location compliances:</span>
-                  <span className="font-mono font-bold">82%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Salary budget parity:</span>
-                  <span className="font-mono font-bold">78%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Cert prerequisite adherence:</span>
-                  <span className="font-mono font-bold">85%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Skills match rating:</span>
-                  <span className="font-mono font-bold">80%</span>
+              {/* Pipeline Pie */}
+              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Pipeline Breakdown</h3>
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={pipelineData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                      {pipelineData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                    </Pie>
+                    <ChartTooltip formatter={(value: any, name: any) => [`${value} candidates`, name]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap gap-2">
+                  {pipelineData.map(d => (
+                    <span key={d.name} className="flex items-center gap-1 text-[10px] text-gray-600">
+                      <span className="w-2 h-2 rounded-full inline-block" style={{ background: d.color }} />
+                      {d.name} ({d.value})
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* 8. TEAM SETTINGS */}
+            {/* Per Job Metrics */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">Performance by Job</h3>
+              {jobMetrics.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No job data available yet.</p>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-[10px] text-gray-400 uppercase">
+                      <th className="pb-2 text-left font-semibold">Job Title</th>
+                      <th className="pb-2 text-center font-semibold">Applications</th>
+                      <th className="pb-2 text-center font-semibold">Qualified</th>
+                      <th className="pb-2 text-center font-semibold">Avg Score</th>
+                      <th className="pb-2 text-center font-semibold">Conversion</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {jobMetrics.map(m => (
+                      <tr key={m.job.id} className="hover:bg-gray-50">
+                        <td className="py-3 font-semibold text-gray-900">{m.job.title}</td>
+                        <td className="py-3 text-center text-gray-600">{m.total}</td>
+                        <td className="py-3 text-center"><span className="text-green-700 font-bold">{m.qualified}</span></td>
+                        <td className="py-3 text-center"><span className={`font-bold ${m.avgScore && m.avgScore >= 80 ? 'text-green-600' : m.avgScore && m.avgScore >= 60 ? 'text-orange-500' : 'text-red-500'}`}>{m.avgScore ? `${m.avgScore}%` : '—'}</span></td>
+                        <td className="py-3 text-center">{m.total > 0 ? `${Math.round((m.qualified/m.total)*100)}%` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Score Distribution */}
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">AI Score Distribution</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {[['High (80-100%)', applications.filter(a => (a.aiScore ?? a.score ?? 0) >= 80).length, 'text-green-600 bg-green-50 border-green-200'],
+                  ['Mid (60-79%)', applications.filter(a => { const s = a.aiScore ?? a.score ?? 0; return s >= 60 && s < 80; }).length, 'text-orange-600 bg-orange-50 border-orange-200'],
+                  ['Low (<60%)', applications.filter(a => { const s = a.aiScore ?? a.score; return s !== undefined && s < 60; }).length, 'text-red-600 bg-red-50 border-red-200']
+                ].map(([label, count, style]) => (
+                  <div key={String(label)} className={`border rounded-xl p-4 text-center ${style}`}>
+                    <p className="text-2xl font-extrabold">{count}</p>
+                    <p className="text-[10px] font-semibold mt-1">{label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       {subView === 'team' && (
         <div className="space-y-6">
           <div>
