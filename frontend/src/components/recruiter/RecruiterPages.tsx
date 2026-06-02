@@ -358,7 +358,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-xs text-gray-600">
                   {jobs.map(job => {
-                    const appsForJob = applications.filter(a => a.jobId === job.id);
+                    const appsForJob = applications.filter(a => a.jobId === job.id || a.roleId === job.id);
                     const scoredApps = appsForJob.filter(a => a.aiScore !== undefined || a.score !== undefined);
                     const avgScore = scoredApps.length ? Math.round(scoredApps.reduce((sum, current) => sum + (current.aiScore ?? current.score ?? 0), 0) / scoredApps.length) : 'N/A';
                     return (
@@ -371,7 +371,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <td className="p-4 font-bold text-gray-800">{appsForJob.length} candidates</td>
                         <td className="p-4 font-mono font-bold text-blue-600">{avgScore !== 'N/A' ? `${avgScore}%` : 'Pending'}</td>
                         <td className="p-4 text-right">
-                          <button onClick={() => navigate('recruiter-applications')} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">
+                          <button onClick={() => navigate('recruiter-applications', { filterJobId: job.id })} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">
                             View Applicants
                           </button>
                         </td>
@@ -392,6 +392,14 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">Corporate Applications Tracker</h2>
               <p className="text-xs text-gray-500">Filter candidate metrics, evaluate overall scorecards, and execute status modifications.</p>
+              {activeParams.filterJobId && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                    Filtered: {jobs.find(j => j.id === activeParams.filterJobId)?.title || activeParams.filterJobId}
+                  </span>
+                  <button onClick={() => navigate('recruiter-applications', {})} className="cursor-pointer text-xs text-gray-400 hover:text-gray-700 underline">Clear filter</button>
+                </div>
+              )}
             </div>
             {/* Bulk handlers drawer */}
             {bulkChecked.length > 0 && (
@@ -459,14 +467,16 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 {applications
                   .filter(app => {
                     const candidate = allCandidates.find(c => c.id === app.candidateId) || allCandidates[0];
-                    const job = jobs.find(j => j.id === app.jobId);
-                    
-                    const name = `${candidate?.firstName || ''} ${candidate?.lastName || ''}`.toLowerCase();
-                    const searchMat = name.includes(appSearch.toLowerCase()) || 
-                                     candidate?.email.toLowerCase().includes(appSearch.toLowerCase()) ||
-                                     job?.title.toLowerCase().includes(appSearch.toLowerCase());
+                    const job = jobs.find(j => j.id === (app.jobId || app.roleId));
+                    const filterJobId = activeParams.filterJobId;
+
+                    const name = (app.candidateName || `${candidate?.firstName || ''} ${candidate?.lastName || ''}`).toLowerCase();
+                    const searchMat = name.includes(appSearch.toLowerCase()) ||
+                                     (app.candidateEmail || candidate?.email || '').toLowerCase().includes(appSearch.toLowerCase()) ||
+                                     (app.jobTitle || job?.title || '').toLowerCase().includes(appSearch.toLowerCase());
                     const statusMat = appFilterStatus === 'All' || app.status === appFilterStatus;
-                    return searchMat && statusMat;
+                    const jobMat = !filterJobId || app.jobId === filterJobId || app.roleId === filterJobId;
+                    return searchMat && statusMat && jobMat;
                   })
                   .map(app => {
                     const candidate = allCandidates.find(c => c.id === app.candidateId) || allCandidates[0];
@@ -495,27 +505,25 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                               className="w-10 h-10 rounded-full border object-cover"
                             />
                             <div>
-                              <span className="font-bold text-gray-950 block">{candidate?.firstName} {candidate?.lastName}</span>
-                              <span className="text-[10px] text-gray-400 font-mono block">{candidate?.email}</span>
+                              <span className="font-bold text-gray-950 block">{app.candidateName || `${candidate?.firstName || ""} ${candidate?.lastName || ""}`}</span>
+                              <span className="text-[10px] text-gray-400 font-mono block">{app.candidateEmail || candidate?.email || ""}</span>
                             </div>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className="font-semibold text-gray-900 block">{job?.title || 'Unknown Role'}</span>
-                          <span className="text-[10px] text-gray-400">{job?.department}</span>
+                          <span className="font-semibold text-gray-900 block">{app.jobTitle || job?.title || "Unknown Role"}</span>
+                          <span className="text-[10px] text-gray-400">{app.company || job?.department || ""}</span>
                         </td>
-                        <td className="p-4">{app.appliedDate}</td>
+                        <td className="p-4">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString("en-AU") : app.appliedDate || "—"}</td>
                         <td className="p-4">
-                          {app.score !== undefined ? (
+                          {(() => { const s = app.aiScore ?? app.score; return s !== undefined ? (
                             <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-gray-900">{app.score}%</span>
+                              <span className="font-mono font-bold text-gray-900">{s}%</span>
                               <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div className={`h-full ${app.score >= 80 ? 'bg-green-500' : app.score >= 50 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${app.score}%` }} />
+                                <div className={`h-full ${s >= 80 ? 'bg-green-500' : s >= 50 ? 'bg-orange-500' : 'bg-red-500'}`} style={{ width: `${s}%` }} />
                               </div>
                             </div>
-                          ) : (
-                            <span className="font-bold text-blue-600">{(app.aiScore ?? app.score) !== undefined ? `${app.aiScore ?? app.score}%` : <span className="text-gray-400 italic">Pending</span>}</span>
-                          )}
+                          ) : <span className="text-gray-400 italic text-xs">Pending</span>; })()}
                         </td>
                         <td className="p-4 text-center">
                           <span className={`inline-block text-[10px] font-bold uppercase py-1 px-2.5 rounded-full ${
@@ -849,7 +857,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                       <span>Qualified</span>
                     </div>
                     <div className="p-2 bg-gray-50 rounded-lg flex items-center justify-center">
-                      <button onClick={() => navigate('recruiter-applications')} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">
+                      <button onClick={() => navigate('recruiter-applications', { filterJobId: job.id })} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">
                         Parse candidates
                       </button>
                     </div>
