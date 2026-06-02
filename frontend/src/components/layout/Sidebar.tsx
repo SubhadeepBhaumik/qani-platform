@@ -3,7 +3,7 @@ import { useApp, AppView } from '../AppContext';
 import {
   Home, Briefcase, FileText, User, Settings, Bell, LogOut,
   HelpCircle, BarChart2, Users, UserCheck, Activity, PlusCircle,
-  DollarSign, PenTool
+  DollarSign, PenTool, Users2
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -30,6 +30,7 @@ export const Sidebar: React.FC = () => {
         { id: 'recruiter-applications', label: 'All Applications', icon: FileText, view: 'recruiter-applications' as AppView },
         { id: 'recruiter-queue', label: 'AI Screening Queue', icon: UserCheck, view: 'recruiter-queue' as AppView },
         { id: 'recruiter-candidates', label: 'Candidate Directory', icon: Users, view: 'recruiter-candidates' as AppView },
+        { id: 'recruiter-team', label: 'Team Management', icon: Users2, view: 'recruiter-team' as AppView },
         { id: 'recruiter-reports', label: 'Reports & Analytics', icon: BarChart2, view: 'recruiter-reports' as AppView },
         { id: 'recruiter-settings', label: 'Company Settings', icon: Settings, view: 'recruiter-settings' as AppView },
       ];
