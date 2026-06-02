@@ -241,10 +241,10 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
               <button 
                 id="dashboard-job-creator-trigger"
                 onClick={() => navigate('recruiter-create-job')}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                className="cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
               >
                 <Plus className="w-4 h-4" />
-                <span>Open Open Job</span>
+                <span>Create New Job</span>
               </button>
             </div>
           </div>
@@ -359,8 +359,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 <tbody className="divide-y divide-gray-100 text-xs text-gray-600">
                   {jobs.map(job => {
                     const appsForJob = applications.filter(a => a.jobId === job.id);
-                    const scoredApps = appsForJob.filter(a => a.score !== undefined);
-                    const avgScore = scoredApps.length ? Math.round(scoredApps.reduce((sum, current) => sum + (current.score || 0), 0) / scoredApps.length) : 'N/A';
+                    const scoredApps = appsForJob.filter(a => a.aiScore !== undefined || a.score !== undefined);
+                    const avgScore = scoredApps.length ? Math.round(scoredApps.reduce((sum, current) => sum + (current.aiScore ?? current.score ?? 0), 0) / scoredApps.length) : 'N/A';
                     return (
                       <tr key={job.id} className="hover:bg-gray-50">
                         <td className="p-4">
@@ -369,7 +369,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                         </td>
                         <td className="p-4">{job.department}</td>
                         <td className="p-4 font-bold text-gray-800">{appsForJob.length} candidates</td>
-                        <td className="p-4 font-mono font-bold text-blue-600">{avgScore !== 'N/A' ? `${avgScore}%` : 'Evaluating...'}</td>
+                        <td className="p-4 font-mono font-bold text-blue-600">{avgScore !== 'N/A' ? `${avgScore}%` : 'Pending'}</td>
                         <td className="p-4 text-right">
                           <button onClick={() => navigate('recruiter-applications')} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">
                             View Applicants
@@ -514,7 +514,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                               </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400 italic">No score calculated</span>
+                            <span className="font-bold text-blue-600">{(app.aiScore ?? app.score) !== undefined ? `${app.aiScore ?? app.score}%` : <span className="text-gray-400 italic">Pending</span>}</span>
                           )}
                         </td>
                         <td className="p-4 text-center">
@@ -531,7 +531,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                           <button 
                             id={`view-app-details-trigger-${app.id}`}
                             onClick={() => navigate('recruiter-app-detail', { applicationId: app.id })}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-bold"
+                            className="cursor-pointer text-xs text-blue-600 hover:text-blue-800 font-bold"
                           >
                             View Assessment
                           </button>
