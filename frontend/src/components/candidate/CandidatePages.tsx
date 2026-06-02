@@ -37,13 +37,17 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
     isGeneratingAI,
     saveUser,
     showToast,
-    activeParams
+    activeParams,
+    refreshStates
   } = useApp();
 
   // Search/Filters State for Browse Jobs
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [filterLocation, setFilterLocation] = useState('All');
+  const [filterSalary, setFilterSalary] = useState('All');
+  const [jobsPage, setJobsPage] = useState(1);
+  const JOBS_PER_PAGE = 10;
 
   // Profile Edit fields
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -235,107 +239,122 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
       )}
 
       {/* 2. BROWSE JOBS */}
-      {subView === 'jobs' && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Explore Open Positions</h2>
-            <p className="text-xs text-gray-500">Apply to matching slots and configure real-time AI assessments.</p>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center shadow-sm">
-            <div className="relative flex-1 w-full">
-              <Search className="w-4.5 h-4.5 text-gray-400 absolute left-3.5 top-3.5" />
-              <input 
-                type="text"
-                placeholder="Search job titles, skills, or departments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-11 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 rounded-lg text-xs pl-11 outline-none transition"
-              />
+      {subView === 'jobs' && (() => {
+        const openJobs = jobs.filter((j: any) => j.status === 'open');
+        const departments = ['All', ...Array.from(new Set(openJobs.map((j: any) => j.department).filter(Boolean))).sort() as string[]];
+        const locations = ['All', ...Array.from(new Set(openJobs.map((j: any) => {
+          const loc = (j.location || '') as string;
+          if (loc.includes('Remote')) return 'Remote';
+          const m = loc.match(/^([^(,]+)/);
+          return m ? m[1].trim() : loc;
+        }).filter(Boolean))).sort() as string[]];
+        const filtered = openJobs.filter((j: any) => {
+          const matchesSearch = !searchQuery || j.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (j.skillsRequired || []).some((s: string) => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (j.department || '').toLowerCase().includes(searchQuery.toLowerCase());
+          const matchesDept = filterType === 'All' || j.department === filterType;
+          const matchesLoc = filterLocation === 'All' || (j.location || '').includes(filterLocation);
+          const matchesSalary = filterSalary === 'All' ||
+            (filterSalary === '0-100k' && (j.salaryMax || 0) <= 100000) ||
+            (filterSalary === '100k-140k' && (j.salaryMin || 0) >= 100000 && (j.salaryMax || 0) <= 140000) ||
+            (filterSalary === '140k-180k' && (j.salaryMin || 0) >= 140000 && (j.salaryMax || 0) <= 180000) ||
+            (filterSalary === '180k+' && (j.salaryMin || 0) >= 180000);
+          return matchesSearch && matchesDept && matchesLoc && matchesSalary;
+        });
+        const totalPages = Math.max(1, Math.ceil(filtered.length / JOBS_PER_PAGE));
+        const paginated = filtered.slice((jobsPage - 1) * JOBS_PER_PAGE, jobsPage * JOBS_PER_PAGE);
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-gray-900">Explore Open Positions</h2>
+                <p className="text-xs text-gray-500">{filtered.length} open {filtered.length === 1 ? 'role' : 'roles'} available across Australia</p>
+              </div>
             </div>
-            
-            <select 
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="h-11 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full md:w-48 cursor-pointer"
-            >
-              <option value="All">All Departments</option>
-              <option value="Engineering">Engineering</option>
-              <option value="Product">Product Design</option>
-              <option value="AI Lab">Artificial Intelligence</option>
-            </select>
-            
-            <select 
-              value={filterLocation}
-              onChange={(e) => setFilterLocation(e.target.value)}
-              className="h-11 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full md:w-48 cursor-pointer"
-            >
-              <option value="All">All Locations</option>
-              <option value="Singapore">Singapore</option>
-              <option value="Remote">Remote</option>
-            </select>
-          </div>
-
-          {/* Jobs Listing grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {jobs
-              .filter(j => j.status === 'open')
-              .filter(j => {
-                if (!searchQuery && filterType === 'All' && filterLocation === 'All') return true;
-                const matchesSearch = !searchQuery || j.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                     j.skillsRequired.some(s => s.toLowerCase().includes(searchQuery.toLowerCase()));
-                const matchesDept = filterType === 'All' || j.department === filterType;
-                const matchesLoc = filterLocation === 'All' || j.location.includes(filterLocation);
-                return matchesSearch && matchesDept && matchesLoc;
-              })
-              .map(job => (
-                <div 
-                  key={job.id} 
-                  id={`job-card-item-${job.id}`}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center shadow-sm flex-wrap">
+              <div className="relative flex-1 w-full min-w-48">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                <input type="text" placeholder="Search by title, skill, or keyword..." value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setJobsPage(1); }}
+                  className="w-full h-11 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 rounded-lg text-xs pl-10 outline-none transition" />
+              </div>
+              <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setJobsPage(1); }}
+                className="h-11 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full md:w-44 cursor-pointer">
+                {departments.map((d: string) => <option key={d} value={d}>{d === 'All' ? 'All Departments' : d}</option>)}
+              </select>
+              <select value={filterLocation} onChange={(e) => { setFilterLocation(e.target.value); setJobsPage(1); }}
+                className="h-11 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full md:w-48 cursor-pointer">
+                {locations.map((l: string) => <option key={l} value={l}>{l === 'All' ? 'All Locations' : l}</option>)}
+              </select>
+              <select value={filterSalary} onChange={(e) => { setFilterSalary(e.target.value); setJobsPage(1); }}
+                className="h-11 px-3 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none w-full md:w-44 cursor-pointer">
+                <option value="All">All Salaries</option>
+                <option value="0-100k">Under $100k</option>
+                <option value="100k-140k">$100k – $140k</option>
+                <option value="140k-180k">$140k – $180k</option>
+                <option value="180k+">$180k+</option>
+              </select>
+              {(searchQuery || filterType !== 'All' || filterLocation !== 'All' || filterSalary !== 'All') && (
+                <button onClick={() => { setSearchQuery(''); setFilterType('All'); setFilterLocation('All'); setFilterSalary('All'); setJobsPage(1); }}
+                  className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer whitespace-nowrap">
+                  Clear filters
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {paginated.map((job: any) => (
+                <div key={job.id} id={`job-card-item-${job.id}`}
                   className="bg-white border border-gray-200 hover:border-blue-500 rounded-xl p-6 flex flex-col justify-between gap-5 shadow-sm hover:shadow-md transition duration-200 cursor-pointer"
-                  onClick={() => navigate('candidate-job-detail', { jobId: job.id })}
-                >
+                  onClick={() => navigate('candidate-job-detail', { jobId: job.id })}>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
-                        {job.department}
-                      </span>
+                      <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">{job.department}</span>
                       <div className="flex items-center gap-2">
-                        {applications.some(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id) && (
-                          <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-green-50 text-green-700 rounded-full border border-green-200">Applied</span>
+                        {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id) && (
+                          <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-green-50 text-green-700 rounded-full border border-green-200">✓ Applied</span>
                         )}
                         <span className="text-[10px] font-semibold text-gray-500 uppercase">{job.experienceLevel} Level</span>
                       </div>
                     </div>
-
                     <h3 className="text-lg font-bold text-gray-950 leading-tight">{job.title}</h3>
-                    <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">{job.description}</p>
-                    
-                    {/* skills requirement indicators */}
+                    {job.company && <p className="text-xs font-semibold text-blue-600">{job.company}</p>}
+                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{job.description}</p>
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {job.skillsRequired.map(skill => (
-                        <span key={skill} className="text-[10px] bg-gray-100 text-gray-700 py-0.5 px-2 rounded-md">
-                          {skill}
-                        </span>
+                      {(job.skillsRequired || []).slice(0, 4).map((skill: string) => (
+                        <span key={skill} className="text-[10px] bg-gray-100 text-gray-700 py-0.5 px-2 rounded-md">{skill}</span>
                       ))}
                     </div>
                   </div>
-
                   <div className="border-t border-gray-100 pt-4 flex items-center justify-between text-xs text-gray-500">
-                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
-                    <button className="text-xs font-semibold py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition cursor-pointer">
-                      View details
-                    </button>
+                    <div className="space-y-0.5">
+                      <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
+                      {!job.hideSalary && job.salaryMin && (
+                        <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> ${(job.salaryMin/1000).toFixed(0)}k – ${(job.salaryMax/1000).toFixed(0)}k</span>
+                      )}
+                    </div>
+                    <button className="text-xs font-semibold py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition cursor-pointer">View details</button>
                   </div>
                 </div>
               ))}
-            
-            {jobs.filter(j => j.status === 'open').length === 0 && (
-              <div className="col-span-2 text-center py-12 text-gray-400 italic">No job openings created yet inside local database.</div>
+              {filtered.length === 0 && (
+                <div className="col-span-2 text-center py-12 text-gray-400 italic">No roles match your filters. Try clearing some filters.</div>
+              )}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button onClick={() => setJobsPage((p: number) => Math.max(1, p - 1))} disabled={jobsPage === 1}
+                  className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 cursor-pointer">Previous</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p: number) => (
+                  <button key={p} onClick={() => setJobsPage(p)}
+                    className={`w-8 h-8 text-xs font-bold rounded-lg cursor-pointer ${p === jobsPage ? 'bg-blue-600 text-white' : 'border border-gray-200 hover:bg-gray-50'}`}>{p}</button>
+                ))}
+                <button onClick={() => setJobsPage((p: number) => Math.min(totalPages, p + 1))} disabled={jobsPage === totalPages}
+                  className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 cursor-pointer">Next</button>
+              </div>
             )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 3. JOB DETAIL */}
       {subView === 'job-detail' && (() => {
@@ -710,15 +729,16 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     onClick={async () => {
                       if (!window.confirm('End this screening session? Your responses will be scored.')) return;
                       try {
-                        const res = await fetch('/api/v1/screening/end', {
+                        const token = localStorage.getItem('qani_auth_token');
+                        const res = await fetch('http://qani.io/api/v1/screening/end', {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
+                          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                           body: JSON.stringify({ sessionId: session.id, decision: 'review' })
                         });
-                        const ended = await res.json();
+                        const endedSession = await res.json();
                         await refreshStates();
-                        navigate('candidate-app-detail', { applicationId: session.applicationId });
                         showToast('Screening complete! View your results below.', 'success');
+                        navigate('candidate-app-detail', { applicationId: session.applicationId });
                       } catch(e) {
                         showToast('Failed to end screening. Try again.', 'error');
                       }

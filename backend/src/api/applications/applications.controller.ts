@@ -211,6 +211,14 @@ export class ApplicationsController {
     }
   }
 
+  // Helper called internally by screening controller
+  static setApplicationStatus(applicationId: string, status: string) {
+    const idx = applications.findIndex((a: any) => a.id === applicationId);
+    if (idx !== -1) {
+      applications[idx].status = status as any;
+    }
+  }
+
   static async updateApplicationStatus(req: Request, res: Response) {
     try {
       const { status, recruiterNotes } = req.body;

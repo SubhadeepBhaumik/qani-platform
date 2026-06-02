@@ -107,7 +107,7 @@ app.use(errorHandler);
 
 
 // Stub endpoints to prevent 404s
-app.get('/api/v1/screening', (_req, res) => res.json([]));
+app.get('/api/v1/screening', ScreeningController.getAllSessions);
 app.post('/api/v1/screening/start', (_req, res) => res.status(201).json({ id: 'session-' + Date.now(), status: 'active', messages: [] }));
 app.post('/api/v1/screening/message', (_req, res) => res.json({ id: _req.body.sessionId, status: 'active', messages: [] }));
 app.post('/api/v1/screening/end', (_req, res) => res.json({ id: _req.body.sessionId, status: 'completed' }));

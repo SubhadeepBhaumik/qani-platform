@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { OpenAI } from 'openai';
+import { ApplicationsController } from '../applications/applications.controller';
 
 interface ScreeningSession {
   id: string;
@@ -45,6 +46,8 @@ export class ScreeningController {
       };
 
       sessions.push(session);
+      // Update application status to 'screening'
+      try { ApplicationsController.setApplicationStatus(applicationId, 'screening'); } catch(_) {}
       return res.status(201).json(session);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to start screening' });
@@ -136,6 +139,14 @@ export class ScreeningController {
       return res.json(session);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to end screening' });
+    }
+  }
+
+  static async getAllSessions(req: Request, res: Response) {
+    try {
+      return res.json(sessions);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch sessions' });
     }
   }
 
