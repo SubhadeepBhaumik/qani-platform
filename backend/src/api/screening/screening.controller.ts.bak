@@ -5,9 +5,7 @@ interface ScreeningSession {
   id: string;
   applicationId: string;
   status: 'active' | 'completed' | 'paused';
-  messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; timestamp: string; questionIdx?: number }>;
-  currentQuestionIdx: number;
-  startDate: string;
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
   score?: number;
   decision?: 'progress' | 'review' | 'reject';
   createdAt: Date;
@@ -25,20 +23,14 @@ export class ScreeningController {
         return res.status(400).json({ error: 'applicationId required' });
       }
 
-      const now = new Date().toISOString();
       const session: ScreeningSession = {
         id: Date.now().toString(),
         applicationId,
         status: 'active',
-        currentQuestionIdx: 0,
-        startDate: now,
         messages: [
           {
-            id: 'msg-1',
             role: 'assistant',
-            content: `Hi ${candidateName || 'there'}! Welcome to the QANI AI screening process. I'm here to learn more about your background and experience. Let's begin — what's your current role and how many years of relevant experience do you have?`,
-            timestamp: now,
-            questionIdx: 0,
+            content: `Hi ${candidateName}! Welcome to the QANI screening process. I'm an AI assistant here to learn more about your background and experience. Let's start with a few questions about your professional experience. What's your current role and how many years have you been working in your field?`,
           },
         ],
         createdAt: new Date(),
@@ -69,12 +61,9 @@ export class ScreeningController {
       }
 
       // Add user message
-      const userMsgId = 'msg-' + Date.now() + '-u';
       session.messages.push({
-        id: userMsgId,
         role: 'user',
         content: message,
-        timestamp: new Date().toISOString(),
       });
 
       // Initialize OpenAI here with env var
@@ -100,15 +89,15 @@ export class ScreeningController {
 
       // Add AI message
       session.messages.push({
-        id: 'msg-' + Date.now() + '-ai',
         role: 'assistant',
         content: aiResponse,
-        timestamp: new Date().toISOString(),
-        questionIdx: session.currentQuestionIdx,
       });
 
-      session.currentQuestionIdx = Math.floor(session.messages.filter(m => m.role === 'assistant').length);
-      return res.json(session);
+      return res.json({
+        sessionId: session.id,
+        message: aiResponse,
+        messageCount: session.messages.length,
+      });
     } catch (error) {
       console.error('OpenAI Error:', error);
       return res.status(500).json({ error: 'Failed to process message' });
