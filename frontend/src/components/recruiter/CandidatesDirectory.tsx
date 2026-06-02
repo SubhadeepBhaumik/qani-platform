@@ -3,7 +3,7 @@ import { useApp } from '../AppContext';
 import { Search, MapPin, Briefcase, Send, CheckCircle, X } from 'lucide-react';
 
 export const CandidatesDirectory: React.FC = () => {
-  const { jobs, showToast, user } = useApp();
+  const { jobs, showToast, user, applications } = useApp();
   const [search, setSearch] = useState('');
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,12 +139,18 @@ export const CandidatesDirectory: React.FC = () => {
                     <MapPin className="w-3 h-3" />
                     {cand.location || 'Australia'}
                   </span>
-                  <button
-                    onClick={() => { setInviteModal({ candidate: cand }); setSelectedJobId(recruiterJobs[0]?.id || ''); }}
-                    className={`cursor-pointer flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${alreadyInvited ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                  >
-                    {alreadyInvited ? <><CheckCircle size={11} /> Invited</> : <><Send size={11} /> Invite to Apply</>}
-                  </button>
+                  {alreadyApplied ? (
+                    <span className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 border border-gray-200 text-gray-500" title={`Applied: ${appliedJobTitles}`}>
+                      <CheckCircle size={11} /> Already Applied
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => { setInviteModal({ candidate: cand }); setSelectedJobId(recruiterJobs[0]?.id || ''); }}
+                      className={`cursor-pointer flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${alreadyInvited ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                      {alreadyInvited ? <><CheckCircle size={11} /> Invited</> : <><Send size={11} /> Invite to Apply</>}
+                    </button>
+                  )}
                 </div>
               </div>
             );
