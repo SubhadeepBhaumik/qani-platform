@@ -106,9 +106,8 @@ export const CandidatesDirectory: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {displayList.map(cand => {
             const alreadyInvited = invited.some(i => i.startsWith(cand.id));
-                    const alreadyApplied = applications.some(a => a.candidateId === cand.id);
-                    const appliedJobTitles = applications.filter(a => a.candidateId === cand.id).map(a => a.jobTitle || a.roleId).join(", ");
-                    const appliedJobTitles = applications.filter(a => a.candidateId === cand.id).map(a => a.jobTitle || a.roleId).join(", ");
+            const alreadyApplied = applications.some(a => a.candidateId === cand.id);
+            const appliedJobTitles = applications.filter(a => a.candidateId === cand.id).map(a => a.jobTitle || a.roleId).join(", ");
             return (
               <div key={cand.id} className="bg-white border border-gray-200 hover:border-blue-400 rounded-xl p-5 space-y-4 shadow-sm flex flex-col justify-between transition">
                 <div className="space-y-3">
