@@ -1306,26 +1306,101 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       )}
 
       {/* 9. RECRUITER SETTINGS */}
-      {subView === 'settings' && (
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Organization Setup Configurations</h2>
-            <p className="text-xs text-gray-500">Configure global metadata representing your workspace and corporate profiles.</p>
-          </div>
-
-          <div className="bg-white border rounded-xl p-6 sm:p-8 space-y-6 shadow-sm max-w-2xl">
-            <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Acme Corp Setup</h3>
-            
-            <div className="space-y-4 text-xs">
-              <p><strong>Primary Employer Handle:</strong> {user.companyName}</p>
-              <p><strong>Recruiter email handles:</strong> {user.email}</p>
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-150 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-blue-600 shrink-0" />
-                <span>To adjust global database tenants or reset billing cards, contact Acme Support handles directly.</span>
-              </div>
+      {subView === 'settings' && (() => {
+        const [settingsTab, setSettingsTab] = React.useState<'profile'|'email'|'phone'>('profile');
+        const [newEmail, setNewEmail] = React.useState('');
+        const [newPhone, setNewPhone] = React.useState('');
+        const [otpSent, setOtpSent] = React.useState(false);
+        const [otpValue, setOtpValue] = React.useState('');
+        const [otpVerified, setOtpVerified] = React.useState(false);
+        const [sending, setSending] = React.useState(false);
+        const DEMO_OTP = '123456';
+        const sendOTP = async (target: string) => {
+          if (!target) { showToast('Please enter a value first.', 'error'); return; }
+          setSending(true);
+          await new Promise(r => setTimeout(r, 1000));
+          setOtpSent(true); setSending(false);
+          showToast(`OTP sent to ${target}. Demo OTP: 123456`, 'success');
+        };
+        const verifyOTP = () => {
+          if (otpValue === DEMO_OTP) { setOtpVerified(true); showToast('OTP verified!', 'success'); }
+          else showToast('Invalid OTP. Use 123456 for demo.', 'error');
+        };
+        const saveChange = (type: 'email'|'phone') => {
+          showToast(`${type === 'email' ? 'Email' : 'Phone'} updated successfully.`, 'success');
+          setOtpSent(false); setOtpValue(''); setOtpVerified(false); setNewEmail(''); setNewPhone(''); setSettingsTab('profile');
+        };
+        return (
+          <div className="space-y-6 max-w-2xl">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900">Account Settings</h2>
+              <p className="text-xs text-gray-500">Manage your profile, email and phone number.</p>
             </div>
+            <div className="flex gap-2 border-b border-gray-200">
+              {([['profile','Profile'],['email','Change Email'],['phone','Change Phone']] as const).map(([id,label]) => (
+                <button key={id} onClick={() => { setSettingsTab(id); setOtpSent(false); setOtpVerified(false); setOtpValue(''); }}
+                  className={`cursor-pointer px-4 py-2 text-xs font-semibold border-b-2 transition -mb-px ${settingsTab===id?'border-blue-600 text-blue-600':'border-transparent text-gray-500 hover:text-gray-800'}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {settingsTab === 'profile' && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900">Profile Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {[['First Name', user.firstName],['Last Name', user.lastName],['Email', user.email],['Company', user.companyName||'—'],['Role', user.role]].map(([label, val]) => (
+                    <div key={label}>
+                      <label className="text-xs text-gray-500 font-medium block mb-1">{label}</label>
+                      <div className="h-9 bg-gray-50 border border-gray-200 rounded-lg px-3 flex items-center text-xs text-gray-800 capitalize">{val}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setSettingsTab('email')} className="cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">Change Email</button>
+                  <button onClick={() => setSettingsTab('phone')} className="cursor-pointer text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold">Change Phone</button>
+                </div>
+              </div>
+            )}
+            {(settingsTab === 'email' || settingsTab === 'phone') && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-900">{settingsTab === 'email' ? 'Change Email Address' : 'Change Phone Number'}</h3>
+                {settingsTab === 'email' && <p className="text-xs text-gray-500">Current: <strong>{user.email}</strong></p>}
+                <div>
+                  <label className="text-xs font-medium text-gray-700 block mb-1">{settingsTab === 'email' ? 'New Email Address' : 'New Phone Number'}</label>
+                  <input value={settingsTab === 'email' ? newEmail : newPhone}
+                    onChange={e => { settingsTab === 'email' ? setNewEmail(e.target.value) : setNewPhone(e.target.value); setOtpSent(false); setOtpVerified(false); }}
+                    placeholder={settingsTab === 'email' ? 'new@email.com' : '+61 4XX XXX XXX'}
+                    type={settingsTab === 'email' ? 'email' : 'tel'}
+                    className="w-full h-9 bg-gray-50 border border-gray-200 rounded-lg px-3 text-xs focus:outline-none focus:border-blue-500" />
+                </div>
+                {!otpSent && (
+                  <button onClick={() => sendOTP(settingsTab === 'email' ? newEmail : newPhone)} disabled={sending || !(settingsTab === 'email' ? newEmail : newPhone)}
+                    className="cursor-pointer h-9 px-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-lg">
+                    {sending ? 'Sending...' : `Send OTP via ${settingsTab === 'email' ? 'Email' : 'SMS'}`}
+                  </button>
+                )}
+                {otpSent && !otpVerified && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">OTP sent. <span className="text-gray-500">(Demo: 123456)</span></div>
+                    <div className="flex gap-2">
+                      <input value={otpValue} onChange={e => setOtpValue(e.target.value)} placeholder="123456" maxLength={6}
+                        className="w-32 h-9 bg-gray-50 border border-gray-200 rounded-lg px-3 text-xs text-center font-mono tracking-widest focus:outline-none focus:border-blue-500" />
+                      <button onClick={verifyOTP} className="cursor-pointer h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">Verify OTP</button>
+                      <button onClick={() => sendOTP(settingsTab === 'email' ? newEmail : newPhone)} className="cursor-pointer h-9 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded-lg">Resend</button>
+                    </div>
+                  </div>
+                )}
+                {otpVerified && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">✅ OTP verified. Confirm to save.</div>
+                    <button onClick={() => saveChange(settingsTab)} className="cursor-pointer h-9 px-5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">Confirm Change</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+        );
+      })()}
       )}
 
     </div>
