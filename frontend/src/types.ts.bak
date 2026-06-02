@@ -67,27 +67,11 @@ export interface RecruiterNote {
 
 export interface Application {
   id: string;
+  jobId: string;
   candidateId: string;
-  candidateName?: string;
-  candidateEmail?: string;
-  roleId?: string;
-  jobId?: string;
-  jobTitle?: string;
-  company?: string;
-  status: 'applied' | 'screening' | 'progress' | 'qualified' | 'review' | 'rejected' | 'hired' | 'withdrawn';
-  appliedAt?: string;
-  appliedDate?: string;
-  screeningStartedAt?: string;
-  screeningCompletedAt?: string;
-  aiScore?: number;
-  score?: number;
-  scoreBreakdown?: {
-    workRights: number;
-    salaryAlignment: number;
-    locationMatch: number;
-    technicalSkills: number;
-    qualifications: number;
-  };
+  status: 'applied' | 'screening' | 'qualified' | 'review' | 'rejected' | 'withdrawn';
+  score?: number; // overall score (0-100)
+  appliedDate: string;
   scorecard?: {
     locationScore: number;
     salaryScore: number;
@@ -95,10 +79,8 @@ export interface Application {
     workRightsScore: number;
     skillsScore: number;
   };
-  transcript?: { role: 'ai' | 'candidate'; message: string; timestamp: string }[];
   aiFeedback?: string;
-  recruiterNotes?: string;
-  notes?: any[];
+  notes?: RecruiterNote[];
   screeningSessionId?: string;
 }
 

@@ -79,8 +79,8 @@ const UserModal: React.FC<{ user: any; onClose: () => void; onSave: (u: any) => 
   const [form, setForm] = useState({ ...user });
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="cursor-pointer fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="cursor-pointer bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg">
@@ -404,8 +404,8 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
 
       {/* Application Detail Modal */}
       {selectedApp && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedApp(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="cursor-pointer fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedApp(null)}>
+          <div className="cursor-pointer bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-gray-900 text-lg">{selectedApp.candidate}</h3>
@@ -521,8 +521,8 @@ Question 1: Describe your most relevant experience for this role.` },
 
       {/* Invoice Modal */}
       {selectedInvoice && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="cursor-pointer fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedInvoice(null)}>
+          <div className="cursor-pointer bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             {/* Invoice Header with QANI branding */}
             <div className="bg-gray-950 rounded-t-2xl p-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -770,7 +770,7 @@ Question 1: Describe your most relevant experience for this role.` },
                         <td className="p-4"><StatusBadge status={u.role} /></td>
                         <td className="p-4 text-gray-500">{u.location}</td>
                         <td className="p-4"><StatusBadge status={u.status} /></td>
-                        <td className="p-4" onClick={e => e.stopPropagation()}>
+                        <td className="cursor-pointer p-4" onClick={e => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
                             <button onClick={() => setSelectedUser(u)} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View & Edit">
                               <Eye className="w-3.5 h-3.5" />

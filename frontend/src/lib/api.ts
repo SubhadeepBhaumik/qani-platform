@@ -159,8 +159,8 @@ export const api = {
     notesCont?: { recruiterName: string; content: string }
   ): Promise<void> => {
     const body: any = { status };
-    if (notesCont) body.notes = notesCont;
-    await call(`/applications/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (notesCont) body.recruiterNotes = notesCont.content;
+    await call(`/applications/${id}/status`, { method: 'PUT', body: JSON.stringify(body) });
   },
 
   // ── SCREENING ─────────────────────────────────────────────
