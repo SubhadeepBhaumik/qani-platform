@@ -58,6 +58,14 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [skills, setSkills] = useState<string[]>(user?.skills || []);
   const [newSkill, setNewSkill] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [linkedIn, setLinkedIn] = useState((user as any)?.linkedIn || '');
+  const [workRights, setWorkRights] = useState((user as any)?.workRights || '');
+  const [salaryExpectation, setSalaryExpectation] = useState((user as any)?.salaryExpectation || '');
+  const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
+  const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
+  const [cvUploading, setCvUploading] = useState(false);
+  const [github, setGithub] = useState((user as any)?.github || '');
+  const [avatarUrl, setAvatarUrl] = useState((user as any)?.avatarUrl || '');
 
   // Screening active chat states
   const [userAnswer, setUserAnswer] = useState('');
@@ -84,12 +92,19 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <h2 className="text-2xl font-bold tracking-tight text-gray-900">Welcome back, {user.firstName}!</h2>
               <p className="text-xs text-gray-500">Monitor active evaluations and AI conversational screens.</p>
             </div>
-            <button 
-              onClick={() => navigate('candidate-jobs')}
-              className="text-xs font-semibold py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-            >
-              Explore Open Jobs
-            </button>
+            <div className="flex items-center gap-3">
+              {(user as any).avatarUrl ? (
+                <img src={(user as any).avatarUrl} className="w-10 h-10 rounded-full object-cover border border-gray-200" alt="avatar" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                  {user.firstName?.[0]}{user.lastName?.[0]}
+                </div>
+              )}
+              <button onClick={() => navigate('candidate-jobs')}
+                className="text-xs font-semibold py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition cursor-pointer">
+                Explore Open Jobs
+              </button>
+            </div>
           </div>
 
           {/* Quick counters grid */}
@@ -787,54 +802,52 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
       })()}
 
       {/* 6. CANDIDATE PROFILE */}
-      {subView === 'profile' && (
+      {subView === 'profile' && (() => {
+        const profileFields = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
+        const filled = profileFields.filter(Boolean).length;
+        const completionPct = Math.round(((filled + (skills.length > 0 ? 1 : 0)) / (profileFields.length + 1)) * 100);
+        return (
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-gray-900">My Candidate Profile</h2>
-            <p className="text-xs text-gray-500">Edit skills criteria, experience files, and resume parameters.</p>
+            <p className="text-xs text-gray-500">Complete your profile to improve your chances with recruiters.</p>
           </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* profile parameters left */}
             <div className="lg:col-span-8 bg-white border border-gray-200 rounded-xl p-6 sm:p-8 space-y-6 shadow-sm">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Candidate Coordinates</h3>
-                <button 
-                  onClick={() => {
-                    if (isEditingProfile) {
-                      // Save modifications
-                      const updated = {
-                        ...user,
-                        firstName,
-                        lastName,
-                        bio,
-                        phone,
-                        location,
-                        skills
-                      };
-                      saveUser(updated);
-                      showToast('Profile coordinates updated successfully.', 'success');
-                    }
-                    setIsEditingProfile(!isEditingProfile);
-                  }}
-                  className="text-xs font-semibold py-1.5 px-4 bg-gray-900 text-white rounded hover:bg-gray-800 transition"
-                >
-                  {isEditingProfile ? 'Save Changes' : 'Edit Coordinates'}
+                <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Personal Details</h3>
+                <button onClick={() => {
+                  if (isEditingProfile) {
+                    if (linkedIn && !linkedIn.includes('linkedin.com')) { showToast('LinkedIn URL must be from linkedin.com', 'error'); return; }
+                    if (github && !github.includes('github.com')) { showToast('GitHub URL must be from github.com', 'error'); return; }
+                    if (phone && !/^[+\d\s\-()]{8,15}$/.test(phone)) { showToast('Please enter a valid phone number', 'error'); return; }
+                    const updated = { ...user, firstName, lastName, bio, phone, location, skills, linkedIn, github, workRights, salaryExpectation, availableFrom, resumeName: cvFileName };
+                    saveUser(updated as any);
+                    showToast('Profile saved successfully.', 'success');
+                  }
+                  setIsEditingProfile(!isEditingProfile);
+                }} className="text-xs font-semibold py-1.5 px-4 bg-gray-900 text-white rounded hover:bg-gray-800 transition cursor-pointer">
+                  {isEditingProfile ? 'Save Changes' : 'Edit Profile'}
                 </button>
               </div>
 
               {!isEditingProfile ? (
-                <div className="space-y-4 text-xs">
+                <div className="space-y-3 text-xs">
                   <div className="grid grid-cols-2 gap-4">
-                    <p><strong>First Name:</strong> {firstName}</p>
-                    <p><strong>Last Name:</strong> {lastName}</p>
+                    <p><strong>First Name:</strong> {firstName || '—'}</p>
+                    <p><strong>Last Name:</strong> {lastName || '—'}</p>
                   </div>
-                  <p><strong>Primary Handle (Email):</strong> {user.email}</p>
-                  <p><strong>Location Coordinates:</strong> {location || 'Not Specified'}</p>
-                  <p><strong>Mobile Suffix:</strong> {phone || 'Not Specified'}</p>
-                  <div className="space-y-1">
-                    <strong>Professional Summary:</strong>
-                    <p className="text-gray-600 leading-relaxed">{bio || 'No bio specified. Edit Coordinates to describe your experience.'}</p>
+                  <p><strong>Email:</strong> {user.email}</p>
+                  <p><strong>Phone:</strong> {phone || '—'}</p>
+                  <p><strong>Location:</strong> {location || '—'}</p>
+                  <p><strong>LinkedIn:</strong> {linkedIn ? <a href={linkedIn} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{linkedIn}</a> : '—'}</p>
+                  <p><strong>GitHub:</strong> {github ? <a href={github} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{github}</a> : '—'}</p>
+                  <p><strong>Work Rights:</strong> {workRights || '—'}</p>
+                  <p><strong>Salary Expectation:</strong> {salaryExpectation ? `$${salaryExpectation}` : '—'}</p>
+                  <p><strong>Available From:</strong> {availableFrom || '—'}</p>
+                  <div className="space-y-1 pt-1">
+                    <strong>Bio:</strong>
+                    <p className="text-gray-600 leading-relaxed">{bio || 'No bio yet. Click Edit Profile to add one.'}</p>
                   </div>
                 </div>
               ) : (
@@ -849,100 +862,159 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded" />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500">Bio</label>
-                    <textarea value={bio} rows={3} onChange={(e) => setBio(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded resize-none" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">Phone</label>
+                      <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. +61 4XX XXX XXX"
+                        className={`w-full text-xs p-2.5 bg-gray-50 border rounded ${phone && !/^[+\d\s\-()]{8,15}$/.test(phone) ? 'border-red-400' : 'border-gray-300'}`} />
+                      {phone && !/^[+\d\s\-()]{8,15}$/.test(phone) && <p className="text-[10px] text-red-500">Enter a valid phone number</p>}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">Location (City, State)</label>
+                      <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Sydney, NSW" className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded" />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-500">Location</label>
-                      <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded" />
+                      <label className="text-xs text-gray-500">LinkedIn URL</label>
+                      <input type="url" value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} placeholder="https://linkedin.com/in/yourname"
+                        className={`w-full text-xs p-2.5 bg-gray-50 border rounded ${linkedIn && !linkedIn.includes('linkedin.com') ? 'border-red-400' : 'border-gray-300'}`} />
+                      {linkedIn && !linkedIn.includes('linkedin.com') && <p className="text-[10px] text-red-500">Must be a linkedin.com URL</p>}
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-500">Phone</label>
-                      <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded" />
+                      <label className="text-xs text-gray-500">GitHub URL</label>
+                      <input type="url" value={github} onChange={(e) => setGithub(e.target.value)} placeholder="https://github.com/yourname"
+                        className={`w-full text-xs p-2.5 bg-gray-50 border rounded ${github && !github.includes('github.com') ? 'border-red-400' : 'border-gray-300'}`} />
+                      {github && !github.includes('github.com') && <p className="text-[10px] text-red-500">Must be a github.com URL</p>}
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">Work Rights / Visa Status</label>
+                      <select value={workRights} onChange={(e) => setWorkRights(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded cursor-pointer">
+                        <option value="">Select...</option>
+                        <option value="Australian Citizen">Australian Citizen</option>
+                        <option value="Permanent Resident">Permanent Resident</option>
+                        <option value="Working Holiday Visa">Working Holiday Visa</option>
+                        <option value="Student Visa">Student Visa</option>
+                        <option value="Sponsored (457/482)">Sponsored (457/482)</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">Salary Expectation (AUD/year)</label>
+                      <input type="number" value={salaryExpectation} onChange={(e) => setSalaryExpectation(e.target.value)} placeholder="e.g. 120000" className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">Available From</label>
+                    <input type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded cursor-pointer" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500">Bio / Professional Summary</label>
+                    <textarea value={bio} rows={4} onChange={(e) => setBio(e.target.value)} placeholder="Describe your experience and what you are looking for..." className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded resize-none" />
                   </div>
                 </div>
               )}
 
-              {/* Skills Tab editing */}
+              {/* Skills */}
               <div className="space-y-3 pt-6 border-t border-gray-100">
-                <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Skills Framework</h3>
+                <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Skills</h3>
                 {isEditingProfile && (
                   <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="e.g. React" 
-                      value={newSkill} 
-                      onChange={(e) => setNewSkill(e.target.value)} 
-                      className="text-xs p-2 bg-gray-50 border rounded flex-1"
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        if (newSkill && !skills.includes(newSkill)) {
-                          setSkills([...skills, newSkill]);
-                          setNewSkill('');
-                        }
-                      }} 
-                      className="px-4 py-2 bg-gray-900 text-white rounded text-xs"
-                    >
-                      Add
-                    </button>
+                    <input type="text" placeholder="e.g. React" value={newSkill} onChange={(e) => setNewSkill(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && newSkill && !skills.includes(newSkill)) { setSkills([...skills, newSkill]); setNewSkill(''); } }}
+                      className="text-xs p-2 bg-gray-50 border rounded flex-1" />
+                    <button type="button" onClick={() => { if (newSkill && !skills.includes(newSkill)) { setSkills([...skills, newSkill]); setNewSkill(''); } }}
+                      className="px-4 py-2 bg-gray-900 text-white rounded text-xs cursor-pointer">Add</button>
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {skills.map(skill => (
                     <span key={skill} className="text-xs bg-blue-50 border border-blue-200 text-blue-700 py-1 px-3 rounded-full flex items-center gap-1.5">
                       <span>{skill}</span>
-                      {isEditingProfile && (
-                        <button onClick={() => setSkills(skills.filter(s => s !== skill))} className="text-blue-500 hover:text-blue-700 font-bold">×</button>
-                      )}
+                      {isEditingProfile && <button onClick={() => setSkills(skills.filter(s => s !== skill))} className="text-blue-500 hover:text-red-500 font-bold cursor-pointer">×</button>}
                     </span>
                   ))}
-                  {skills.length === 0 && <span className="text-gray-400 text-xs italic">No skills specified on profile.</span>}
+                  {skills.length === 0 && <span className="text-gray-400 text-xs italic">No skills added yet.</span>}
                 </div>
               </div>
 
-              {/* Resume controls */}
+              {/* CV Upload */}
               <div className="space-y-3 pt-6 border-t border-gray-100">
-                <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Candidate CV Files</h3>
-                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <FileCheck className="w-5 h-5 text-blue-600" />
-                    <span>{user.resumeName || 'steve_resume.pdf'} (Singapore Region file)</span>
+                <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Resume / CV</h3>
+                {cvFileName ? (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <FileCheck className="w-5 h-5 text-green-600" />
+                      <span className="font-medium text-gray-800">{cvFileName}</span>
+                    </div>
+                    <button onClick={() => setCvFileName('')} className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer">Remove</button>
                   </div>
-                  <a href="#" className="flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800">
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
-                  </a>
-                </div>
+                ) : (
+                  <label className="block p-6 bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-xl text-center cursor-pointer transition">
+                    <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { showToast('File too large. Max 5MB.', 'error'); return; }
+                      setCvUploading(true);
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setCvFileName(file.name);
+                        setCvUploading(false);
+                        showToast('CV uploaded successfully.', 'success');
+                      };
+                      reader.readAsDataURL(file);
+                    }} />
+                    {cvUploading ? (
+                      <span className="text-xs text-blue-600">Uploading...</span>
+                    ) : (
+                      <>
+                        <Download className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                        <span className="text-xs text-gray-500">Click to upload PDF or Word document (max 5MB)</span>
+                      </>
+                    )}
+                  </label>
+                )}
               </div>
             </div>
 
-            {/* right visual matching completed summary */}
+            {/* Profile completion sidebar */}
             <div className="lg:col-span-4 bg-white border border-gray-200 rounded-xl p-6 h-fit space-y-4 shadow-sm">
-              <h4 className="text-xs font-bold text-gray-950 uppercase tracking-widest">Profile Integrity</h4>
+              <h4 className="text-xs font-bold text-gray-950 uppercase tracking-widest">Profile Completion</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-gray-700">
-                  <span>Completed Indices:</span>
-                  <span className="text-blue-600">80%</span>
+                  <span>Completed:</span>
+                  <span className={completionPct >= 80 ? 'text-green-600' : completionPct >= 50 ? 'text-yellow-600' : 'text-red-500'}>{completionPct}%</span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600" style={{ width: '80%' }} />
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`h-full transition-all duration-500 ${completionPct >= 80 ? 'bg-green-500' : completionPct >= 50 ? 'bg-yellow-500' : 'bg-red-400'}`} style={{ width: `${completionPct}%` }} />
                 </div>
               </div>
-              <ul className="text-[11px] text-gray-600 space-y-1 pt-2">
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500" /> Bio written</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500" /> Skills categorized</li>
-                <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500" /> CV registered</li>
-                <li className="flex items-center gap-1.5 text-orange-400"><AlertTriangle className="w-3.5 h-3.5" /> Verify github links</li>
+              <ul className="text-[11px] text-gray-600 space-y-2 pt-2">
+                {[
+                  { label: 'Bio written', done: !!bio },
+                  { label: 'Skills added', done: skills.length > 0 },
+                  { label: 'CV uploaded', done: !!cvFileName },
+                  { label: 'LinkedIn added', done: !!linkedIn },
+                  { label: 'GitHub added', done: !!github },
+                  { label: 'Work rights set', done: !!workRights },
+                  { label: 'Salary expectation set', done: !!salaryExpectation },
+                  { label: 'Availability set', done: !!availableFrom },
+                  { label: 'Phone number added', done: !!phone },
+                  { label: 'Location set', done: !!location },
+                ].map(item => (
+                  <li key={item.label} className={`flex items-center gap-1.5 ${item.done ? 'text-gray-700' : 'text-orange-400'}`}>
+                    {item.done ? <Check className="w-3.5 h-3.5 text-green-500 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
+                    {item.label}
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* 7. CANDIDATE SETTINGS */}
       {subView === 'settings' && (
