@@ -258,7 +258,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   ]);
   const [newQuestionText, setNewQuestionText] = useState('');
   const [mandatoryQuestions, setMandatoryQuestions] = useState({
-    driversLicence: false,
+    driversLicence: true,
     locationCommute: true,
     workRights: true,
     salaryExpectation: true,

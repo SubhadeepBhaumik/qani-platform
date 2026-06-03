@@ -203,21 +203,30 @@ export class ScreeningController {
 
       try {
         const openaiScorer = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const job = session.jobData || {};
+        const salaryMin = job.salaryMin || 0;
+        const salaryMax = job.salaryMax || 0;
+        const salaryRange = salaryMin > 0 ? '$' + (salaryMin/1000).toFixed(0) + 'k-$' + (salaryMax/1000).toFixed(0) + 'k AUD' : 'not specified';
+        const requirements = (job.requirementsMust || []).join(', ') || 'not specified';
+        const jobLocation = job.location || 'not specified';
         const promptLines = [
-          'You are a strict recruitment AI scoring a job interview.',
-          'Score the CANDIDATE honestly based on quality of their answers.',
+          'You are an expert recruitment AI scoring a job interview for: ' + (job.title || 'a role') + '.',
+          'Job location: ' + jobLocation + '. Salary budget: ' + salaryRange + '. Key requirements: ' + requirements,
           '',
           'INTERVIEW TRANSCRIPT:',
           transcript,
           '',
-          'SCORING RULES:',
-          '- One-word or meaningless answers = 15-30 per dimension',
-          '- Partial answers with some detail = 40-60 per dimension',
-          '- Clear detailed professional answers = 65-85 per dimension',
-          '- No answers at all = 5-15 per dimension',
+          'SCORING RULES (be strict and realistic):',
+          '- locationScore: confirmed correct location or relocate = 75-90. Wrong location = 20-40.',
+          '- workRightsScore: confirmed valid work rights = 80-95. Unclear = 40-60. No rights = 10-20.',
+          '- salaryScore: salary budget is ' + salaryRange + '. If candidate salary is MORE than 2x the max budget = 10-20. Within 30% above budget = 50-65. Within budget = 75-90.',
+          '- qualificationsScore: vague generic answers = 30-50. Specific with examples = 60-75. Exceptional with metrics and outcomes = 80-90.',
+          '- skillsScore: no evidence of required skills = 20-35. Some evidence = 45-65. Strong specific evidence = 70-85.',
+          '- overallScore: weighted average of all 5. If salary is more than 2x the budget cap overall at 45 maximum.',
+          '- recommendation: qualified if overall>=70, review if 45-69, rejected if <45.',
           '',
           'Return ONLY this JSON no markdown:',
-          '{"locationScore":0,"salaryScore":0,"qualificationsScore":0,"workRightsScore":0,"skillsScore":0,"overallScore":0,"recommendation":"review","feedback":"one sentence"}'
+          '{"locationScore":0,"salaryScore":0,"qualificationsScore":0,"workRightsScore":0,"skillsScore":0,"overallScore":0,"recommendation":"review","feedback":"2 sentences honest assessment"}'
         ];
         const comp = await openaiScorer.chat.completions.create({
           model: 'gpt-4o-mini',
