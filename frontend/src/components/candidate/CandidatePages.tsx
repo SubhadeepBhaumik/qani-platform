@@ -64,6 +64,9 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
   const [cvUploading, setCvUploading] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(true);
+  const [notifyScreening, setNotifyScreening] = useState(true);
+  const [notifyJobs, setNotifyJobs] = useState(true);
   const [github, setGithub] = useState((user as any)?.github || '');
   const [avatarUrl, setAvatarUrl] = useState((user as any)?.avatarUrl || '');
 
@@ -114,15 +117,15 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <p className="text-2xl font-extrabold text-gray-950">{applications.filter(a => a.candidateId === user.id).length}</p>
             </div>
             <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-2">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Under Screening</span>
-              <p className="text-2xl font-extrabold text-blue-600">{applications.filter(a => a.candidateId === user.id && a.status === 'screening').length}</p>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Screenings Completed</span>
+              <p className="text-2xl font-extrabold text-blue-600">{applications.filter(a => a.candidateId === user.id && (a.status === 'qualified' || a.status === 'review' || a.status === 'rejected')).length}</p>
             </div>
             <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-2">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qualified Status</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qualified</span>
               <p className="text-2xl font-extrabold text-green-600">{applications.filter(a => a.candidateId === user.id && a.status === 'qualified').length}</p>
             </div>
             <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-2">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">System Notifications</span>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Unread Notifications</span>
               <p className="text-2xl font-extrabold text-gray-800">{notifications.filter(n => n.status === 'unread').length}</p>
             </div>
           </div>
@@ -1090,60 +1093,70 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-gray-900">Portal Settings</h2>
-            <p className="text-xs text-gray-500">Edit notification frequencies and modify credential configurations.</p>
+            <p className="text-xs text-gray-500">Manage your account, privacy and notification preferences.</p>
           </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8 space-y-6 shadow-sm max-w-2xl">
-            <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Account Configurations</h3>
-            
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Account</h3>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-700 block">Primary Communication Handle</label>
+                <label className="text-xs font-semibold text-gray-700 block">Email Address</label>
                 <input type="text" disabled value={user.email} className="w-full text-xs p-2.5 bg-gray-100 text-gray-500 border rounded cursor-not-allowed" />
+                <p className="text-[10px] text-gray-400">To change email, contact support (OTP verification coming soon)</p>
               </div>
-
-              {/* Password simulation widget */}
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
-                <span className="text-xs font-bold text-gray-800">Update Account Password</span>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500">Current Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full p-2 border rounded text-xs" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-gray-500">New Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full p-2 border rounded text-xs" />
-                  </div>
+              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+                <span className="text-xs font-bold text-gray-800 block">Change Password</span>
+                <div className="space-y-2">
+                  <input type="password" placeholder="Current password" className="w-full p-2 border rounded text-xs" />
+                  <input type="password" placeholder="New password" className="w-full p-2 border rounded text-xs" />
+                  <input type="password" placeholder="Confirm new password" className="w-full p-2 border rounded text-xs" />
                 </div>
-                <button 
-                  type="button" 
-                  onClick={() => showToast('Password configuration parsed.', 'success')}
-                  className="px-3 py-1.5 bg-gray-950 hover:bg-gray-900 text-white rounded text-[11px] font-semibold"
-                >
-                  Save Password
+                <button type="button" onClick={() => showToast('Password change coming soon — OTP verification required.', 'info')}
+                  className="px-3 py-1.5 bg-gray-950 hover:bg-gray-900 text-white rounded text-[11px] font-semibold cursor-pointer">
+                  Update Password
                 </button>
               </div>
-
-              {/* Notification Toggles */}
-              <div className="space-y-3 pt-4 border-t border-gray-100">
-                <span className="text-xs font-bold text-gray-800 block">Notification Presets</span>
-                <div className="space-y-2 text-xs text-gray-600">
-                  <label className="flex items-center">
-                    <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 mr-2" />
-                    <span>Notify immediately upon finished AI assessment scoring.</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 mr-2" />
-                    <span>Receive recommended weekly job postings matching profile coordinates.</span>
-                  </label>
-                </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Privacy</h3>
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
+                  <input type="checkbox" checked={profileVisible} onChange={(e) => { setProfileVisible(e.target.checked); showToast(e.target.checked ? 'Profile visible to recruiters.' : 'Profile hidden from recruiters.', 'success'); }} className="mt-0.5 cursor-pointer" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">Show profile to recruiters</p>
+                    <p className="text-[10px] text-gray-500">Recruiters can find and view your profile in the candidate directory.</p>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer opacity-60">
+                  <input type="checkbox" checked={true} disabled className="mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500">AI screening data used for matching</p>
+                    <p className="text-[10px] text-gray-400">Required for platform functionality — cannot be disabled.</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Notification Preferences</h3>
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
+                  <input type="checkbox" checked={notifyScreening} onChange={(e) => { setNotifyScreening(e.target.checked); showToast('Preference saved.', 'success'); }} className="mt-0.5 cursor-pointer" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">AI screening results</p>
+                    <p className="text-[10px] text-gray-500">Notify when your screening score is ready.</p>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
+                  <input type="checkbox" checked={notifyJobs} onChange={(e) => { setNotifyJobs(e.target.checked); showToast('Preference saved.', 'success'); }} className="mt-0.5 cursor-pointer" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">New job recommendations</p>
+                    <p className="text-[10px] text-gray-500">Weekly digest of jobs matching your profile.</p>
+                  </div>
+                </label>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* 8. CANDIDATE NOTIFICATIONS */}
       {subView === 'notifications' && (
         <div className="space-y-6">
           <div>
