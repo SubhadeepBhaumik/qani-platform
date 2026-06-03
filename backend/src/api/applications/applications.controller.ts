@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import { pushNotification } from '../notifications/notifications.controller';
+import { roles } from '../roles/roles.controller';
 
 interface Application {
   id: string;
@@ -182,6 +184,28 @@ export class ApplicationsController {
         recruiterNotes: '',
       };
       applications.push(application);
+
+      // Notify candidate that application was received
+      try {
+        const job = roles.find((r: any) => r.id === roleId);
+        pushNotification(
+          candidateId, candidateEmail || '',
+          'new_application',
+          'Application Received — ' + (jobTitle || 'Position'),
+          'Your application for ' + (jobTitle || 'the position') + ' has been received. AI screening will begin shortly.',
+          roleId, application.id
+        );
+        // Notify recruiter of new application
+        const recruiterEmail = job?.recruiterId || 'recruiter@qani.io';
+        pushNotification(
+          'recruiter-' + recruiterEmail, recruiterEmail,
+          'new_application',
+          'New Application — ' + (jobTitle || 'Position'),
+          (candidateName || 'A candidate') + ' has applied for ' + (jobTitle || 'the position') + '.',
+          roleId, application.id
+        );
+      } catch(e) {}
+
       return res.status(201).json(application);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to create application' });

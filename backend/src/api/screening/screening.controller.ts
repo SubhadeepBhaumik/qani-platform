@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { OpenAI } from 'openai';
 import { ApplicationsController, applications } from '../applications/applications.controller';
+import { pushNotification } from '../notifications/notifications.controller';
 import { roles } from '../roles/roles.controller';
 
 interface ScreeningSession {
@@ -263,6 +264,34 @@ export class ScreeningController {
           status: recommendation, screeningSessionId: session.id,
           screeningCompletedAt: new Date().toISOString(),
         });
+
+        // Notify candidate
+        const app = applications.find((a: any) => a.id === session.applicationId);
+        if (app) {
+          const job = roles.find((r: any) => r.id === (app.roleId || (app as any).jobId));
+          const jobTitle = job?.title || 'the position';
+          const candidateEmail = app.candidateEmail || '';
+          const candidateId = app.candidateId || '';
+
+          pushNotification(
+            candidateId, candidateEmail,
+            'screening_complete',
+            'AI Screening Complete — ' + jobTitle,
+            'Your AI screening for ' + jobTitle + ' is complete. Score: ' + Math.round(overallScore) + '%. Status: ' + recommendation.charAt(0).toUpperCase() + recommendation.slice(1) + '.',
+            job?.id, session.applicationId
+          );
+
+          // Notify recruiter
+          const recruiterEmail = job?.recruiterId || 'recruiter@qani.io';
+          const candidateName = (app as any).candidateName || 'A candidate';
+          pushNotification(
+            'recruiter-' + recruiterEmail, recruiterEmail,
+            'screening_complete',
+            'Screening Complete — ' + candidateName,
+            candidateName + ' completed AI screening for ' + jobTitle + '. Score: ' + Math.round(overallScore) + '%. Recommendation: ' + recommendation + '.',
+            job?.id, session.applicationId
+          );
+        }
       } catch(e) { console.error('App update error:', e); }
 
       return res.json({ ...session, scorecard, aiFeedback: feedback });

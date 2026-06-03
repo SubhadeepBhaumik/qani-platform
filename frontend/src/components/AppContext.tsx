@@ -239,7 +239,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       navigate('auth-login');
       return;
     }
-    const app = await api.applyForJob(jobId, user.id);
+    const job = jobs.find((j: any) => j.id === jobId);
+    const app = await api.applyForJob(jobId, user.id, user.firstName + ' ' + user.lastName, user.email, job?.title);
     await refreshStates();
     showToast('Applied! Screening queue unlocked.', 'success');
     navigate('candidate-app-detail', { applicationId: app.id });

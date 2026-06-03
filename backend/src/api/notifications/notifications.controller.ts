@@ -147,6 +147,22 @@ export const inAppNotifications: InAppNotification[] = [
   },
 ];
 
+export function pushNotification(recipientId: string, recipientEmail: string, type: InAppNotification['type'], title: string, message: string, relatedJobId?: string, relatedApplicationId?: string) {
+  const notif: InAppNotification = {
+    id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2,5),
+    recipientId,
+    recipientEmail,
+    type,
+    title,
+    message,
+    status: 'unread',
+    relatedJobId,
+    relatedApplicationId,
+    createdAt: new Date().toISOString(),
+  };
+  inAppNotifications.push(notif);
+}
+
 export class NotificationsController {
   static async sendNotification(req: Request, res: Response) {
     try {
