@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-const roles: any[] = [
+export const roles: any[] = [
   {
     id: 'job-1', organisationId: 'default', title: 'Senior Full Stack Developer',
     department: 'Engineering', category: 'Software Engineering',
@@ -20,6 +20,7 @@ const roles: any[] = [
       'What are your salary expectations and notice period?'
     ],
     qualificationWeights: { locationWeight: 80, salaryWeight: 90, qualificationsWeight: 85, workRightsWeight: 95, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-15',
   },
   {
@@ -41,6 +42,7 @@ const roles: any[] = [
       'What are your salary expectations?'
     ],
     qualificationWeights: { locationWeight: 70, salaryWeight: 85, qualificationsWeight: 80, workRightsWeight: 90, skillsWeight: 85 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-18',
   },
   {
@@ -62,6 +64,7 @@ const roles: any[] = [
       'Do you have full Australian work rights? Salary expectation?'
     ],
     qualificationWeights: { locationWeight: 85, salaryWeight: 80, qualificationsWeight: 80, workRightsWeight: 100, skillsWeight: 90 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-20',
   },
   {
@@ -83,6 +86,7 @@ const roles: any[] = [
       'What is your salary expectation and notice period?'
     ],
     qualificationWeights: { locationWeight: 60, salaryWeight: 80, qualificationsWeight: 75, workRightsWeight: 85, skillsWeight: 90 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-22',
   },
   {
@@ -104,6 +108,7 @@ const roles: any[] = [
       'Are you based in Melbourne? Salary expectation?'
     ],
     qualificationWeights: { locationWeight: 90, salaryWeight: 85, qualificationsWeight: 95, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-24',
   },
   // ── ATLASSIAN JOBS (Sarah Chen) ──
@@ -121,6 +126,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science or equivalent"],
     screeningQuestions: ['Describe your experience with distributed systems at scale.', 'How do you approach database optimisation for high-traffic systems?', 'What is your notice period and salary expectation?', 'Are you based in Sydney or willing to relocate?'],
     qualificationWeights: { locationWeight: 80, salaryWeight: 90, qualificationsWeight: 85, workRightsWeight: 95, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-20',
   },
   {
@@ -137,6 +143,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Engineering or Computer Science"],
     screeningQuestions: ['How do you balance technical debt with feature delivery?', 'Describe a time you turned around an underperforming team.', 'What is your management philosophy?', 'Salary expectation and notice period?'],
     qualificationWeights: { locationWeight: 75, salaryWeight: 85, qualificationsWeight: 90, workRightsWeight: 95, skillsWeight: 80 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-22',
   },
   {
@@ -153,6 +160,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Cybersecurity or related"],
     screeningQuestions: ['What is your approach to threat modelling?', 'Describe a critical vulnerability you discovered and how you handled it.', 'Are you an Australian citizen or permanent resident?', 'Salary expectation?'],
     qualificationWeights: { locationWeight: 70, salaryWeight: 85, qualificationsWeight: 90, workRightsWeight: 100, skillsWeight: 95 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-25',
   },
   {
@@ -169,6 +177,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science, Statistics or Engineering"],
     screeningQuestions: ['Describe a data pipeline you built from scratch.', 'How do you handle data quality issues in production?', 'What tools do you use for orchestration?', 'Salary expectation and location?'],
     qualificationWeights: { locationWeight: 80, salaryWeight: 88, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 95 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-26',
   },
   {
@@ -185,6 +194,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Engineering or Business"],
     screeningQuestions: ['How do you manage dependencies across multiple engineering teams?', 'Describe the largest program you have managed.', 'How do you handle scope creep?', 'Salary and availability?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 87, qualificationsWeight: 88, workRightsWeight: 90, skillsWeight: 82 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-27',
   },
   {
@@ -201,6 +211,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science or equivalent"],
     screeningQuestions: ['What is your approach to iOS app architecture?', 'How do you optimise app performance?', 'Describe a complex UI you implemented on iOS.', 'Salary and notice period?'],
     qualificationWeights: { locationWeight: 80, salaryWeight: 88, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-28',
   },
   {
@@ -217,6 +228,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in any field"],
     screeningQuestions: ['How do you handle a technical objection during a demo?', 'Describe a complex deal you helped close.', 'Are you based in Melbourne?', 'Salary expectation?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 85, qualificationsWeight: 80, workRightsWeight: 90, skillsWeight: 85 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-29',
   },
   // ── CANVA JOBS (James Morrison) ──
@@ -234,6 +246,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in CS or related"],
     screeningQuestions: ['How do you approach building accessible components?', 'Describe a design system you have built or maintained.', 'How do you handle breaking changes in a shared component library?', 'Salary and location?'],
     qualificationWeights: { locationWeight: 80, salaryWeight: 88, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-21',
   },
   {
@@ -250,6 +263,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Marketing, Business or related"],
     screeningQuestions: ['Describe a growth experiment that moved the needle significantly.', 'How do you prioritise growth initiatives?', 'What metrics do you focus on for user retention?', 'Salary expectation?'],
     qualificationWeights: { locationWeight: 80, salaryWeight: 85, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 88 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-23',
   },
   {
@@ -266,6 +280,7 @@ const roles: any[] = [
     educationRequired: ["Master's or PhD in ML, CS or related preferred"],
     screeningQuestions: ['Describe an LLM-powered feature you have shipped to production.', 'How do you evaluate generative AI quality at scale?', 'What is your experience with fine-tuning foundation models?', 'Salary expectation and notice period?'],
     qualificationWeights: { locationWeight: 75, salaryWeight: 85, qualificationsWeight: 95, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-24',
   },
   {
@@ -282,6 +297,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science or equivalent"],
     screeningQuestions: ['Describe a large-scale infrastructure migration you led.', 'How do you approach platform reliability?', 'What is your philosophy on infrastructure as code?', 'Salary and notice period?'],
     qualificationWeights: { locationWeight: 70, salaryWeight: 85, qualificationsWeight: 90, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-25',
   },
   {
@@ -298,6 +314,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Design, HCI or related"],
     screeningQuestions: ['Walk us through a product design project you are proud of.', 'How do you incorporate user research into your design process?', 'Describe how you handle design critique.', 'Salary and notice period?'],
     qualificationWeights: { locationWeight: 80, salaryWeight: 85, qualificationsWeight: 88, workRightsWeight: 90, skillsWeight: 95 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-26',
   },
   // ── SEEK JOBS (Emma Thompson) ──
@@ -315,6 +332,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science"],
     screeningQuestions: ['Describe your experience with Elasticsearch at scale.', 'How do you approach relevance tuning?', 'Tell us about a search feature you built end to end.', 'Salary and are you in Melbourne?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 88, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-20',
   },
   {
@@ -331,6 +349,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Business, Engineering or related"],
     screeningQuestions: ['How do you define and measure product success?', 'Describe a feature you killed and why.', 'How do you balance candidate needs vs employer needs in a marketplace?', 'Salary expectation?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 85, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 85 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-22',
   },
   {
@@ -347,6 +366,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Statistics, Mathematics or related"],
     screeningQuestions: ['Describe an insight you surfaced that changed a business decision.', 'How do you communicate data findings to non-technical stakeholders?', 'What SQL techniques do you use for complex analysis?', 'Salary and location?'],
     qualificationWeights: { locationWeight: 88, salaryWeight: 88, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 90 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-23',
   },
   {
@@ -363,6 +383,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science or equivalent"],
     screeningQuestions: ['How do you approach incident response?', 'Describe how you have improved reliability at a previous company.', 'What is your experience with SLOs?', 'Salary and notice period?'],
     qualificationWeights: { locationWeight: 70, salaryWeight: 88, qualificationsWeight: 88, workRightsWeight: 90, skillsWeight: 95 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-25',
   },
   {
@@ -379,6 +400,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Psychology, HCI or Design"],
     screeningQuestions: ['Walk us through a research project that significantly impacted product direction.', 'How do you recruit research participants?', 'How do you handle conflicting findings from qual and quant research?', 'Salary and location?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 85, qualificationsWeight: 88, workRightsWeight: 90, skillsWeight: 88 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-26',
   },
   {
@@ -395,6 +417,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Business or related"],
     screeningQuestions: ['How do you handle a high-risk churn situation with an enterprise client?', 'Describe your approach to quarterly business reviews.', 'Are you based in Sydney?', 'Salary expectation?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 85, qualificationsWeight: 82, workRightsWeight: 90, skillsWeight: 82 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-27',
   },
   {
@@ -411,6 +434,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Computer Science or equivalent"],
     screeningQuestions: ['Describe your experience with Jetpack Compose.', 'How do you approach app performance on low-end devices?', 'What is your testing strategy for Android apps?', 'Salary and are you in Melbourne?'],
     qualificationWeights: { locationWeight: 85, salaryWeight: 88, qualificationsWeight: 85, workRightsWeight: 90, skillsWeight: 100 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-28',
   },
   {
@@ -427,6 +451,7 @@ const roles: any[] = [
     educationRequired: ["Bachelor's in Finance or Accounting, CPA or CA required"],
     screeningQuestions: ['Describe a financial model you built that influenced a major decision.', 'How do you communicate financial insights to non-finance leaders?', 'Are you CPA or CA qualified?', 'Salary expectation and are you in Melbourne?'],
     qualificationWeights: { locationWeight: 88, salaryWeight: 87, qualificationsWeight: 95, workRightsWeight: 90, skillsWeight: 85 },
+    mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false },
     status: 'open', postedDate: '2026-05-29',
   },
 ];

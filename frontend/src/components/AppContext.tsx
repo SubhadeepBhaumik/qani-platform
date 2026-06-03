@@ -120,7 +120,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (savedUser) {
           setUser(savedUser);
           await refreshStates();
-          if (savedUser.role === 'candidate') setActiveView('candidate-dashboard');
+          // Check if there's a specific URL to navigate to
+          const currentPath = window.location.pathname;
+          const ROUTES: Record<string, string> = {
+            '/candidate/dashboard': 'candidate-dashboard',
+            '/candidate/jobs': 'candidate-jobs',
+            '/candidate/job': 'candidate-job-detail',
+            '/candidate/application': 'candidate-app-detail',
+            '/candidate/screening': 'candidate-screening',
+            '/candidate/profile': 'candidate-profile',
+            '/candidate/settings': 'candidate-settings',
+            '/candidate/notifications': 'candidate-notifications',
+            '/candidate/applications': 'candidate-applications',
+            '/recruiter/dashboard': 'recruiter-dashboard',
+            '/recruiter/jobs': 'recruiter-jobs',
+            '/recruiter/applications': 'recruiter-applications',
+            '/recruiter/queue': 'recruiter-queue',
+            '/recruiter/candidates': 'recruiter-candidates',
+            '/admin/dashboard': 'admin-dashboard',
+          };
+          const urlView = ROUTES[currentPath];
+          if (urlView) {
+            const params = new URLSearchParams(window.location.search);
+            const viewParams: any = {};
+            if (params.get('jobId')) viewParams.jobId = params.get('jobId');
+            if (params.get('applicationId')) viewParams.applicationId = params.get('applicationId');
+            if (params.get('sessionId')) viewParams.sessionId = params.get('sessionId');
+            setActiveView(urlView as any);
+            setActiveParams(viewParams);
+          } else if (savedUser.role === 'candidate') setActiveView('candidate-dashboard');
           else if (savedUser.role === 'recruiter') setActiveView('recruiter-dashboard');
           else setActiveView('admin-dashboard');
         } else {

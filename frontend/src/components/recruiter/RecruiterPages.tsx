@@ -257,6 +257,13 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
     'What are your compensation expectations and what is your availability for a starting date?'
   ]);
   const [newQuestionText, setNewQuestionText] = useState('');
+  const [mandatoryQuestions, setMandatoryQuestions] = useState({
+    driversLicence: false,
+    locationCommute: true,
+    workRights: true,
+    salaryExpectation: true,
+    yearsExperience: true,
+  });
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   // Load existing job data when editing
@@ -282,6 +289,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
           setScreeningQueries(existingJob.screeningQuestions || []);
+          if (existingJob.mandatoryQuestions) setMandatoryQuestions(existingJob.mandatoryQuestions);
           if (existingJob.qualificationWeights) {
             setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
             setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
@@ -369,6 +377,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       skillsRequired: ['React', 'Backend Node'],
       educationRequired: ["Bachelor's in Computer Science"],
       screeningQuestions: screeningQueries,
+      mandatoryQuestions: mandatoryQuestions,
       status: 'open',
       postedDate: new Date().toISOString().split('T')[0],
       qualificationWeights: {
@@ -1187,10 +1196,36 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 />
               </div>
 
+              {/* Mandatory Questions */}
+              <div className="space-y-3 pt-4 border-t">
+                <label className="text-xs font-bold text-gray-700 block">Mandatory Screening Questions</label>
+                <p className="text-[10px] text-gray-400">These are always asked first by QANI AI before job-specific questions.</p>
+                <div className="space-y-2">
+                  {[
+                    { key: 'locationCommute', label: 'Location & Commute', desc: 'Are you based in [city] or willing to commute/relocate?' },
+                    { key: 'workRights', label: 'Work Rights / Visa Status', desc: 'Do you have full work rights in Australia?' },
+                    { key: 'salaryExpectation', label: 'Salary Expectation', desc: 'What is your expected annual salary (AUD)?' },
+                    { key: 'yearsExperience', label: 'Years of Experience', desc: 'How many years of relevant experience do you have?' },
+                    { key: 'driversLicence', label: "Driver's Licence", desc: "Do you hold a valid Australian driver's licence?" },
+                  ].map(item => (
+                    <label key={item.key} className="flex items-start gap-3 p-2.5 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
+                      <input type="checkbox"
+                        checked={(mandatoryQuestions as any)[item.key]}
+                        onChange={(e) => setMandatoryQuestions(prev => ({ ...prev, [item.key]: e.target.checked }))}
+                        className="mt-0.5 cursor-pointer" />
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">{item.label}</p>
+                        <p className="text-[10px] text-gray-500">{item.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* Configure Custom AI Questions List */}
               <div className="space-y-2 pt-4 border-t">
-                <label className="text-xs font-bold text-gray-700 block">AI Screening Questions</label>
-                <p className="text-[10px] text-gray-400">Drag to reorder. These questions are asked by the QANI AI recruiter to every candidate.</p>
+                <label className="text-xs font-bold text-gray-700 block">Custom AI Screening Questions</label>
+                <p className="text-[10px] text-gray-400">Drag to reorder. These job-specific questions are asked after mandatory questions.</p>
                 <div className="space-y-2">
                   {screeningQueries.map((q, idx) => (
                     <div

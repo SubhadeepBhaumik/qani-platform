@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { OpenAI } from 'openai';
-import { ApplicationsController } from '../applications/applications.controller';
+import { ApplicationsController, applications } from '../applications/applications.controller';
+import { roles } from '../roles/roles.controller';
 
 interface ScreeningSession {
   id: string;
@@ -8,6 +9,7 @@ interface ScreeningSession {
   status: 'active' | 'completed' | 'paused';
   messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; timestamp: string; questionIdx?: number }>;
   currentQuestionIdx: number;
+  jobData?: any;
   startDate: string;
   score?: number;
   decision?: 'progress' | 'review' | 'reject';
@@ -27,6 +29,32 @@ export class ScreeningController {
       }
 
       const now = new Date().toISOString();
+      // Get application and job data for screening context
+      let jobData: any = {};
+      try {
+        const app = applications.find((a: any) => a.id === applicationId);
+        if (app) {
+          const job = roles.find((r: any) => r.id === (app.roleId || (app as any).jobId));
+          if (job) jobData = { ...job, candidateName };
+        }
+      } catch(_) {}
+
+      // Build first question based on mandatory questions setup
+      const mandQ = jobData.mandatoryQuestions || {};
+      const firstQ = mandQ.locationCommute
+        ? 'Are you currently based in ' + (jobData.location || 'the required location') + ', or are you willing to commute or relocate?'
+        : mandQ.workRights
+        ? 'Do you have full working rights in Australia (citizen, permanent resident, or valid work visa)?'
+        : mandQ.salaryExpectation
+        ? 'What is your expected annual salary in AUD for this role?'
+        : mandQ.yearsExperience
+        ? 'How many years of relevant experience do you have for this type of role?'
+        : "What is your current role and how many years of relevant experience do you have?";
+
+      const name = candidateName || 'there';
+      const jobTitle = jobData.title || 'this position';
+      const greeting = 'Hi ' + name + '! Welcome to the QANI AI screening process for the ' + jobTitle + ' role. I have a few questions to assess your suitability. Let\'s start: ' + firstQ;
+
       const session: ScreeningSession = {
         id: Date.now().toString(),
         applicationId,
@@ -37,17 +65,16 @@ export class ScreeningController {
           {
             id: 'msg-1',
             role: 'assistant',
-            content: `Hi ${candidateName || 'there'}! Welcome to the QANI AI screening process. I'm here to learn more about your background and experience. Let's begin — what's your current role and how many years of relevant experience do you have?`,
+            content: greeting,
             timestamp: now,
             questionIdx: 0,
           },
         ],
         createdAt: new Date(),
+        jobData,
       };
 
       sessions.push(session);
-      // Update application status to 'screening'
-      try { ApplicationsController.setApplicationStatus(applicationId, 'screening'); } catch(_) {}
       return res.status(201).json(session);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to start screening' });
@@ -91,7 +118,37 @@ export class ScreeningController {
         messages: [
           {
             role: 'system',
-            content: `You are a professional recruiter conducting a screening interview. Ask relevant questions to assess the candidate's qualifications, experience, and fit for the role. Be conversational but professional. After gathering key information, provide constructive feedback.`,
+            content: (() => {
+              const job = session.jobData || {};
+              const mandQ = job.mandatoryQuestions || {};
+              const mandatoryList = [
+                mandQ.locationCommute ? 'Ask: Are you based in ' + (job.location || 'the required location') + ' or willing to commute/relocate?' : '',
+                mandQ.workRights ? 'Ask: Do you have full working rights in Australia (citizen, PR, or valid work visa)?' : '',
+                mandQ.salaryExpectation ? 'Ask: What is your expected annual salary in AUD?' : '',
+                mandQ.yearsExperience ? 'Ask: How many years of relevant experience do you have in this field?' : '',
+                mandQ.driversLicence ? 'Ask: Do you hold a valid Australian driver licence?' : '',
+              ].filter(Boolean).join('\n');
+              const customQ = (job.screeningQuestions || []).join('\n');
+              return [
+                'You are QANI, an expert AI recruitment interviewer for Australian companies.',
+                'You are interviewing ' + (session.jobData?.candidateName || 'the candidate') + ' for the role of ' + (job.title || 'this position') + '.',
+                '',
+                'INSTRUCTIONS:',
+                '- Ask ONE question at a time',
+                '- Be professional and conversational',
+                '- Start with mandatory questions first, then job-specific questions',
+                '- Do NOT skip mandatory questions',
+                '- After all questions, give brief professional feedback',
+                '',
+                mandatoryList ? 'MANDATORY QUESTIONS (ask these first in order):' : '',
+                mandatoryList,
+                '',
+                customQ ? 'JOB-SPECIFIC QUESTIONS (ask after mandatory):' : '',
+                customQ,
+                '',
+                job.requirementsMust ? 'ROLE REQUIREMENTS: ' + (job.requirementsMust || []).join(', ') : '',
+              ].filter(s => s !== undefined).join('\n');
+            })(),
           },
           ...session.messages,
         ],
@@ -134,37 +191,70 @@ export class ScreeningController {
       session.status = 'completed';
       session.completedAt = new Date();
       session.decision = decision || 'review';
+      const userMsgs = session.messages.filter((m: any) => m.role === 'user');
+      const transcript = session.messages
+        .map((m: any) => (m.role === 'assistant' ? 'Interviewer' : 'Candidate') + ': ' + m.content)
+        .join('\n');
 
-      const userMessages = session.messages.filter((m: any) => m.role === 'user');
-      const answerCount = userMessages.length;
-      const baseScore = Math.min(100, 40 + (answerCount * 12) + Math.floor(Math.random() * 15));
-      session.score = baseScore;
+      let scorecard = { locationScore: 25, salaryScore: 25, qualificationsScore: 25, workRightsScore: 25, skillsScore: 25 };
+      let overallScore = 25;
+      let recommendation = 'rejected';
+      let feedback = 'Insufficient responses provided.';
 
-      const scorecard = {
-        locationScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
-        salaryScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
-        qualificationsScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
-        workRightsScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
-        skillsScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
-      };
+      try {
+        const openaiScorer = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const promptLines = [
+          'You are a strict recruitment AI scoring a job interview.',
+          'Score the CANDIDATE honestly based on quality of their answers.',
+          '',
+          'INTERVIEW TRANSCRIPT:',
+          transcript,
+          '',
+          'SCORING RULES:',
+          '- One-word or meaningless answers = 15-30 per dimension',
+          '- Partial answers with some detail = 40-60 per dimension',
+          '- Clear detailed professional answers = 65-85 per dimension',
+          '- No answers at all = 5-15 per dimension',
+          '',
+          'Return ONLY this JSON no markdown:',
+          '{"locationScore":0,"salaryScore":0,"qualificationsScore":0,"workRightsScore":0,"skillsScore":0,"overallScore":0,"recommendation":"review","feedback":"one sentence"}'
+        ];
+        const comp = await openaiScorer.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: promptLines.join('\n') }],
+          max_tokens: 200,
+          temperature: 0.1,
+        });
+        const raw = (comp.choices[0].message.content || '{}').trim().replace(/```json/g, '').replace(/```/g, '').trim();
+        const p = JSON.parse(raw);
+        scorecard = {
+          locationScore: Math.min(100, Math.max(0, Number(p.locationScore) || 0)),
+          salaryScore: Math.min(100, Math.max(0, Number(p.salaryScore) || 0)),
+          qualificationsScore: Math.min(100, Math.max(0, Number(p.qualificationsScore) || 0)),
+          workRightsScore: Math.min(100, Math.max(0, Number(p.workRightsScore) || 0)),
+          skillsScore: Math.min(100, Math.max(0, Number(p.skillsScore) || 0)),
+        };
+        overallScore = Math.min(100, Math.max(0, Number(p.overallScore) || 0));
+        recommendation = ['qualified','review','rejected'].includes(p.recommendation) ? p.recommendation : 'review';
+        feedback = p.feedback || 'Screening evaluated.';
+      } catch(aiErr) {
+        console.error('AI scoring error:', aiErr);
+        const base = Math.min(50, 10 + (userMsgs.length * 7));
+        overallScore = base;
+        scorecard = { locationScore: base, salaryScore: base, qualificationsScore: base, workRightsScore: base, skillsScore: base };
+        recommendation = base >= 40 ? 'review' : 'rejected';
+        feedback = 'Scored based on response volume.';
+      }
 
-      const recommendation = baseScore >= 70 ? 'qualified' : baseScore >= 50 ? 'review' : 'rejected';
-      const feedback = baseScore >= 70
-        ? 'Strong candidate. Meets key requirements and communicated clearly.'
-        : baseScore >= 50
-        ? 'Potential fit. Some areas need clarification before progressing.'
-        : 'Does not meet minimum requirements at this stage.';
+      session.score = overallScore;
 
       try {
         ApplicationsController.updateApplicationAfterScreening(session.applicationId, {
-          score: baseScore,
-          scorecard,
-          aiFeedback: feedback,
-          status: recommendation,
-          screeningSessionId: session.id,
+          score: overallScore, scorecard, aiFeedback: feedback,
+          status: recommendation, screeningSessionId: session.id,
           screeningCompletedAt: new Date().toISOString(),
         });
-      } catch(e) { console.error('Failed to update application:', e); }
+      } catch(e) { console.error('App update error:', e); }
 
       return res.json({ ...session, scorecard, aiFeedback: feedback });
     } catch (error) {
