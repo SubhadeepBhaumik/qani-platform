@@ -239,16 +239,31 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <span>Activity History</span>
                 </h4>
                 <div className="space-y-4 text-xs relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100 pl-6">
-                  <div className="space-y-1 relative">
-                    <div className="absolute -left-6 top-1 w-2.5 h-2.5 bg-green-500 rounded-full ring-4 ring-white" />
-                    <span className="text-gray-400 text-[10px] font-mono">TODAY</span>
-                    <p className="font-semibold text-gray-900">Logged into QANI Platform</p>
-                  </div>
-                  <div className="space-y-1 relative">
-                    <div className="absolute -left-6 top-1 w-2.5 h-2.5 bg-blue-500 rounded-full ring-4 ring-white" />
-                    <span className="text-gray-400 text-[10px] font-mono">YESTERDAY</span>
-                    <p className="font-semibold text-gray-900">Profile available to recruiters</p>
-                  </div>
+                  {applications.filter(a => a.candidateId === user.id).slice(0, 4).map((app, idx) => {
+                    const job = jobs.find(j => j.id === (app.jobId ?? (app as any).roleId));
+                    const date = app.appliedDate || (app as any).appliedAt?.split('T')[0] || 'Recent';
+                    const colors = ['bg-blue-500','bg-green-500','bg-yellow-500','bg-purple-500'];
+                    return (
+                      <div key={app.id} className="space-y-1 relative">
+                        <div className={`absolute -left-6 top-1 w-2.5 h-2.5 ${colors[idx % 4]} rounded-full ring-4 ring-white`} />
+                        <span className="text-gray-400 text-[10px] font-mono">{date}</span>
+                        <p className="font-semibold text-gray-900">Applied — {job?.title || (app as any).jobTitle || 'Position'}</p>
+                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
+                          app.status === 'qualified' ? 'bg-green-100 text-green-700' :
+                          app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          app.status === 'screening' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>{app.status}</span>
+                      </div>
+                    );
+                  })}
+                  {applications.filter(a => a.candidateId === user.id).length === 0 && (
+                    <div className="space-y-1 relative">
+                      <div className="absolute -left-6 top-1 w-2.5 h-2.5 bg-gray-300 rounded-full ring-4 ring-white" />
+                      <span className="text-gray-400 text-[10px] font-mono">TODAY</span>
+                      <p className="font-semibold text-gray-700">No applications yet — browse jobs to start</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -350,7 +365,17 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                         <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> ${(job.salaryMin/1000).toFixed(0)}k – ${(job.salaryMax/1000).toFixed(0)}k</span>
                       )}
                     </div>
-                    <button className="text-xs font-semibold py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition cursor-pointer">View details</button>
+                    <div className="flex gap-2">
+                      {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id) ? (
+                        <span className="text-xs font-semibold py-2 px-3 bg-green-50 text-green-700 border border-green-200 rounded-lg">✓ Applied</span>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); applyForJob(job.id); }}
+                          className="text-xs font-semibold py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition cursor-pointer">
+                          Apply
+                        </button>
+                      )}
+                      <button className="text-xs font-semibold py-2 px-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition cursor-pointer">Details</button>
+                    </div>
                   </div>
                 </div>
               ))}
