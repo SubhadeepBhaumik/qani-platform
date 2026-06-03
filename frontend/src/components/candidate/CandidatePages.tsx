@@ -154,7 +154,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           </td>
                           <td className="p-4 text-gray-600">{app.appliedDate}</td>
                           <td className="p-4 font-mono font-bold text-blue-600">
-                            {app.score !== undefined ? `${app.score}/100` : 'Evaluating...'}
+                            {(app.score !== undefined || (app as any).aiScore !== undefined) ? `${Math.round(app.score ?? (app as any).aiScore)}/100` : 'Pending...'}
                           </td>
                           <td className="p-4 text-center">
                             <span className={`inline-block text-[10px] font-bold uppercase py-1 px-2.5 rounded-full ${
@@ -199,9 +199,9 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       </div>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
-                        {!job.hideSalary && (
+                        {!job.hideSalary && job.salaryMin && (
                           <span className="flex items-center gap-1">
-                            <DollarSign className="w-3.5 h-3.5" /> ${job.salaryMin} - ${job.salaryMax}
+                            <DollarSign className="w-3.5 h-3.5" /> ${(job.salaryMin/1000).toFixed(0)}k – ${(job.salaryMax/1000).toFixed(0)}k
                           </span>
                         )}
                       </div>
@@ -397,10 +397,16 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     {job.department}
                   </span>
                   <h1 className="text-3xl font-extrabold text-gray-950">{job.title}</h1>
+                  {(job as any).company && <p className="text-sm font-semibold text-blue-600">{(job as any).company}</p>}
                   <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2">
                     <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
-                    {!job.hideSalary && (
-                      <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> ${job.salaryMin} - ${job.salaryMax} / mo</span>
+                    {!job.hideSalary && job.salaryMin && (
+                      <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5" /> ${(job.salaryMin/1000).toFixed(0)}k – ${(job.salaryMax/1000).toFixed(0)}k / yr</span>
+                    )}
+                    {job.employmentType && Array.isArray(job.employmentType) && (
+                      <span className="flex items-center gap-1">
+                        <Briefcase className="w-3.5 h-3.5" /> {job.employmentType.join(' · ')}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -557,11 +563,16 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
 
                 {/* score details panel */}
+                {!app.scorecard && (app.status === 'applied' || app.status === 'screening') && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-700 font-semibold">
+                    Complete the AI screening to see your score and feedback here.
+                  </div>
+                )}
                 {app.scorecard && (
                   <div className="space-y-6 pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Match Assessment</h3>
-                      <span className="font-mono text-xl font-extrabold text-blue-600 bg-blue-50 py-1 px-3 rounded-lg">{app.score}/100</span>
+                      <span className="font-mono text-xl font-extrabold text-blue-600 bg-blue-50 py-1 px-3 rounded-lg">{Math.round(app.score ?? (app as any).aiScore ?? 0)}/100</span>
                     </div>
 
                     <div className="space-y-3">
@@ -1015,6 +1026,64 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         </div>
         );
       })()}
+
+      {/* MY APPLICATIONS */}
+      {subView === 'applications' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900">My Applications</h2>
+            <p className="text-xs text-gray-500">{applications.filter(a => a.candidateId === user.id).length} total applications</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  <th className="p-4">Position</th>
+                  <th className="p-4">Company</th>
+                  <th className="p-4">Applied</th>
+                  <th className="p-4">AI Score</th>
+                  <th className="p-4 text-center">Status</th>
+                  <th className="p-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 text-xs">
+                {applications.filter(a => a.candidateId === user.id).map(app => {
+                  const job = jobs.find(j => j.id === (app.jobId ?? app.roleId));
+                  return (
+                    <tr key={app.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate('candidate-app-detail', { applicationId: app.id })}>
+                      <td className="p-4">
+                        <span className="font-semibold text-gray-900">{job?.title || 'Unknown Position'}</span>
+                      </td>
+                      <td className="p-4 text-gray-500">{(job as any)?.company || (job as any)?.organisationId || '—'}</td>
+                      <td className="p-4 text-gray-500">{app.appliedDate || '—'}</td>
+                      <td className="p-4 font-mono font-bold text-blue-600">
+                        {(app.score !== undefined || (app as any).aiScore !== undefined) ? `${Math.round(app.score ?? (app as any).aiScore)}/100` : 'Pending'}
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`inline-block text-[10px] font-bold uppercase py-1 px-2.5 rounded-full ${
+                          app.status === 'qualified' ? 'bg-green-100 text-green-700' :
+                          app.status === 'screening' ? 'bg-blue-100 text-blue-700' :
+                          app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          app.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>{app.status}</span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer">View</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {applications.filter(a => a.candidateId === user.id).length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-12 text-center text-gray-400 italic">No applications yet. Browse jobs to apply.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* 7. CANDIDATE SETTINGS */}
       {subView === 'settings' && (

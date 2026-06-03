@@ -134,9 +134,39 @@ export class ScreeningController {
       session.status = 'completed';
       session.completedAt = new Date();
       session.decision = decision || 'review';
-      session.score = Math.random() * 100;
 
-      return res.json(session);
+      const userMessages = session.messages.filter((m: any) => m.role === 'user');
+      const answerCount = userMessages.length;
+      const baseScore = Math.min(100, 40 + (answerCount * 12) + Math.floor(Math.random() * 15));
+      session.score = baseScore;
+
+      const scorecard = {
+        locationScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
+        salaryScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
+        qualificationsScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
+        workRightsScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
+        skillsScore: Math.min(100, Math.max(0, baseScore + Math.floor(Math.random() * 16) - 8)),
+      };
+
+      const recommendation = baseScore >= 70 ? 'qualified' : baseScore >= 50 ? 'review' : 'rejected';
+      const feedback = baseScore >= 70
+        ? 'Strong candidate. Meets key requirements and communicated clearly.'
+        : baseScore >= 50
+        ? 'Potential fit. Some areas need clarification before progressing.'
+        : 'Does not meet minimum requirements at this stage.';
+
+      try {
+        ApplicationsController.updateApplicationAfterScreening(session.applicationId, {
+          score: baseScore,
+          scorecard,
+          aiFeedback: feedback,
+          status: recommendation,
+          screeningSessionId: session.id,
+          screeningCompletedAt: new Date().toISOString(),
+        });
+      } catch(e) { console.error('Failed to update application:', e); }
+
+      return res.json({ ...session, scorecard, aiFeedback: feedback });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to end screening' });
     }

@@ -18,6 +18,7 @@ export const Sidebar: React.FC = () => {
       return [
         { id: 'candidate-dashboard', label: 'My Dashboard', icon: Home, view: 'candidate-dashboard' as AppView },
         { id: 'candidate-jobs', label: 'Browse Jobs', icon: Briefcase, view: 'candidate-jobs' as AppView },
+        { id: 'candidate-applications', label: 'My Applications', icon: FileText, view: 'candidate-applications' as AppView },
         { id: 'candidate-profile', label: 'My Profile', icon: User, view: 'candidate-profile' as AppView },
         { id: 'candidate-notifications', label: 'Notifications', icon: Bell, view: 'candidate-notifications' as AppView, badge: unreadCount },
         { id: 'candidate-settings', label: 'Settings', icon: Settings, view: 'candidate-settings' as AppView },

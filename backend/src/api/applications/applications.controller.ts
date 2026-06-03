@@ -219,6 +219,22 @@ export class ApplicationsController {
     }
   }
 
+  static updateApplicationAfterScreening(applicationId: string, data: any) {
+    const idx = applications.findIndex((a: any) => a.id === applicationId);
+    if (idx !== -1) {
+      (applications as any)[idx] = {
+        ...(applications as any)[idx],
+        aiScore: data.score,
+        score: data.score,
+        scorecard: data.scorecard,
+        aiFeedback: data.aiFeedback,
+        status: data.status,
+        screeningSessionId: data.screeningSessionId,
+        screeningCompletedAt: data.screeningCompletedAt,
+      };
+    }
+  }
+
   static async updateApplicationStatus(req: Request, res: Response) {
     try {
       const { status, recruiterNotes } = req.body;

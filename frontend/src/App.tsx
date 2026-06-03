@@ -28,6 +28,7 @@ export const ROUTES: Record<string, string> = {
   'candidate-profile': '/candidate/profile',
   'candidate-settings': '/candidate/settings',
   'candidate-notifications': '/candidate/notifications',
+  'candidate-applications': '/candidate/applications',
   'recruiter-dashboard': '/recruiter/dashboard',
   'recruiter-applications': '/recruiter/applications',
   'recruiter-app-detail': '/recruiter/application',
@@ -115,6 +116,7 @@ const AppContent: React.FC = () => {
       case 'candidate-profile': return <CandidatePages subView="profile" />;
       case 'candidate-settings': return <CandidatePages subView="settings" />;
       case 'candidate-notifications': return <CandidatePages subView="notifications" />;
+      case 'candidate-applications': return <CandidatePages subView="applications" />;
       case 'recruiter-dashboard': return <RecruiterPages subView="dashboard" />;
       case 'recruiter-applications': return <RecruiterPages subView="applications" />;
       case 'recruiter-app-detail': return <RecruiterPages subView="app-detail" />;

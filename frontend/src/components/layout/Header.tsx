@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../AppContext';
+import { api } from '../../lib/api';
 import { Bell, ChevronDown, CheckCircle2, MapPin } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { user, notifications, navigate, markNotifRead } = useApp();
+  const { user, notifications, navigate, refreshStates } = useApp();
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
   const unreadNotifs = notifications.filter(n => n.status === 'unread');
@@ -67,15 +68,42 @@ export const Header: React.FC = () => {
                   notifications.slice(0, 5).map(n => (
                     <div
                       key={n.id}
-                      onClick={() => { markNotifRead(n.id); setShowNotifDropdown(false); }}
-                      className={`cursor-pointer p-3 hover:bg-gray-50 border-b border-gray-50 transition ${n.status === 'unread' ? 'bg-blue-50/30' : ''}`}
+                      onClick={async () => {
+                        if (n.status === 'unread') {
+                          await api.markNotificationAsRead(n.id);
+                          await refreshStates();
+                        }
+                        setShowNotifDropdown(false);
+                        if (n.relatedApplicationId) {
+                          const role = user?.role;
+                          if (role === 'candidate') navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
+                          else navigate('recruiter-applications');
+                        } else if (n.relatedJobId) {
+                          const role = user?.role;
+                          if (role === 'candidate') navigate('candidate-job-detail', { jobId: n.relatedJobId });
+                          else navigate('recruiter-jobs');
+                        } else {
+                          if (user?.role === 'candidate') navigate('candidate-notifications');
+                          else navigate('recruiter-dashboard');
+                        }
+                      }}
+                      className={`cursor-pointer p-3 hover:bg-gray-50 border-b border-gray-50 transition ${n.status === 'unread' ? 'bg-blue-50/40' : ''}`}
                     >
-                      <p className="text-xs font-semibold text-gray-900">{n.title}</p>
-                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{n.content}</p>
-                      <span className="text-[9px] text-gray-400 mt-1 block">{new Date(n.date).toLocaleString('en-AU')}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`text-xs font-semibold ${n.status === 'unread' ? 'text-gray-900' : 'text-gray-500'}`}>{n.title}</p>
+                        {n.status === 'unread' && <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />}
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{n.content || n.message}</p>
+                      <span className="text-[9px] text-gray-400 mt-1 block">{new Date(n.date || n.createdAt || '').toLocaleString('en-AU')}</span>
                     </div>
                   ))
                 )}
+                <div className="p-2 border-t border-gray-100">
+                  <button onClick={() => { setShowNotifDropdown(false); if (user?.role === 'candidate') navigate('candidate-notifications'); else navigate('recruiter-dashboard'); }}
+                    className="w-full text-center text-[11px] text-blue-600 hover:text-blue-800 font-semibold py-1 cursor-pointer">
+                    View all notifications →
+                  </button>
+                </div>
               </div>
             )}
           </div>

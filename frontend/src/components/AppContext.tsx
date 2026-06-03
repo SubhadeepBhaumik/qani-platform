@@ -16,6 +16,7 @@ export type AppView =
   | 'candidate-profile'
   | 'candidate-settings'
   | 'candidate-notifications'
+  | 'candidate-applications'
   | 'recruiter-dashboard'
   | 'recruiter-applications'
   | 'recruiter-app-detail'
