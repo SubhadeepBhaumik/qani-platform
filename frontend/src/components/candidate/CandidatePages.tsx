@@ -148,7 +148,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-xs">
                     {applications.filter(a => a.candidateId === user.id).map(app => {
-                      const job = jobs.find(j => j.id === app.jobId ?? app.roleId);
+                      const job = jobs.find(j => j.id === (app.jobId ?? (app as any).roleId));
                       return (
                         <tr key={app.id} className="hover:bg-gray-50">
                           <td className="p-4">
@@ -502,7 +502,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const app = applications.find(a => a.id === appId);
         if (!app) return <p className="text-red-500">Application context not existing.</p>;
 
-        const job = jobs.find(j => j.id === app.jobId ?? app.roleId);
+        const job = jobs.find(j => j.id === (app.jobId ?? (app as any).roleId));
 
         return (
           <div className="space-y-6">
@@ -519,7 +519,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <div className="lg:col-span-8 bg-white border border-gray-200 rounded-xl p-6 sm:p-8 space-y-6 shadow-sm">
                 <div>
                   <span className="text-[10px] uppercase text-blue-600 font-bold tracking-wider">Evaluation Profile</span>
-                  <h1 className="text-2xl font-extrabold text-gray-950 mt-1">{job?.title || 'Unknown Position'} Application</h1>
+                  <h1 className="text-2xl font-extrabold text-gray-950 mt-1">{job?.title || (app as any).jobTitle || 'Application'}</h1>
                 </div>
 
                 {/* status alert bar */}
@@ -566,74 +566,80 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
 
                 {/* score details panel */}
-                {!app.scorecard && (app.status === 'applied' || app.status === 'screening') && (
+                {!(app.scorecard || (app as any).scoreBreakdown) && (app.status === 'applied' || app.status === 'screening') && (
                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-700 font-semibold">
                     Complete the AI screening to see your score and feedback here.
                   </div>
                 )}
-                {app.scorecard && (
+                {(app.scorecard || (app as any).scoreBreakdown) && (() => { const sc = app.scorecard || { locationScore: (app as any).scoreBreakdown?.locationMatch || 0, salaryScore: (app as any).scoreBreakdown?.salaryAlignment || 0, qualificationsScore: (app as any).scoreBreakdown?.qualifications || 0, workRightsScore: (app as any).scoreBreakdown?.workRights || 0, skillsScore: (app as any).scoreBreakdown?.technicalSkills || 0 }; return (
                   <div className="space-y-6 pt-4 border-t border-gray-100">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Match Assessment</h3>
-                      <span className="font-mono text-xl font-extrabold text-blue-600 bg-blue-50 py-1 px-3 rounded-lg">{Math.round(app.score ?? (app as any).aiScore ?? 0)}/100</span>
+                      <span className="font-mono text-xl font-extrabold text-blue-600 bg-blue-50 py-1 px-3 rounded-lg">{Math.round((app as any).score ?? (app as any).aiScore ?? 0)}/100</span>
                     </div>
 
                     <div className="space-y-3">
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-gray-700">
                           <span>Work Location Compliances:</span>
-                          <span className="font-semibold">{app.scorecard.locationScore}%</span>
+                          <span className="font-semibold">{sc.locationScore}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600" style={{ width: `${app.scorecard.locationScore}%` }} />
+                          <div className="h-full bg-blue-600" style={{ width: `${sc.locationScore}%` }} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-gray-700">
                           <span>Salary Match Projections:</span>
-                          <span className="font-semibold">{app.scorecard.salaryScore}%</span>
+                          <span className="font-semibold">{sc.salaryScore}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600" style={{ width: `${app.scorecard.salaryScore}%` }} />
+                          <div className="h-full bg-blue-600" style={{ width: `${sc.salaryScore}%` }} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-gray-700">
                           <span>Mandatory Certifications Alignment:</span>
-                          <span className="font-semibold">{app.scorecard.qualificationsScore}%</span>
+                          <span className="font-semibold">{sc.qualificationsScore}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600" style={{ width: `${app.scorecard.qualificationsScore}%` }} />
+                          <div className="h-full bg-blue-600" style={{ width: `${sc.qualificationsScore}%` }} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-gray-700">
                           <span>Visa / Availability parameters:</span>
-                          <span className="font-semibold">{app.scorecard.workRightsScore}%</span>
+                          <span className="font-semibold">{sc.workRightsScore}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600" style={{ width: `${app.scorecard.workRightsScore}%` }} />
+                          <div className="h-full bg-blue-600" style={{ width: `${sc.workRightsScore}%` }} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs text-gray-700">
                           <span>Specific Skills & Software Experience:</span>
-                          <span className="font-semibold">{app.scorecard.skillsScore}%</span>
+                          <span className="font-semibold">{sc.skillsScore}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-600" style={{ width: `${app.scorecard.skillsScore}%` }} />
+                          <div className="h-full bg-blue-600" style={{ width: `${sc.skillsScore}%` }} />
                         </div>
                       </div>
                     </div>
 
                     {app.aiFeedback && (
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1 pt-4">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">Assessment feedback:</span>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">AI Assessment Feedback:</span>
                         <p className="text-xs text-gray-700 leading-relaxed italic">"{app.aiFeedback}"</p>
                       </div>
                     )}
+                    {(app as any).recruiterNotes && (
+                      <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 space-y-1">
+                        <span className="text-[10px] font-bold text-blue-400 uppercase">Recruiter Notes:</span>
+                        <p className="text-xs text-blue-800 leading-relaxed">{(app as any).recruiterNotes}</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                ); })()}
               </div>
 
               {/* side info right */}
@@ -641,8 +647,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <div className="p-6 bg-white border border-gray-200 rounded-xl space-y-4 shadow-sm">
                   <h4 className="text-xs font-bold text-gray-900 uppercase">Application Coordinates</h4>
                   <div className="space-y-2 text-xs text-gray-600">
-                    <p><strong>Date Applied:</strong> {app.appliedDate}</p>
-                    <p><strong>Position:</strong> {job?.title || 'N/A'}</p>
+                    <p><strong>Date Applied:</strong> {app.appliedDate || (app as any).appliedAt?.split('T')[0] || 'N/A'}</p>
+                    <p><strong>Position:</strong> {job?.title || (app as any).jobTitle || 'N/A'}</p>
                     <p><strong>Status:</strong> <span className="capitalize font-semibold">{app.status}</span></p>
                   </div>
                 </div>
