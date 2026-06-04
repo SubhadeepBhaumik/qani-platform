@@ -53,7 +53,7 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
     const matchStatus = jobStatusFilter === "all" || (j.status||"active") === jobStatusFilter;
     return matchSearch && matchStatus;
   });
-  return (
+  return (<>
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -119,6 +119,8 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
         })}
       </div>
     </div>
+
+  </>
   );
 };
 
@@ -337,6 +339,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
 
   // Recruiter notes additions
   const [recNoteText, setRecNoteText] = useState('');
+  const [compareModalApps, setCompareModalApps] = useState<any[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   // Team setup modal triggers
   const [teamEmailInvite, setTeamEmailInvite] = useState('');
@@ -622,8 +626,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   {bulkChecked.length >= 2 && bulkChecked.length <= 3 && (
                     <button onClick={() => {
                       const compareApps = applications.filter(a => bulkChecked.includes(a.id));
-                      const rows = compareApps.map(a => `${a.candidateName||'Unknown'} | ${a.jobTitle||''} | Score: ${a.aiScore??a.score??'N/A'}% | Status: ${a.status} | AI Feedback: ${a.aiFeedback||'N/A'}`).join('\n\n');
-                      alert('--- CANDIDATE COMPARISON ---\n\n' + rows);
+                      setCompareModalApps(compareApps);
+                      setShowCompareModal(true);
                     }} className="cursor-pointer bg-purple-600 text-white font-bold py-1 px-2.5 rounded text-[10px]">Compare ({bulkChecked.length})</button>
                   )}
                   <button onClick={() => {
@@ -1589,6 +1593,99 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       {/* 9. RECRUITER SETTINGS */}
       {subView === 'settings' && <RecruiterSettings user={user} showToast={showToast} />}
 
+
+      {/* Candidate Comparison Modal */}
+      {showCompareModal && compareModalApps.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCompareModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Candidate Comparison</h2>
+              <button onClick={() => setShowCompareModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer font-bold text-xl">×</button>
+            </div>
+            <div className="p-6 overflow-x-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="p-3 text-left text-[10px] font-bold text-gray-400 uppercase border-b border-gray-200">Criteria</th>
+                    {compareModalApps.map((app: any) => (
+                      <th key={app.id} className="p-3 text-center border-b border-gray-200">
+                        <p className="font-bold text-gray-900">{app.candidateName || 'Unknown'}</p>
+                        <p className="text-[10px] text-gray-400">{app.jobTitle || 'N/A'}</p>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <tr>
+                    <td className="p-3 font-semibold text-gray-700">Overall Score</td>
+                    {compareModalApps.map((app: any) => {
+                      const score = Math.round(app.aiScore ?? app.score ?? 0);
+                      return (
+                        <td key={app.id} className="p-3 text-center">
+                          <span className={`text-lg font-extrabold ${score >= 70 ? 'text-green-600' : score >= 50 ? 'text-yellow-600' : 'text-red-500'}`}>{score || '—'}{score ? '/100' : ''}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr className="bg-gray-50/50">
+                    <td className="p-3 font-semibold text-gray-700">Status</td>
+                    {compareModalApps.map((app: any) => (
+                      <td key={app.id} className="p-3 text-center">
+                        <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${
+                          app.status === 'qualified' ? 'bg-green-100 text-green-700' :
+                          app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                          app.status === 'screening' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>{app.status}</span>
+                      </td>
+                    ))}
+                  </tr>
+                  {(['locationScore','salaryScore','qualificationsScore','workRightsScore','skillsScore'] as const).map(key => {
+                    const labels: Record<string,string> = { locationScore:'Location', salaryScore:'Salary', qualificationsScore:'Qualifications', workRightsScore:'Work Rights', skillsScore:'Skills' };
+                    return (
+                      <tr key={key}>
+                        <td className="p-3 font-semibold text-gray-700">{labels[key]}</td>
+                        {compareModalApps.map((app: any) => {
+                          const sc = app.scorecard || app.scoreBreakdown;
+                          const altKeys: Record<string,string> = { locationScore:'locationMatch', salaryScore:'salaryAlignment', qualificationsScore:'qualifications', workRightsScore:'workRights', skillsScore:'technicalSkills' };
+                          const val = sc ? Math.round(sc[key] ?? sc[altKeys[key]] ?? 0) : null;
+                          return (
+                            <td key={app.id} className="p-3">
+                              {val !== null ? (
+                                <div className="space-y-1">
+                                  <span className="font-semibold">{val}%</span>
+                                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full ${val >= 70 ? 'bg-green-500' : val >= 50 ? 'bg-yellow-500' : 'bg-red-400'}`} style={{ width: `${val}%` }} />
+                                  </div>
+                                </div>
+                              ) : <span className="text-gray-400">—</span>}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                  <tr className="bg-gray-50/50">
+                    <td className="p-3 font-semibold text-gray-700">AI Feedback</td>
+                    {compareModalApps.map((app: any) => (
+                      <td key={app.id} className="p-3 text-gray-600 italic text-[11px]">{app.aiFeedback || '—'}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-semibold text-gray-700">Applied Date</td>
+                    {compareModalApps.map((app: any) => (
+                      <td key={app.id} className="p-3 text-center text-gray-600">{app.appliedDate || app.appliedAt?.split('T')[0] || '—'}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="p-4 border-t border-gray-100 flex justify-end">
+              <button onClick={() => setShowCompareModal(false)} className="px-4 py-2 bg-gray-900 text-white rounded-lg text-xs font-semibold cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
