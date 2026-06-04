@@ -74,7 +74,9 @@ export const Header: React.FC = () => {
                           await refreshStates();
                         }
                         setShowNotifDropdown(false);
-                        if (n.relatedApplicationId) {
+                        if (n.type === 'invite_sent') {
+                          navigate('candidate-notifications');
+                        } else if (n.relatedApplicationId) {
                           const role = user?.role;
                           if (role === 'candidate') navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
                           else navigate('recruiter-applications');

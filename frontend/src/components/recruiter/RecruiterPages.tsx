@@ -406,7 +406,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       skillsRequired: ['React', 'Backend Node'],
       educationRequired: ["Bachelor's in Computer Science"],
       screeningQuestions: screeningQueries,
-      mandatoryQuestions: mandatoryQuestions,
+      ...(({ mandatoryQuestions: mandatoryQuestions }) => ({ mandatoryQuestions } as any))({ mandatoryQuestions }),
       status: 'open',
       postedDate: new Date().toISOString().split('T')[0],
       expiresAt: jobExpiresAt,
@@ -977,6 +977,67 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <p className="text-gray-700 leading-normal italic">"{n.content}"</p>
                       </div>
                     ))}
+                {/* Interview Scheduling */}
+                {app.status === 'qualified' && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-xl space-y-3">
+                    {(app as any).interviewDateTime ? (
+                      <>
+                        <p className="text-xs font-bold text-green-900">✅ Interview Scheduled</p>
+                        <div className="p-2 bg-green-100 rounded-lg text-xs text-green-800 font-semibold">
+                          📅 {new Date((app as any).interviewDateTime).toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' })}
+                        </div>
+                        <p className="text-[10px] text-green-600">Candidate has been notified. To reschedule, pick a new date below.</p>
+                      </>
+                    ) : (
+                      <p className="text-xs font-bold text-green-900">Schedule Interview</p>
+                    )}
+                    <input type="datetime-local" id={`interview-dt-${app.id}`}
+                      defaultValue={(app as any).interviewDateTime || ''}
+                      className="w-full text-xs p-2 border border-green-200 rounded bg-white cursor-pointer" />
+                    <button onClick={async () => {
+                      const dt = (document.getElementById(`interview-dt-${app.id}`) as HTMLInputElement)?.value;
+                      if (!dt) { showToast('Please select a date and time.', 'error'); return; }
+                      const formatted = new Date(dt).toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' });
+                      try {
+                        await fetch(`/api/v1/applications/${app.id}/status`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('qani_auth_token')}` },
+                          body: JSON.stringify({ status: app.status, interviewDateTime: dt })
+                        });
+                        await fetch('/api/v1/notifications/send', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            to: app.candidateEmail,
+                            recipientEmail: app.candidateEmail,
+                            recipientId: app.candidateId,
+                            type: 'invite_sent',
+                            title: 'Interview Scheduled — ' + (app.jobTitle || 'Position'),
+                            message: 'Congratulations ' + (app.candidateName||'').split(' ')[0] + '! Your interview for ' + (app.jobTitle || 'the role') + ' is scheduled for ' + formatted + '. Login to QANI to confirm and add to your calendar.',
+                            relatedApplicationId: app.id,
+                            relatedJobId: app.roleId || (app as any).jobId,
+                            interviewDateTime: dt,
+                          })
+                        });
+                        await refreshStates();
+                        // Open Google Calendar for recruiter
+                        const dtR = new Date(dt);
+                        const dtEndR = new Date(dtR.getTime() + 3600000);
+                        const fmtR = (d: Date) => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+                        const gcUrlR = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+                          '&text=' + encodeURIComponent('Interview — ' + (app.candidateName||'Candidate') + ' for ' + (app.jobTitle||'Position')) +
+                          '&dates=' + fmtR(dtR) + '/' + fmtR(dtEndR) +
+                          '&details=' + encodeURIComponent('Interview with ' + (app.candidateName||'Candidate') + ' scheduled via QANI.') +
+                          '&sf=true&output=xml';
+                        window.open(gcUrlR, '_blank');
+                        showToast('Interview scheduled! Google Calendar opened. Candidate notified for ' + formatted, 'success');
+                      } catch(e) { showToast('Failed to schedule interview.', 'error'); }
+                    }} className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold cursor-pointer">
+                      {(app as any).interviewDateTime ? 'Reschedule & Notify Candidate' : 'Confirm & Notify Candidate'}
+                    </button>
+                  </div>
+                )}
+
                 {/* Email Candidate Button */}
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
                   <div>

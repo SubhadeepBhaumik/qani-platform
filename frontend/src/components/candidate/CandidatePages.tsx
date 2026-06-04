@@ -65,6 +65,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
   const [cvUploading, setCvUploading] = useState(false);
   const [profileVisible, setProfileVisible] = useState(true);
+  const [interviewModal, setInterviewModal] = useState<{title: string; dateTime: string} | null>(null);
   const [notifyScreening, setNotifyScreening] = useState(true);
   const [notifyJobs, setNotifyJobs] = useState(true);
   const [github, setGithub] = useState((user as any)?.github || '');
@@ -84,7 +85,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   if (!user) return null;
 
   // Render Sub-Views based on parameter
-  return (
+  return (<>
     <div className="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto space-y-6">
       
       {/* 1. CANDIDATE DASHBOARD */}
@@ -1190,33 +1191,123 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
       )}
       {subView === 'notifications' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Notifications Desk</h2>
-            <p className="text-xs text-gray-500">Track pipeline updates, system triggers, and direct recruitment pings.</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900">Notifications</h2>
+              <p className="text-xs text-gray-500">{notifications.filter(n => n.status === 'unread').length} unread</p>
+            </div>
+            {notifications.some(n => n.status === 'unread') && (
+              <button onClick={async () => { await api.markAllNotificationsRead(); await refreshStates(); showToast('All marked as read.', 'success'); }}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-800 cursor-pointer">Mark all as read</button>
+            )}
           </div>
-
           <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 shadow-sm max-w-4xl">
-            {notifications.map(n => (
-              <div key={n.id} className="p-5 hover:bg-gray-50 flex items-start gap-4 transition">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
-                  <Bell className="w-4.5 h-4.5" />
-                </div>
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-gray-950">{n.title}</span>
-                    <span className="text-[10px] font-mono text-gray-400">{new Date(n.date).toLocaleString()}</span>
+            {notifications.map(n => {
+              const handleNotifClick = async () => {
+                if (n.status === 'unread') { await api.markNotificationAsRead(n.id); await refreshStates(); }
+                if (n.type === 'invite_sent' && (n as any).interviewDateTime) {
+                  setInterviewModal({ title: n.title, dateTime: (n as any).interviewDateTime });
+                  return;
+                }
+                if (n.relatedApplicationId) navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
+                else if (n.relatedJobId) navigate('candidate-job-detail', { jobId: n.relatedJobId });
+              };
+              return (
+                <div key={n.id} onClick={handleNotifClick}
+                  className={`p-5 flex items-start gap-4 transition cursor-pointer ${n.status === 'unread' ? 'bg-blue-50/40 hover:bg-blue-50' : 'hover:bg-gray-50'}`}>
+                  <div className={`p-2 rounded-lg shrink-0 ${n.status === 'unread' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
+                    <Bell className="w-4 h-4" />
                   </div>
-                  <p className="text-xs text-gray-600">{n.content}</p>
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-xs font-bold ${n.status === 'unread' ? 'text-gray-950' : 'text-gray-500'}`}>{n.title}</span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {n.status === 'unread' && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
+                        <span className="text-[10px] text-gray-400">{(n.date || n.createdAt) ? new Date(n.date || n.createdAt || '').toLocaleString() : 'Just now'}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500">{n.content || (n as any).message}</p>
+                    {n.type === 'invite_sent' && (n as any).interviewDateTime && (
+                      <span className="text-[10px] text-green-600 font-semibold">📅 Click to view interview & add to calendar</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {notifications.length === 0 && (
-              <div className="p-12 text-center text-gray-400 italic">No notifications inside sandbox.</div>
+              <div className="p-12 text-center text-gray-400 italic">No notifications yet.</div>
             )}
           </div>
         </div>
       )}
 
     </div>
+
+    {interviewModal && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setInterviewModal(null)}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5" onClick={e => e.stopPropagation()}>
+          <div className="text-center space-y-2">
+            <span className="text-4xl">📅</span>
+            <h2 className="text-lg font-bold text-gray-900">{interviewModal.title}</h2>
+            <p className="text-sm text-gray-600">{new Date(interviewModal.dateTime).toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' })}</p>
+          </div>
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 text-center">Duration: 1 hour · Confirm attendance with recruiter</div>
+          <div className="space-y-2">
+            <button onClick={async () => {
+              const dt = new Date(interviewModal.dateTime);
+              const dtEnd = new Date(dt.getTime() + 3600000);
+              const fmt = (d: Date) => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+              // Open Google Calendar directly
+              const gcUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+                '&text=' + encodeURIComponent(interviewModal.title) +
+                '&dates=' + fmt(dt) + '/' + fmt(dtEnd) +
+                '&details=' + encodeURIComponent('Interview scheduled via QANI AI Recruitment Platform. Please confirm your attendance.') +
+                '&sf=true&output=xml';
+              window.open(gcUrl, '_blank');
+              // Also notify recruiter that candidate accepted
+              try {
+                await fetch('/api/v1/notifications/send', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    recipientEmail: 'recruiter@qani.io',
+                    recipientId: 'recruiter',
+                    type: 'invite_sent',
+                    title: 'Interview Accepted — ' + user.firstName + ' ' + user.lastName,
+                    message: user.firstName + ' ' + user.lastName + ' has accepted the interview scheduled for ' + dt.toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' }) + '.',
+                    interviewDateTime: interviewModal.dateTime,
+                  })
+                });
+              } catch(e) {}
+              showToast('Google Calendar opened! Interview confirmed.', 'success');
+              setInterviewModal(null);
+            }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold cursor-pointer">
+              ✅ Confirm & Open Google Calendar
+            </button>
+            <button onClick={() => {
+              const dt = new Date(interviewModal.dateTime);
+              const dtEnd = new Date(dt.getTime() + 3600000);
+              const fmt = (d: Date) => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+              const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//QANI//EN','BEGIN:VEVENT',
+                'DTSTART:'+fmt(dt),'DTEND:'+fmt(dtEnd),
+                'SUMMARY:'+interviewModal.title,
+                'DESCRIPTION:Interview scheduled via QANI.',
+                'STATUS:CONFIRMED','END:VEVENT','END:VCALENDAR'].join('\r\n');
+              const blob = new Blob([ics],{type:'text/calendar'});
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href=url; a.download='interview.ics'; a.click();
+              URL.revokeObjectURL(url);
+              showToast('Calendar file downloaded for Outlook/Apple Calendar.','success');
+              setInterviewModal(null);
+            }} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold cursor-pointer">
+              📥 Download for Outlook / Apple Calendar
+            </button>
+            <button onClick={() => setInterviewModal(null)} className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold cursor-pointer">Close</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 };

@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Globe, Layout, LogIn, Users, Briefcase, HelpCircle, ChevronDown, ChevronRight, Eye, EyeOff, Save, RotateCcw, FileText, Layers, Plus, Trash2, AlertCircle, CheckCircle, AlignLeft, Link, Menu } from 'lucide-react';
 
