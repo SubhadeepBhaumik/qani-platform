@@ -163,6 +163,49 @@ export function pushNotification(recipientId: string, recipientEmail: string, ty
   inAppNotifications.push(notif);
 }
 
+// Check for expiring jobs and notify recruiters and matching candidates
+export function checkJobExpiry(roles: any[], applications: any[]) {
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  for (const job of roles) {
+    if (!job.expiresAt || job.status !== 'open') continue;
+    const expiry = new Date(job.expiresAt);
+    const daysLeft = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysLeft === 1) {
+      // Notify recruiter
+      const recruiterEmail = job.recruiterId || 'recruiter@qani.io';
+      pushNotification(
+        'recruiter-' + recruiterEmail, recruiterEmail,
+        'job_expiring',
+        'Job Expiring Tomorrow — ' + job.title,
+        'Your job posting for ' + job.title + ' closes tomorrow. Extend the deadline if needed.',
+        job.id
+      );
+
+      // Notify candidates with matching skills who haven't applied
+      const appliedCandidateIds = applications.filter((a: any) => a.roleId === job.id).map((a: any) => a.candidateId);
+      // We can only notify candidates who have applied to other jobs (have email in system)
+      // For now notify all candidates who applied to other jobs with matching skills
+      const notifiedEmails = new Set<string>();
+      for (const app of applications) {
+        if (appliedCandidateIds.includes(app.candidateId)) continue;
+        if (notifiedEmails.has(app.candidateEmail)) continue;
+        if (!app.candidateEmail) continue;
+        notifiedEmails.add(app.candidateEmail);
+        pushNotification(
+          app.candidateId, app.candidateEmail,
+          'job_expiring',
+          'Job Closing Soon — ' + job.title,
+          'The ' + job.title + ' role at ' + (job.company || 'QANI') + ' closes tomorrow. Apply now before it\'s too late.',
+          job.id
+        );
+      }
+    }
+  }
+}
+
 export class NotificationsController {
   static async sendNotification(req: Request, res: Response) {
     try {

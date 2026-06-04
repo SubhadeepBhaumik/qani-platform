@@ -247,6 +247,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   const [jobType, setJobType] = useState('Full-time');
   const [jobSalMin, setJobSalMin] = useState(8000);
   const [jobSalMax, setJobSalMax] = useState(12000);
+  const defaultExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const [jobExpiresAt, setJobExpiresAt] = useState(defaultExpiry);
   const [jobDesc, setJobDesc] = useState('');
   const [mustReqString, setMustReqString] = useState('');
   const [niceReqString, setNiceReqString] = useState('');
@@ -285,6 +287,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setJobType((existingJob.employmentType && existingJob.employmentType[0]) || 'Full-time');
           setJobSalMin(existingJob.salaryMin || 8000);
           setJobSalMax(existingJob.salaryMax || 12000);
+          if (existingJob.expiresAt) setJobExpiresAt(existingJob.expiresAt.split('T')[0]);
           setJobDesc(existingJob.description || '');
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
@@ -300,6 +303,28 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
         }
       };
       loadJob();
+    }
+    // If no editJobId, reset all fields for new job
+    if (!activeParams.editJobId && subView === 'create-job') {
+      setJobTitle('');
+      setJobDept('Engineering');
+      setJobCategory('Software Engineering');
+      setJobLoc('');
+      setJobType('Full-time');
+      setJobSalMin(80000);
+      setJobSalMax(120000);
+      setJobDesc('');
+      setMustReqString('');
+      setNiceReqString('');
+      setScreeningQueries([]);
+      setLocationWeight(80);
+      setSalaryWeight(90);
+      setQualificationsWeight(85);
+      setWorkRightsWeight(95);
+      setSkillsWeight(100);
+      setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true });
+      const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      setJobExpiresAt(newExpiry);
     }
   }, [activeParams.editJobId, subView]);
   
@@ -380,6 +405,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       mandatoryQuestions: mandatoryQuestions,
       status: 'open',
       postedDate: new Date().toISOString().split('T')[0],
+      expiresAt: jobExpiresAt,
       qualificationWeights: {
         locationWeight,
         salaryWeight,
@@ -1170,6 +1196,12 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700 block">Salary Max</label>
                   <input type="number" value={jobSalMax} onChange={(e) => setJobSalMax(Number(e.target.value))} className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-700 block">Application Closing Date</label>
+                <input type="date" value={jobExpiresAt} onChange={(e) => setJobExpiresAt(e.target.value)} min={new Date().toISOString().split('T')[0]}
+                  className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none cursor-pointer" />
+                <p className="text-[10px] text-gray-400">Job will be automatically closed after this date.</p>
                 </div>
               </div>
 
