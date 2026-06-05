@@ -978,7 +978,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                       </div>
                     ))}
                 {/* Interview Scheduling */}
-                {app.status === 'qualified' && (
+                {app.status === 'qualified' && (app.aiScore || (app as any).score || app.scorecard || (app as any).scoreBreakdown) && (
                   <div className="p-4 bg-green-50 border border-green-200 rounded-xl space-y-3">
                     {(app as any).interviewDateTime ? (
                       <>
@@ -1020,17 +1020,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                           })
                         });
                         await refreshStates();
-                        // Open Google Calendar for recruiter
-                        const dtR = new Date(dt);
-                        const dtEndR = new Date(dtR.getTime() + 3600000);
-                        const fmtR = (d: Date) => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
-                        const gcUrlR = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
-                          '&text=' + encodeURIComponent('Interview — ' + (app.candidateName||'Candidate') + ' for ' + (app.jobTitle||'Position')) +
-                          '&dates=' + fmtR(dtR) + '/' + fmtR(dtEndR) +
-                          '&details=' + encodeURIComponent('Interview with ' + (app.candidateName||'Candidate') + ' scheduled via QANI.') +
-                          '&sf=true&output=xml';
-                        window.open(gcUrlR, '_blank');
-                        showToast('Interview scheduled! Google Calendar opened. Candidate notified for ' + formatted, 'success');
+                        showToast('Interview scheduled! Candidate notified for ' + formatted + '. You will receive a notification when candidate confirms.', 'success');
                       } catch(e) { showToast('Failed to schedule interview.', 'error'); }
                     }} className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-semibold cursor-pointer">
                       {(app as any).interviewDateTime ? 'Reschedule & Notify Candidate' : 'Confirm & Notify Candidate'}

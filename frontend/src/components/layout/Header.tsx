@@ -74,8 +74,22 @@ export const Header: React.FC = () => {
                           await refreshStates();
                         }
                         setShowNotifDropdown(false);
-                        if (n.type === 'invite_sent') {
-                          navigate('candidate-notifications');
+                        if (n.type === 'invite_sent' && (n as any).interviewDateTime) {
+                          if (user?.role === 'recruiter') {
+                            // Open Google Calendar for recruiter
+                            const dt = new Date((n as any).interviewDateTime);
+                            const dtEnd = new Date(dt.getTime() + 3600000);
+                            const fmt = (d: Date) => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+                            const title = encodeURIComponent(n.title || 'Interview');
+                            const gcUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+                              '&text=' + title +
+                              '&dates=' + fmt(dt) + '/' + fmt(dtEnd) +
+                              '&details=' + encodeURIComponent((n as any).message || 'Interview via QANI') +
+                              '&sf=true&output=xml';
+                            window.open(gcUrl, '_blank');
+                          } else {
+                            navigate('candidate-notifications');
+                          }
                         } else if (n.relatedApplicationId) {
                           const role = user?.role;
                           if (role === 'candidate') navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });

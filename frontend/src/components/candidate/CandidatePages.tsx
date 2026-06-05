@@ -1266,20 +1266,24 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               window.open(gcUrl, '_blank');
               // Also notify recruiter that candidate accepted
               try {
+                // Find the application to get recruiter email
+                const matchedApp = applications.find((a: any) => a.id === interviewModal.applicationId);
+                const recruiterEmail = (matchedApp as any)?.recruiterEmail || 'recruiter@qani.io';
                 await fetch('/api/v1/notifications/send', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    recipientEmail: 'recruiter@qani.io',
-                    recipientId: 'recruiter',
+                    recipientEmail: recruiterEmail,
+                    recipientId: 'recruiter-' + recruiterEmail,
                     type: 'invite_sent',
-                    title: 'Interview Accepted — ' + user.firstName + ' ' + user.lastName,
-                    message: user.firstName + ' ' + user.lastName + ' has accepted the interview scheduled for ' + dt.toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' }) + '.',
+                    title: 'Interview Confirmed — ' + user.firstName + ' ' + user.lastName,
+                    message: user.firstName + ' ' + user.lastName + ' has confirmed the interview scheduled for ' + dt.toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' }) + '. Click to add to your Google Calendar.',
                     interviewDateTime: interviewModal.dateTime,
+                    relatedApplicationId: interviewModal.applicationId,
                   })
                 });
               } catch(e) {}
-              showToast('Google Calendar opened! Interview confirmed.', 'success');
+              showToast('Google Calendar opened! Recruiter notified of your confirmation.', 'success');
               setInterviewModal(null);
             }} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold cursor-pointer">
               ✅ Confirm & Open Google Calendar
