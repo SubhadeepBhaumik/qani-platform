@@ -26,7 +26,7 @@ export const SupportChatbot: React.FC = () => {
 
   const quickQuestions = [
     "How does candidate evaluation work?",
-    "Is my Gemini API key secure on QANI?",
+    "Is my OpenAI API key secure on QANI?",
     "How do I switch roles for testing?",
     "How to post a job screening?"
   ];

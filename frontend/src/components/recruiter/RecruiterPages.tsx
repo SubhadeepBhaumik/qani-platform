@@ -898,7 +898,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     <div className="p-4 bg-gray-50 border border-dashed rounded-xl space-y-1">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-blue-800">
                         <Sparkles className="w-4 h-4" />
-                        <span>Gemini Recruiter Feedback:</span>
+                        <span>QANI AI Feedback:</span>
                       </div>
                       <p className="text-xs text-gray-700 leading-relaxed italic mt-1 pb-2">"{app.aiFeedback}"</p>
                     </div>
@@ -1379,7 +1379,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
             {/* Slider weights coordinates right */}
             <div className="lg:col-span-4 space-y-6 border-l pl-4 border-gray-150">
               <span className="text-xs font-bold text-gray-900 uppercase tracking-widest block">Qualification Weights</span>
-              <p className="text-[10px] text-gray-400">Weight indicators determine how critical each scorecard metric is when Gemini auto-classifies candidate tiers.</p>
+              <p className="text-[10px] text-gray-400">Weight indicators determine how critical each scorecard metric is when QANI AI scores and classifies candidate tiers.</p>
               
               <div className="space-y-4">
                 <div className="space-y-1.55">

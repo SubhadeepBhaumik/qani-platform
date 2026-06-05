@@ -31,7 +31,7 @@ export const HelpPage: React.FC = () => {
           <HelpCircle className="w-7 h-7 text-blue-600" />
           <span>Documentation & Platform FAQs</span>
         </h1>
-        <p className="text-xs text-gray-500">Understand automated matches, security layers, and how Gemini AI scores candidate criteria.</p>
+        <p className="text-xs text-gray-500">Understand automated matches, security layers, and how QANI AI scores candidate criteria.</p>
       </div>
 
       {/* FAQs blocks */}
@@ -46,9 +46,9 @@ export const HelpPage: React.FC = () => {
         </div>
 
         <div className="p-5 bg-white border border-gray-200 rounded-xl space-y-2 shadow-sm">
-          <h3 className="font-bold text-sm text-gray-950">Is my Gemini API key secure on the QANI Platform?</h3>
+          <h3 className="font-bold text-sm text-gray-950">Is my OpenAI API key secure on the QANI Platform?</h3>
           <p className="text-xs text-gray-600 leading-relaxed">
-            Yes, absolutely. QANI implements a clean full-stack architecture where all API requests are proxied securely through the Express backend. This guarantees that your private Gemini API key is never transmitted or exposed in the user's browser DevTools.
+            Yes, absolutely. QANI implements a clean full-stack architecture where all API requests are proxied securely through the Express backend. This guarantees that your private OpenAI API key is never transmitted or exposed in the user's browser DevTools.
           </p>
         </div>
 
