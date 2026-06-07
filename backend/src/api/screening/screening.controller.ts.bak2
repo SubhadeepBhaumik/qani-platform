@@ -150,40 +150,13 @@ export class ScreeningController {
         'REQUIREMENTS: ' + (job.requirementsMust || []).join(', '),
       ].filter(s => s !== undefined).join('\r\n');
 
-      // Build answered questions summary to prevent re-asking
-      const allMessages = session.messages;
-      const answeredSummary: string[] = [];
-      const mandatoryLabels = [
-        mandQ.locationCommute ? 'Location/commute' : '',
-        mandQ.workRights ? 'Work rights' : '',
-        mandQ.salaryExpectation ? 'Salary expectation' : '',
-        mandQ.yearsExperience ? 'Years of experience' : '',
-        mandQ.driversLicence ? 'Driver licence' : '',
-      ].filter(Boolean);
-
-      // Pair AI questions with candidate answers
-      let qIdx = 0;
-      for (let i = 0; i < allMessages.length - 1; i++) {
-        if (allMessages[i].role === 'assistant' && allMessages[i+1] && allMessages[i+1].role === 'user') {
-          const label = qIdx < mandatoryLabels.length ? mandatoryLabels[qIdx] : 'Job-specific Q' + (qIdx - mandatoryLabels.length + 1);
-          answeredSummary.push(label + ': ' + allMessages[i+1].content.substring(0, 80));
-          qIdx++;
-        }
-      }
-
-      const answeredBlock = answeredSummary.length > 0
-        ? '\r\nALREADY ANSWERED — DO NOT ASK THESE AGAIN:\r\n' + answeredSummary.map((s,i) => (i+1) + '. ' + s).join('\r\n')
-        : '';
-
-      const fullSystemPrompt = systemPrompt + answeredBlock;
-
-      // Send full history but cap at 20 messages for token efficiency
-      const recentMessages = session.messages.slice(-20);
+      // Token optimisation: only send last 12 messages to GPT, not full history
+      const recentMessages = session.messages.slice(-12);
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: fullSystemPrompt },
+          { role: 'system', content: systemPrompt },
           ...recentMessages,
         ],
         max_tokens: 300,
