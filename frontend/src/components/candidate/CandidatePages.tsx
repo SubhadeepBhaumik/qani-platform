@@ -793,7 +793,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       if (!window.confirm('End this screening session? Your responses will be scored.')) return;
                       try {
                         const token = localStorage.getItem('qani_auth_token');
-                        const res = await fetch('http://qani.io/api/v1/screening/end', {
+                        const res = await fetch('https://qani.io/api/v1/screening/end', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
                           body: JSON.stringify({ sessionId: session.id, decision: 'review' })
