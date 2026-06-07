@@ -709,8 +709,9 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const app = applications.find(a => a.id === session.applicationId);
         const job = jobs.find(j => j.id === app?.jobId);
 
-        const totalQuestions = job?.screeningQuestions?.length || 5;
+        const totalQuestions = (session as any).totalQuestions || ((job?.screeningQuestions?.length || 0) + (session as any).mandatoryCount || 5);
         const answeredCount = session.messages.filter(m => m.role === 'user').length;
+        const currentQ = Math.min(answeredCount + 1, totalQuestions);
         const progressPercent = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
 
         const handleChatSubmit = (e: React.FormEvent) => {
@@ -734,7 +735,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               </button>
               <div className="text-right">
                 <span className="text-[10px] font-mono text-gray-500 uppercase block">Interview Progress</span>
-                <span className="text-xs font-bold text-blue-600">{progressPercent}% Completed</span>
+                <span className="text-xs font-bold text-blue-600">Question {answeredCount >= totalQuestions ? totalQuestions : currentQ} of {totalQuestions}</span>
+                <span className="text-[10px] text-gray-400 block">{progressPercent}% completed</span>
               </div>
             </div>
 
