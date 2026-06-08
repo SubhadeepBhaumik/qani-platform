@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { sendApplicationReceivedEmail, sendScreeningCompleteEmail, sendInterviewInviteEmail, sendRecruiterScreeningAlertEmail } from '../../services/email.service';
+import { sendEmail, sendApplicationReceivedEmail, sendScreeningCompleteEmail, sendInterviewInviteEmail, sendRecruiterScreeningAlertEmail } from '../../services/email.service';
 
 const prisma = new PrismaClient();
 
@@ -30,7 +30,24 @@ export async function pushNotification(
     if (recipientEmail && recipientEmail.includes('@')) {
       const firstName = recipientEmail.split('@')[0].split('.')[0];
       const name = firstName.charAt(0).toUpperCase() + firstName.slice(1);
-      if (type === 'new_application') {
+      if (type === 'system' && title.toLowerCase().includes('invited')) {
+        // Team invite email
+        const html = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:32px;">
+            <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+              <div style="margin-bottom:24px;">
+                <span style="background:#1e40af;color:#fff;font-weight:900;font-size:14px;padding:6px 12px;border-radius:6px;font-family:monospace;">Q</span>
+                <span style="font-weight:800;font-size:18px;color:#111827;margin-left:8px;">QANI</span>
+              </div>
+              <h2 style="color:#111827;font-size:20px;margin:0 0 8px;">You've been invited to QANI</h2>
+              <p style="color:#374151;font-size:14px;line-height:1.6;">${message || 'You have been invited to join the QANI AI Recruitment Platform.'}</p>
+              <a href="https://qani.io/register/recruiter" style="display:inline-block;background:#2563eb;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:16px;">Accept Invitation</a>
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+              <p style="color:#9ca3af;font-size:12px;">QANI AI Recruitment Platform · Australia · <a href="https://qani.io" style="color:#6b7280;">qani.io</a></p>
+            </div>
+          </div>`;
+        sendEmail(recipientEmail, title, html).catch(console.error);
+      } else if (type === 'new_application') {
         const jobMatch = title.match(/— (.+)$/);
         const jobTitle = jobMatch ? jobMatch[1] : 'the position';
         sendApplicationReceivedEmail(recipientEmail, name, jobTitle, 'QANI').catch(console.error);
@@ -97,20 +114,45 @@ export async function checkJobExpiry(roles: any[], applications: any[]) {
 export class NotificationsController {
   static async sendNotification(req: Request, res: Response) {
     try {
-      const { to, subject, message, recipientId, recipientEmail, type, body, relatedJobId, relatedApplicationId, interviewDateTime } = req.body;
+      const { to, subject, title: titleField, message, recipientId, recipientEmail, type, body, relatedJobId, relatedApplicationId, interviewDateTime } = req.body;
+      const finalEmail = recipientEmail || to || null;
+      const finalTitle = subject || titleField || 'Notification';
+      const finalMessage = message || body || '';
+      const finalType = type || 'system';
+
       const notif = await prisma.notification.create({
         data: {
           recipientId: recipientId || to || 'unknown',
-          recipientEmail: recipientEmail || to || null,
-          type: type || 'system',
-          title: subject || 'Notification',
-          message: message || body || '',
+          recipientEmail: finalEmail,
+          type: finalType,
+          title: finalTitle,
+          message: finalMessage,
           status: 'unread',
           relatedJobId: relatedJobId || null,
           relatedApplicationId: relatedApplicationId || null,
           interviewDateTime: interviewDateTime ? new Date(interviewDateTime) : null,
         }
       });
+
+      // Send real email for invite notifications
+      if (finalEmail && finalEmail.includes('@') && finalType === 'system' && finalTitle.toLowerCase().includes('invited')) {
+        const html = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:32px;">
+            <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+              <div style="margin-bottom:24px;">
+                <span style="background:#1e40af;color:#fff;font-weight:900;font-size:14px;padding:6px 12px;border-radius:6px;font-family:monospace;">Q</span>
+                <span style="font-weight:800;font-size:18px;color:#111827;margin-left:8px;">QANI</span>
+              </div>
+              <h2 style="color:#111827;font-size:20px;margin:0 0 16px;">You have been invited to QANI</h2>
+              <p style="color:#374151;font-size:14px;line-height:1.6;">${finalMessage}</p>
+              <a href="https://qani.io/register/recruiter" style="display:inline-block;background:#2563eb;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin-top:16px;">Accept Invitation</a>
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+              <p style="color:#9ca3af;font-size:12px;">QANI AI Recruitment Platform · Australia · <a href="https://qani.io">qani.io</a></p>
+            </div>
+          </div>`;
+        sendEmail(finalEmail, finalTitle, html).catch(console.error);
+      }
+
       return res.status(201).json(notif);
     } catch (error) {
       console.error('Send notification error:', error);
