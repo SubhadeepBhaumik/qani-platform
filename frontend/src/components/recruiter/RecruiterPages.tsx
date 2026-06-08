@@ -199,9 +199,9 @@ const RecruiterSettings: React.FC<{ user: any; showToast: any }> = ({ user, show
           )}
           {otpSent && !otpVerified && (
             <div className="space-y-3">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">OTP sent. <span className="text-gray-500">(Demo: 123456)</span></div>
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">OTP sent. Check your {settingsTab === "email" ? "email" : "phone"}.</div>
               <div className="flex gap-2">
-                <input value={otpValue} onChange={e => setOtpValue(e.target.value)} placeholder="123456" maxLength={6}
+                <input value={otpValue} onChange={e => setOtpValue(e.target.value)} placeholder="Enter 6-digit OTP" maxLength={6}
                   className="w-32 h-9 bg-gray-50 border border-gray-200 rounded-lg px-3 text-xs text-center font-mono tracking-widest focus:outline-none focus:border-blue-500" />
                 <button onClick={verifyOTP} className="cursor-pointer h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">Verify OTP</button>
                 <button onClick={() => sendOTP(settingsTab === "email" ? newEmail : newPhone)} className="cursor-pointer h-9 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded-lg">Resend</button>

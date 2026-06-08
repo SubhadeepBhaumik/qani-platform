@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { generateOTP, storeOTP, verifyOTP } from '../../services/otp.service';
+import { sendEmail } from '../../services/email.service';
+import { sendOTPSMS } from '../../services/sms.service';
 import { AuthService } from '../../services/auth.service';
 
 const prisma = new PrismaClient();
@@ -103,6 +106,51 @@ export class AuthController {
       });
     } catch (error) {
       return res.status(401).json({ error: 'Invalid token' });
+    }
+  }
+
+  static async sendOTP(req: Request, res: Response) {
+    try {
+      const { target, type, userId } = req.body;
+      if (!target || !type) return res.status(400).json({ error: 'target and type required' });
+
+      const otp = generateOTP();
+      const key = userId + ':' + type + ':' + target;
+      storeOTP(key, otp, target, type);
+
+      if (type === 'sms') {
+        await sendOTPSMS(target, otp);
+        return res.json({ success: true, message: 'OTP sent via SMS' });
+      } else {
+        const html = `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;">
+            <h2 style="color:#111827;">Your QANI Verification Code</h2>
+            <div style="background:#f3f4f6;border-radius:8px;padding:24px;text-align:center;margin:24px 0;">
+              <p style="font-size:36px;font-weight:900;letter-spacing:8px;color:#2563eb;margin:0;">${otp}</p>
+            </div>
+            <p style="color:#6b7280;font-size:14px;">This code expires in 10 minutes. Do not share it with anyone.</p>
+          </div>`;
+        await sendEmail(target, 'Your QANI Verification Code', html);
+        return res.json({ success: true, message: 'OTP sent via email' });
+      }
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      return res.status(500).json({ error: 'Failed to send OTP' });
+    }
+  }
+
+  static async verifyOTPEndpoint(req: Request, res: Response) {
+    try {
+      const { target, type, otp, userId } = req.body;
+      if (!target || !type || !otp) return res.status(400).json({ error: 'target, type and otp required' });
+
+      const key = userId + ':' + type + ':' + target;
+      const result = verifyOTP(key, otp);
+
+      if (!result.valid) return res.status(400).json({ error: result.reason });
+      return res.json({ success: true, message: 'OTP verified' });
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to verify OTP' });
     }
   }
 
