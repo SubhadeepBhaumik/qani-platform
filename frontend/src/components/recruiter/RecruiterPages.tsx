@@ -1644,7 +1644,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                         recipientId: teamEmailInvite,
                         type: 'system',
                         title: 'You have been invited to join QANI',
-                        message: `You have been invited to join QANI as a ${teamRoleInvite}. Visit https://qani.io/register/recruiter to create your account.`,
+                        message: `You have been invited to join QANI as a ${teamRoleInvite}. Click here to accept: https://qani.io/accept-invite?email=${encodeURIComponent(teamEmailInvite)}&role=${encodeURIComponent(teamRoleInvite)}`,
                       })
                     }).then(() => showToast(`Invite sent to ${teamEmailInvite}`, 'success')).catch(() => showToast('Failed to send invite.', 'error'));
                     setTeamEmailInvite('');

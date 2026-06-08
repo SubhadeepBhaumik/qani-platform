@@ -6,6 +6,7 @@ import { Header } from './components/layout/Header';
 import { HomePage } from './components/shared/HomePage';
 import { AuthPages } from './components/auth/AuthPages';
 import { HelpPage } from './components/shared/HelpPage';
+import { AcceptInvitePage } from './components/shared/AcceptInvitePage';
 import { CandidatePages } from './components/candidate/CandidatePages';
 import { RecruiterPages } from './components/recruiter/RecruiterPages';
 import { CandidatesDirectory } from './components/recruiter/CandidatesDirectory';
@@ -20,6 +21,7 @@ export const ROUTES: Record<string, string> = {
   'auth-register-recruiter': '/register/recruiter',
   'verify-email': '/verify-email',
   'help': '/help',
+  'accept-invite': '/accept-invite',
   'candidate-dashboard': '/candidate/dashboard',
   'candidate-jobs': '/candidate/jobs',
   'candidate-job-detail': '/candidate/job',
@@ -54,7 +56,7 @@ const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
   Object.entries(ROUTES).map(([view, path]) => [path, view])
 );
 
-const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'help'];
+const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'help', 'accept-invite'];
 
 const RouterSync: React.FC = () => {
   const { activeView, navigate: appNavigate, activeParams } = useApp();
@@ -117,6 +119,7 @@ const AppContent: React.FC = () => {
       case 'auth-register-recruiter': return <AuthPages subView="register-recruiter" />;
       case 'verify-email': return <AuthPages subView="verify-email" />;
       case 'help': return <HelpPage />;
+      case 'accept-invite': return <AcceptInvitePage />;
       case 'candidate-dashboard': return <CandidatePages subView="dashboard" />;
       case 'candidate-jobs': return <CandidatePages subView="jobs" />;
       case 'candidate-job-detail': return <CandidatePages subView="job-detail" />;
