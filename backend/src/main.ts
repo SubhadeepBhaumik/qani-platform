@@ -8,10 +8,10 @@ import morgan from 'morgan';
 import 'express-async-errors';
 import dotenv from 'dotenv';
 import { AuthController } from './api/auth/auth.controller';
-import { RolesController } from './api/roles/roles.controller';
+import { RolesController, syncRolesToMemory } from './api/roles/roles.controller';
 import { RequirementsController } from './api/requirements/requirements.controller';
 import { CandidatesController } from './api/candidates/candidates.controller';
-import { ApplicationsController } from './api/applications/applications.controller';
+import { ApplicationsController, syncApplicationsToMemory } from './api/applications/applications.controller';
 import { ScreeningController } from './api/screening/screening.controller';
 import { ScoringController } from './api/scoring/scoring.controller';
 import { DashboardController } from './api/dashboard/dashboard.controller';
@@ -116,6 +116,8 @@ app.post('/api/v1/audit-logs', (_req, res) => res.status(201).json({}));
 app.get('/api/v1/users', (_req, res) => res.json([]));
 
 AuthController.seedDemoUsers().then(() => console.log('Demo users ready'));
+syncRolesToMemory().then(() => console.log('Jobs synced from DB:', require('./api/roles/roles.controller').roles.length));
+syncApplicationsToMemory().then(() => console.log('Applications synced from DB:', require('./api/applications/applications.controller').applications.length));
 app.listen(port, () => {
   console.log(`✓ Server running on http://localhost:${port}`);
 });

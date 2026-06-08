@@ -1,63 +1,69 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database...');
 
-  const org = await prisma.organisation.create({
-    data: { name: 'Recruitment School', industry: 'Recruitment', subscriptionPlan: 'premium', status: 'active' },
-  });
+  // Clear existing data
+  await prisma.screeningSession.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.application.deleteMany();
+  await prisma.job.deleteMany();
+  await prisma.candidateProfile.deleteMany();
+  await prisma.teamMember.deleteMany();
+  await prisma.user.deleteMany();
 
-  const recruiter = await prisma.user.create({
-    data: {
-      organisationId: org.id,
-      email: 'steve@recruitmentschool.com.au',
-      passwordHash: await bcrypt.hash('SecurePass123!', 10),
-      firstName: 'Steve',
-      lastName: 'Begg',
-      role: 'RECRUITER',
-      emailVerified: true,
-    },
-  });
+  const hash = await bcrypt.hash('Admin@QANI2026!', 10);
+  const recruitHash = await bcrypt.hash('Recruit@QANI2026!', 10);
+  const candHash = await bcrypt.hash('Candi@QANI2026!', 10);
 
-  const candidates = [];
-  for (let i = 1; i <= 20; i++) {
-    candidates.push(await prisma.candidate.create({
-      data: {
-        organisationId: org.id,
-        email: `candidate${i}@example.com`,
-        firstName: 'John',
-        lastName: `Candidate${i}`,
-        suburb: ['Sydney', 'Melbourne', 'Brisbane'][i % 3],
-      },
-    }));
-  }
+  // Users
+  const admin = await prisma.user.create({ data: { email: 'admin@qani.io', passwordHash: hash, firstName: 'QANI', lastName: 'Admin', role: 'admin', companyName: 'QANI', emailVerified: true } });
+  const sarah = await prisma.user.create({ data: { email: 'recruiter@qani.io', passwordHash: recruitHash, firstName: 'Sarah', lastName: 'Chen', role: 'recruiter', companyName: 'Atlassian', emailVerified: true } });
+  const james = await prisma.user.create({ data: { email: 'james.hr@techcorp.au', passwordHash: recruitHash, firstName: 'James', lastName: 'Morrison', role: 'recruiter', companyName: 'Canva', emailVerified: true } });
+  const emma = await prisma.user.create({ data: { email: 'emma.hr@seek.com.au', passwordHash: recruitHash, firstName: 'Emma', lastName: 'Thompson', role: 'recruiter', companyName: 'Seek', emailVerified: true } });
+  const liam = await prisma.user.create({ data: { email: 'candidate@qani.io', passwordHash: candHash, firstName: 'Liam', lastName: 'Nguyen', role: 'candidate', emailVerified: true } });
+  const priya = await prisma.user.create({ data: { email: 'priya.sharma@gmail.com', passwordHash: candHash, firstName: 'Priya', lastName: 'Sharma', role: 'candidate', emailVerified: true } });
+  const tom = await prisma.user.create({ data: { email: 'tom.williams@gmail.com', passwordHash: candHash, firstName: 'Tom', lastName: 'Williams', role: 'candidate', emailVerified: true } });
+  const jessica = await prisma.user.create({ data: { email: 'jessica.lee@gmail.com', passwordHash: candHash, firstName: 'Jessica', lastName: 'Lee', role: 'candidate', emailVerified: true } });
+  const marcus = await prisma.user.create({ data: { email: 'marcus.vance@gmail.com', passwordHash: candHash, firstName: 'Marcus', lastName: 'Vance', role: 'candidate', emailVerified: true } });
+  const sophie = await prisma.user.create({ data: { email: 'sophie.martin@gmail.com', passwordHash: candHash, firstName: 'Sophie', lastName: 'Martin', role: 'candidate', emailVerified: true } });
 
-  const roles = [];
-  const roleNames = ['Senior Developer', 'Full Stack Engineer', 'DevOps Engineer', 'Data Scientist', 'QA Engineer'];
-  for (const name of roleNames) {
-    roles.push(await prisma.role.create({
-      data: { organisationId: org.id, title: name, status: 'active' },
-    }));
-  }
+  console.log('Users seeded: 10');
 
-  for (let r = 0; r < roles.length; r++) {
-    for (let c = 0; c < 4; c++) {
-      await prisma.application.create({
-        data: {
-          organisationId: org.id,
-          roleId: roles[r].id,
-          candidateId: candidates[(r * 4 + c) % candidates.length].id,
-          status: ['applied', 'screening', 'completed'][c % 3],
-        },
-      });
-    }
-  }
+  // Jobs — Atlassian
+  const job1 = await prisma.job.create({ data: { recruiterId: sarah.id, company: 'Atlassian', title: 'Senior Software Engineer', department: 'Engineering', location: 'Sydney CBD', employmentType: ['full-time'], salaryMin: 130000, salaryMax: 160000, description: 'Join Atlassian engineering team to build world-class developer tools.', requirementsMust: ['5+ years software engineering', 'React or Vue', 'Node.js or Python', 'Agile/Scrum'], requirementsNice: ['Open source contributions', 'AWS experience'], skillsRequired: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'], experienceLevel: 'Senior', screeningQuestions: ['Describe your experience with high-performance React frontends.', 'How do you approach API security in Node.js?', 'What are your salary expectations and notice period?', 'Describe a complex technical problem you solved recently.'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 20, salaryWeight: 25, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 15 }, status: 'open', postedDate: new Date('2026-05-01') } });
+  const job2 = await prisma.job.create({ data: { recruiterId: sarah.id, company: 'Atlassian', title: 'Product Manager — Platform', department: 'Product', location: 'Sydney CBD', employmentType: ['full-time'], salaryMin: 140000, salaryMax: 170000, description: 'Lead product strategy for Atlassian platform products.', requirementsMust: ['5+ years product management', 'B2B SaaS experience', 'Data-driven decision making'], requirementsNice: ['Technical background', 'Jira/Confluence experience'], skillsRequired: ['Product Strategy', 'Roadmapping', 'Agile', 'Analytics'], experienceLevel: 'Senior', screeningQuestions: ['Describe your product roadmap experience.', 'How do you prioritise features with competing stakeholders?', 'What metrics do you use to measure product success?'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 15, salaryWeight: 25, qualificationsWeight: 25, workRightsWeight: 20, skillsWeight: 15 }, status: 'open', postedDate: new Date('2026-05-05') } });
+  const job3 = await prisma.job.create({ data: { recruiterId: sarah.id, company: 'Atlassian', title: 'DevOps / Platform Engineer', department: 'Engineering', location: 'Sydney CBD', employmentType: ['full-time'], salaryMin: 120000, salaryMax: 150000, description: 'Build and maintain Atlassian cloud infrastructure.', requirementsMust: ['3+ years DevOps', 'Kubernetes', 'CI/CD pipelines', 'AWS or GCP'], requirementsNice: ['Terraform', 'Prometheus/Grafana'], skillsRequired: ['Kubernetes', 'Docker', 'AWS', 'Terraform', 'CI/CD'], experienceLevel: 'Mid-Senior', screeningQuestions: ['Describe your Kubernetes experience in production.', 'How do you handle incident response?', 'What CI/CD tools have you used?'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 20, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 20 }, status: 'open', postedDate: new Date('2026-05-10') } });
 
-  console.log('✅ Seeding complete!');
+  // Jobs — Canva
+  const job8 = await prisma.job.create({ data: { recruiterId: james.id, company: 'Canva', title: 'Frontend Engineer', department: 'Engineering', location: 'Sydney', employmentType: ['full-time'], salaryMin: 120000, salaryMax: 150000, description: 'Build beautiful, performant frontend experiences at Canva.', requirementsMust: ['4+ years frontend', 'React expertise', 'TypeScript', 'Performance optimization'], requirementsNice: ['WebGL', 'Canvas API', 'Design systems'], skillsRequired: ['React', 'TypeScript', 'CSS', 'Performance'], experienceLevel: 'Mid-Senior', screeningQuestions: ['Describe your experience optimising React app performance.', 'How do you approach cross-browser compatibility?', 'What is your experience with design systems?'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 15, salaryWeight: 20, qualificationsWeight: 25, workRightsWeight: 20, skillsWeight: 20 }, status: 'open', postedDate: new Date('2026-05-12') } });
+  const job9 = await prisma.job.create({ data: { recruiterId: james.id, company: 'Canva', title: 'Growth Product Manager', department: 'Product', location: 'Sydney', employmentType: ['full-time'], salaryMin: 130000, salaryMax: 160000, description: 'Drive user growth and activation at Canva.', requirementsMust: ['4+ years product', 'Growth experimentation', 'A/B testing', 'Analytics'], requirementsNice: ['SQL', 'Amplitude or Mixpanel'], skillsRequired: ['Growth', 'A/B Testing', 'Analytics', 'Product Strategy'], experienceLevel: 'Mid-Senior', screeningQuestions: ['Describe a growth experiment you ran and its outcome.', 'How do you identify activation bottlenecks?', 'What growth metrics matter most to you?'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 15, salaryWeight: 25, qualificationsWeight: 25, workRightsWeight: 20, skillsWeight: 15 }, status: 'open', postedDate: new Date('2026-05-14') } });
+
+  // Jobs — Seek
+  const job13 = await prisma.job.create({ data: { recruiterId: emma.id, company: 'Seek', title: 'Full Stack Developer', department: 'Engineering', location: 'Melbourne', employmentType: ['full-time'], salaryMin: 100000, salaryMax: 130000, description: 'Build and maintain Seek job platform features.', requirementsMust: ['3+ years full stack', 'React', 'Node.js', 'PostgreSQL'], requirementsNice: ['Elasticsearch', 'Redis', 'GraphQL'], skillsRequired: ['React', 'Node.js', 'PostgreSQL', 'REST APIs'], experienceLevel: 'Mid', screeningQuestions: ['Describe your full stack project experience.', 'How do you handle database performance issues?', 'What is your experience with REST API design?'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 25, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 15 }, status: 'open', postedDate: new Date('2026-05-15') } });
+  const job15 = await prisma.job.create({ data: { recruiterId: emma.id, company: 'Seek', title: 'Data Analyst', department: 'Data', location: 'Melbourne', employmentType: ['full-time'], salaryMin: 80000, salaryMax: 105000, description: 'Analyse data to drive business decisions at Seek.', requirementsMust: ['2+ years data analysis', 'SQL proficiency', 'Excel/Google Sheets', 'Data visualisation'], requirementsNice: ['Python', 'Tableau', 'Power BI'], skillsRequired: ['SQL', 'Python', 'Tableau', 'Excel'], experienceLevel: 'Mid', screeningQuestions: ['Describe a data analysis project you completed.', 'How proficient are you with SQL?', 'What visualisation tools have you used?'], mandatoryQuestions: { locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 25, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 15 }, status: 'open', postedDate: new Date('2026-05-18') } });
+
+  // Additional jobs
+  const job21 = await prisma.job.create({ data: { recruiterId: sarah.id, company: 'Atlassian', title: 'AI/ML Engineer', department: 'Engineering', location: 'Remote', employmentType: ['full-time'], salaryMin: 140000, salaryMax: 180000, description: 'Build AI/ML systems powering Atlassian intelligence features.', requirementsMust: ['4+ years ML engineering', 'Python', 'PyTorch or TensorFlow', 'MLOps'], requirementsNice: ['LLM fine-tuning', 'Vector databases', 'RAG systems'], skillsRequired: ['Python', 'PyTorch', 'MLOps', 'LLMs'], experienceLevel: 'Senior', screeningQuestions: ['Describe your ML model deployment experience.', 'What is your experience with LLMs?', 'How do you handle model drift in production?'], mandatoryQuestions: { locationCommute: false, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 10, salaryWeight: 20, qualificationsWeight: 30, workRightsWeight: 20, skillsWeight: 20 }, status: 'open', postedDate: new Date('2026-05-20') } });
+  const job25 = await prisma.job.create({ data: { recruiterId: james.id, company: 'Canva', title: 'Backend Node.js Engineer', department: 'Engineering', location: 'Remote', employmentType: ['full-time'], salaryMin: 110000, salaryMax: 140000, description: 'Build scalable backend services for Canva platform.', requirementsMust: ['3+ years Node.js', 'TypeScript', 'REST APIs', 'PostgreSQL or MongoDB'], requirementsNice: ['GraphQL', 'Redis', 'Microservices'], skillsRequired: ['Node.js', 'TypeScript', 'PostgreSQL', 'REST APIs'], experienceLevel: 'Mid-Senior', screeningQuestions: ['Describe your Node.js backend architecture experience.', 'How do you approach API rate limiting and security?', 'What is your experience with database optimisation?'], mandatoryQuestions: { locationCommute: false, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: false }, qualificationWeights: { locationWeight: 10, salaryWeight: 25, qualificationsWeight: 25, workRightsWeight: 20, skillsWeight: 20 }, status: 'open', postedDate: new Date('2026-05-22') } });
+
+  console.log('Jobs seeded: 8 (key demo jobs)');
+
+  // Applications
+  const app1 = await prisma.application.create({ data: { candidateId: liam.id, candidateName: 'Liam Nguyen', candidateEmail: 'candidate@qani.io', jobId: job1.id, jobTitle: 'Senior Software Engineer', company: 'Atlassian', status: 'qualified', aiScore: 91, scorecard: { locationScore: 95, salaryScore: 88, qualificationsScore: 90, workRightsScore: 100, skillsScore: 85 }, aiFeedback: 'Liam is an excellent match with strong React and Node.js experience, confirmed work rights and salary within budget. Highly recommended for interview.', appliedDate: new Date('2026-05-10'), appliedAt: new Date('2026-05-10') } });
+  const app2 = await prisma.application.create({ data: { candidateId: priya.id, candidateName: 'Priya Sharma', candidateEmail: 'priya.sharma@gmail.com', jobId: job9.id, jobTitle: 'Growth Product Manager', company: 'Canva', status: 'review', aiScore: 72, scorecard: { locationScore: 80, salaryScore: 65, qualificationsScore: 75, workRightsScore: 90, skillsScore: 70 }, aiFeedback: 'Priya has solid product experience but salary expectations are slightly above budget. Recommend manual review.', appliedDate: new Date('2026-05-12'), appliedAt: new Date('2026-05-12') } });
+  const app3 = await prisma.application.create({ data: { candidateId: tom.id, candidateName: 'Tom Williams', candidateEmail: 'tom.williams@gmail.com', jobId: job1.id, jobTitle: 'Senior Software Engineer', company: 'Atlassian', status: 'rejected', aiScore: 38, scorecard: { locationScore: 40, salaryScore: 20, qualificationsScore: 35, workRightsScore: 50, skillsScore: 30 }, aiFeedback: 'Tom does not meet the minimum requirements. Salary expectations significantly exceed budget and experience is insufficient.', appliedDate: new Date('2026-05-13'), appliedAt: new Date('2026-05-13') } });
+  const app4 = await prisma.application.create({ data: { candidateId: jessica.id, candidateName: 'Jessica Lee', candidateEmail: 'jessica.lee@gmail.com', jobId: job15.id, jobTitle: 'Data Analyst', company: 'Seek', status: 'screening', appliedDate: new Date('2026-05-15'), appliedAt: new Date('2026-05-15') } });
+  const app5 = await prisma.application.create({ data: { candidateId: marcus.id, candidateName: 'Marcus Vance', candidateEmail: 'marcus.vance@gmail.com', jobId: job3.id, jobTitle: 'DevOps / Platform Engineer', company: 'Atlassian', status: 'applied', appliedDate: new Date('2026-05-16'), appliedAt: new Date('2026-05-16') } });
+  const app6 = await prisma.application.create({ data: { candidateId: sophie.id, candidateName: 'Sophie Martin', candidateEmail: 'sophie.martin@gmail.com', jobId: job15.id, jobTitle: 'Data Analyst', company: 'Seek', status: 'qualified', aiScore: 88, scorecard: { locationScore: 90, salaryScore: 85, qualificationsScore: 88, workRightsScore: 100, skillsScore: 82 }, aiFeedback: 'Sophie is an excellent fit with strong analytical skills, confirmed work rights and salary within budget.', appliedDate: new Date('2026-05-17'), appliedAt: new Date('2026-05-17') } });
+
+  console.log('Applications seeded: 6');
+  console.log('Database seeding complete.');
 }
 
-main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
+main()
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); });
