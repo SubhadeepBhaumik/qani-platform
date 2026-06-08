@@ -36,6 +36,12 @@ export const AcceptInvitePage: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
+        // Mark invite as accepted in DB
+        fetch('https://qani.io/api/v1/team/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }).catch(console.error);
         setDone(true);
         showToast('Account created! You can now log in.', 'success');
         setTimeout(() => navigate('auth-login'), 2000);

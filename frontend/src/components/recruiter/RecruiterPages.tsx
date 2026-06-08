@@ -345,6 +345,15 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
 
   // Team setup modal triggers
   const [teamEmailInvite, setTeamEmailInvite] = useState('');
+  const [teamMembers, setTeamMembers] = React.useState<any[]>([]);
+  React.useEffect(() => {
+    if (subView === 'team' && user?.id) {
+      const token = localStorage.getItem('qani_auth_token');
+      fetch(`https://qani.io/api/v1/team/members?invitedBy=${user.id}`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+      }).then(r => r.json()).then(d => Array.isArray(d) && setTeamMembers(d)).catch(console.error);
+    }
+  }, [subView, user?.id]);
   const [teamRoleInvite, setTeamRoleInvite] = useState('Recruiter');
 
   // Load initial historical applicant listings for dashboard tables
@@ -1636,6 +1645,13 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 onClick={() => {
                   if (teamEmailInvite) {
                     const token = localStorage.getItem('qani_auth_token');
+                    // Store invite in DB
+                    fetch('https://qani.io/api/v1/team/invite', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                      body: JSON.stringify({ email: teamEmailInvite, role: teamRoleInvite, invitedBy: user?.id, companyId: user?.companyName }),
+                    }).catch(console.error);
+                    // Send invite email
                     fetch('https://qani.io/api/v1/notifications/send', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -1686,8 +1702,31 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
                 <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
               </div>
-              {/* No other team members yet - invite them above */}
-              <div className="pt-4 text-xs text-gray-400 italic">Invite team members using the button above to add them here.</div>
+              {/* Invited team members from DB */}
+              {teamMembers.length === 0 ? (
+                <div className="pt-4 text-xs text-gray-400 italic">No team members yet. Invite colleagues using the button above.</div>
+              ) : (
+                teamMembers.map((m: any) => (
+                  <div key={m.id} className="flex items-center justify-between pt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-700 text-xs">{m.email[0].toUpperCase()}</div>
+                      <div>
+                        <span className="font-bold text-xs text-gray-900 block">{m.email}</span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${m.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{m.status === 'active' ? 'Active' : 'Pending'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase">{m.role}</span>
+                      <button onClick={async () => {
+                        const token = localStorage.getItem('qani_auth_token');
+                        await fetch(`https://qani.io/api/v1/team/members/${m.id}`, { method: 'DELETE', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+                        setTeamMembers(prev => prev.filter(x => x.id !== m.id));
+                        showToast('Member removed.', 'success');
+                      }} className="cursor-pointer text-[10px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ import { ApplicationsController, syncApplicationsToMemory } from './api/applicat
 import { ScreeningController } from './api/screening/screening.controller';
 import { ScoringController } from './api/scoring/scoring.controller';
 import { DashboardController } from './api/dashboard/dashboard.controller';
+import { TeamController } from './api/team/team.controller';
 
 dotenv.config();
 
@@ -43,6 +44,10 @@ app.post('/api/v1/auth/login', AuthController.login);
 app.get('/api/v1/auth/me', AuthController.me);
 app.post('/api/v1/auth/refresh', AuthController.refreshToken);
 app.post('/api/v1/auth/change-password', AuthController.changePassword);
+app.post('/api/v1/team/invite', TeamController.createInvite);
+app.get('/api/v1/team/members', TeamController.getTeamMembers);
+app.post('/api/v1/team/accept', TeamController.acceptInvite);
+app.delete('/api/v1/team/members/:id', TeamController.removeTeamMember);
 app.post('/api/v1/auth/send-otp', AuthController.sendOTP);
 app.post('/api/v1/auth/verify-otp', AuthController.verifyOTPEndpoint);
 
