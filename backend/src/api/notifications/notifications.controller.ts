@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { sendApplicationReceivedEmail, sendScreeningCompleteEmail, sendInterviewInviteEmail, sendRecruiterScreeningAlertEmail } from '../../services/email.service';
 
 const prisma = new PrismaClient();
 
@@ -25,6 +26,35 @@ export async function pushNotification(
         interviewDateTime: interviewDateTime ? new Date(interviewDateTime) : null,
       }
     });
+    // Send real email based on type
+    if (recipientEmail && recipientEmail.includes('@')) {
+      const firstName = recipientEmail.split('@')[0].split('.')[0];
+      const name = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+      if (type === 'new_application') {
+        const jobMatch = title.match(/— (.+)$/);
+        const jobTitle = jobMatch ? jobMatch[1] : 'the position';
+        sendApplicationReceivedEmail(recipientEmail, name, jobTitle, 'QANI').catch(console.error);
+      } else if (type === 'screening_complete' && message) {
+        const scoreMatch = message.match(/Score: (\d+)%/);
+        const recMatch = message.match(/Status: (\w+)|Recommendation: (\w+)/);
+        const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+        const rec = recMatch ? (recMatch[1] || recMatch[2]).toLowerCase() : 'review';
+        const jobMatch = title.match(/— (.+)$/);
+        const jobTitle = jobMatch ? jobMatch[1] : 'the position';
+        if (score > 0) {
+          sendScreeningCompleteEmail(recipientEmail, name, jobTitle, score, rec).catch(console.error);
+        }
+        // Also alert recruiter
+        if (recipientId && recipientId.startsWith('recruiter-')) {
+          sendRecruiterScreeningAlertEmail(recipientEmail, name, name, jobTitle, score, rec).catch(console.error);
+        }
+      } else if (type === 'invite_sent' && interviewDateTime) {
+        const jobMatch = title.match(/— (.+)$/);
+        const jobTitle = jobMatch ? jobMatch[1] : 'the position';
+        const dt = new Date(interviewDateTime).toLocaleString('en-AU', { dateStyle: 'full', timeStyle: 'short' });
+        sendInterviewInviteEmail(recipientEmail, name, jobTitle, 'QANI', dt).catch(console.error);
+      }
+    }
   } catch(e) {
     console.error('pushNotification error:', e);
   }
