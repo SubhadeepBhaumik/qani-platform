@@ -41,7 +41,7 @@ export async function syncApplicationsToMemory() {
 export class ApplicationsController {
   static async applyForRole(req: Request, res: Response) {
     try {
-      const { candidateId, roleId, candidateName, candidateEmail, jobTitle, company } = req.body;
+      const { candidateId, roleId, candidateName, candidateEmail, jobTitle, company, cvUrl, cvFilename } = req.body;
       if (!candidateId || !roleId) {
         return res.status(400).json({ error: 'candidateId and roleId required' });
       }
@@ -61,6 +61,8 @@ export class ApplicationsController {
           status: 'applied',
           appliedDate: new Date(),
           notes: [],
+          ...(cvUrl && { cvUrl }),
+          ...(cvFilename && { cvFilename: cvFilename }),
         }
       });
 

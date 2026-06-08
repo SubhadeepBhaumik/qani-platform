@@ -1635,10 +1635,21 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 type="button" 
                 onClick={() => {
                   if (teamEmailInvite) {
-                    showToast(`Invited ${teamEmailInvite} as ${teamRoleInvite} successfully.`, 'success');
+                    const token = localStorage.getItem('qani_auth_token');
+                    fetch('https://qani.io/api/v1/notifications/send', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                      body: JSON.stringify({
+                        recipientEmail: teamEmailInvite,
+                        recipientId: teamEmailInvite,
+                        type: 'system',
+                        title: 'You have been invited to join QANI',
+                        message: `You have been invited to join QANI as a ${teamRoleInvite}. Visit https://qani.io/register/recruiter to create your account.`,
+                      })
+                    }).then(() => showToast(`Invite sent to ${teamEmailInvite}`, 'success')).catch(() => showToast('Failed to send invite.', 'error'));
                     setTeamEmailInvite('');
                   } else {
-                    showToast('Invite details are empty.', 'error');
+                    showToast('Enter an email address to invite.', 'error');
                   }
                 }}
                 className="inline-flex items-center gap-1 py-1.5 px-3 bg-blue-600 text-white rounded text-xs font-bold"

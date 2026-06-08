@@ -109,6 +109,29 @@ export class AuthController {
     }
   }
 
+  static async changePassword(req: Request, res: Response) {
+    try {
+      const { userId, currentPassword, newPassword } = req.body;
+      if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'userId, currentPassword and newPassword required' });
+      }
+      const user = await prisma.user.findUnique({ where: { id: userId } });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const passwordMatch = await AuthService.comparePassword(currentPassword, user.passwordHash);
+      if (!passwordMatch) return res.status(401).json({ error: 'Current password is incorrect' });
+
+      if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
+
+      const newHash = await AuthService.hashPassword(newPassword);
+      await prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
+      return res.json({ success: true, message: 'Password changed successfully' });
+    } catch (error) {
+      console.error('Change password error:', error);
+      return res.status(500).json({ error: 'Failed to change password' });
+    }
+  }
+
   static async refreshToken(req: Request, res: Response) {
     try {
       const { refreshToken } = req.body;

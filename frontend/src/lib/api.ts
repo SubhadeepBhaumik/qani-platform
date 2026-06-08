@@ -173,10 +173,10 @@ export const api = {
     try { return await call<Application>(`/applications/${id}`); } catch (_) { return null; }
   },
 
-  applyForJob: async (jobId: string, candidateId: string, candidateName?: string, candidateEmail?: string, jobTitle?: string): Promise<Application> => {
+  applyForJob: async (jobId: string, candidateId: string, candidateName?: string, candidateEmail?: string, jobTitle?: string, company?: string, cvUrl?: string | null, cvFilename?: string | null): Promise<Application> => {
     return call<Application>('/applications', {
       method: 'POST',
-      body: JSON.stringify({ roleId: jobId, candidateId, candidateName, candidateEmail, jobTitle, status: 'applied' }),
+      body: JSON.stringify({ roleId: jobId, candidateId, candidateName, candidateEmail, jobTitle, company, cvUrl, cvFilename, status: 'applied' }),
     });
   },
 

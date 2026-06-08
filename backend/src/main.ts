@@ -42,6 +42,7 @@ app.post('/api/v1/auth/register', AuthController.register);
 app.post('/api/v1/auth/login', AuthController.login);
 app.get('/api/v1/auth/me', AuthController.me);
 app.post('/api/v1/auth/refresh', AuthController.refreshToken);
+app.post('/api/v1/auth/change-password', AuthController.changePassword);
 app.post('/api/v1/auth/send-otp', AuthController.sendOTP);
 app.post('/api/v1/auth/verify-otp', AuthController.verifyOTPEndpoint);
 

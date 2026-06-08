@@ -1205,12 +1205,37 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
                 <span className="text-xs font-bold text-gray-800 block">Change Password</span>
                 <div className="space-y-2">
-                  <input type="password" placeholder="Current password" className="w-full p-2 border rounded text-xs" />
-                  <input type="password" placeholder="New password" className="w-full p-2 border rounded text-xs" />
-                  <input type="password" placeholder="Confirm new password" className="w-full p-2 border rounded text-xs" />
+                  <input id="cp-current" type="password" placeholder="Current password" className="w-full p-2 border rounded text-xs" />
+                  <input id="cp-new" type="password" placeholder="New password (min 8 chars)" className="w-full p-2 border rounded text-xs" />
+                  <input id="cp-confirm" type="password" placeholder="Confirm new password" className="w-full p-2 border rounded text-xs" />
                 </div>
-                <button type="button" onClick={() => showToast('Password change coming soon — OTP verification required.', 'info')}
-                  className="px-3 py-1.5 bg-gray-950 hover:bg-gray-900 text-white rounded text-[11px] font-semibold cursor-pointer">
+                <button type="button" onClick={async () => {
+                  const current = (document.getElementById('cp-current') as HTMLInputElement)?.value;
+                  const newPw = (document.getElementById('cp-new') as HTMLInputElement)?.value;
+                  const confirm = (document.getElementById('cp-confirm') as HTMLInputElement)?.value;
+                  if (!current || !newPw || !confirm) { showToast('Please fill in all fields.', 'error'); return; }
+                  if (newPw !== confirm) { showToast('New passwords do not match.', 'error'); return; }
+                  if (newPw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+                  try {
+                    const token = localStorage.getItem('qani_auth_token');
+                    const res = await fetch('https://qani.io/api/v1/auth/change-password', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                      body: JSON.stringify({ userId: user?.id, currentPassword: current, newPassword: newPw }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      showToast('Password changed successfully.', 'success');
+                      (document.getElementById('cp-current') as HTMLInputElement).value = '';
+                      (document.getElementById('cp-new') as HTMLInputElement).value = '';
+                      (document.getElementById('cp-confirm') as HTMLInputElement).value = '';
+                    } else {
+                      showToast(data.error || 'Failed to change password.', 'error');
+                    }
+                  } catch(e) {
+                    showToast('Failed to change password. Try again.', 'error');
+                  }
+                }} className="px-3 py-1.5 bg-gray-950 hover:bg-gray-900 text-white rounded text-[11px] font-semibold cursor-pointer">
                   Update Password
                 </button>
               </div>

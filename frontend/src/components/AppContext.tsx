@@ -251,7 +251,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     const job = jobs.find((j: any) => j.id === jobId);
-    const app = await api.applyForJob(jobId, user.id, user.firstName + ' ' + user.lastName, user.email, job?.title);
+    // Get candidate CV from profile if available
+    const profileRes = await fetch(`https://qani.io/api/v1/candidates/${user.id}/profile`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('qani_auth_token')}` }
+    }).then(r => r.json()).catch(() => ({}));
+    const cvUrl = profileRes?.cvUrl || null;
+    const cvFilename = profileRes?.cvFilename || null;
+    const app = await api.applyForJob(jobId, user.id, user.firstName + ' ' + user.lastName, user.email, job?.title, (job as any)?.company, cvUrl, cvFilename);
     await refreshStates();
     showToast('Applied! Screening queue unlocked.', 'success');
     navigate('candidate-app-detail', { applicationId: app.id });
