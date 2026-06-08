@@ -97,7 +97,7 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
                   <div className="flex items-center gap-1">
                     <button onClick={() => { const u = {...job, status: jobStatus==="active"?"paused":"active"}; saveJob(u); showToast(`Job ${jobStatus==="active"?"paused":"activated"}.`,"success"); refreshStates(); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-orange-500 rounded-lg hover:bg-orange-50 transition" title={jobStatus==="active"?"Pause":"Activate"}>{jobStatus==="active" ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}</button>
                     <button onClick={() => { const clone = {...job, id:"job-"+Date.now(), title:job.title+" (Copy)", status:"active"}; saveJob(clone); showToast("Job duplicated.","success"); refreshStates(); }} className="cursor-pointer p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 transition" title="Duplicate"><Copy className="w-3.5 h-3.5" /></button>
-                    <button onClick={() => navigate("recruiter-create-job", { editJobId: job.id })} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 transition" title="Edit"><Edit3 className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => navigate("recruiter-edit-job", { editJobId: job.id, mode: "edit" })} className="cursor-pointer p-1.5 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 transition" title="Edit"><Edit3 className="w-3.5 h-3.5" /></button>
                     <button onClick={() => deleteJob(job.id)} className="cursor-pointer p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition" title="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
@@ -109,6 +109,7 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
                 <div className="p-2 bg-gray-50 rounded-lg"><span className="font-extrabold text-gray-900 block">{appCount}</span><span>Applied</span></div>
                 <div className="p-2 bg-gray-50 rounded-lg"><span className="font-extrabold text-green-600 block">{qualCount}</span><span>Qualified</span></div>
                 <div className="p-2 bg-gray-50 rounded-lg col-span-2 flex items-center justify-center gap-3">
+                  <button onClick={() => navigate("recruiter-job-detail", { jobId: job.id })} className="cursor-pointer text-xs font-semibold text-gray-700 hover:text-blue-600 hover:underline">View Details</button>
                   <button onClick={() => navigate("recruiter-applications", { filterJobId: job.id })} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">View Applicants</button>
                   <span className="text-gray-300">|</span>
                   <button onClick={() => { saveJob({...job, status:"closed"}); showToast("Job closed.","success"); refreshStates(); }} className="cursor-pointer text-xs font-semibold text-gray-400 hover:text-red-500 hover:underline">Close</button>
@@ -294,7 +295,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
           setScreeningQueries(existingJob.screeningQuestions || []);
-          if (existingJob.mandatoryQuestions) setMandatoryQuestions(existingJob.mandatoryQuestions);
+          if (existingJob.mandatoryQuestions) setMandatoryQuestions({ ...existingJob.mandatoryQuestions, driversLicence: existingJob.mandatoryQuestions.driversLicence ?? true });
           if (existingJob.qualificationWeights) {
             setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
             setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
@@ -1182,6 +1183,43 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
 
       {/* 5. JOBS MANAGEMENT */}
       {subView === 'jobs' && <RecruiterJobsList jobs={jobs} applications={applications} navigate={navigate} deleteJob={deleteJob} saveJob={saveJob} showToast={showToast} refreshStates={refreshStates} />}
+      {subView === 'job-detail' && (() => {
+        const job = jobs.find(j => j.id === activeParams.jobId);
+        if (!job) return <div className="text-center py-20 text-gray-400">Job not found.</div>;
+        const jobApps = applications.filter(a => a.jobId === job.id || a.roleId === job.id);
+        const qualCount = jobApps.filter(a => a.status === 'qualified').length;
+        const weights = (job as any).qualificationWeights || {};
+        return (
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate('recruiter-jobs')} className="cursor-pointer inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 font-semibold"><ArrowLeft className="w-4 h-4" />Back to Jobs</button>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{job.title}</h2>
+                  <p className="text-sm text-gray-500 mt-1">{(job as any).company} · {job.location} · {job.department}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => navigate('recruiter-edit-job', { editJobId: job.id, mode: 'edit' })} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition"><Edit3 className="w-3.5 h-3.5" />Edit</button>
+                  <button onClick={() => navigate('recruiter-applications', { filterJobId: job.id })} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition"><Users className="w-3.5 h-3.5" />View Applicants ({jobApps.length})</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Salary</p><p className="text-sm font-bold text-gray-900">${Math.round(((job.salaryMin||0)/1000))}k–${Math.round(((job.salaryMax||0)/1000))}k</p></div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Applicants</p><p className="text-sm font-bold text-gray-900">{jobApps.length}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Qualified</p><p className="text-sm font-bold text-green-600">{qualCount}</p></div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Status</p><p className="text-sm font-bold text-gray-900 capitalize">{job.status}</p></div>
+              </div>
+              {job.description && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Description</p><p className="text-sm text-gray-600 leading-relaxed">{job.description}</p></div>}
+              {(job.requirementsMust||[]).length > 0 && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Must Have</p><ul className="space-y-1">{(job.requirementsMust||[]).map((r:string,i:number) => <li key={i} className="text-sm text-gray-600 flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span>{r}</li>)}</ul></div>}
+              {(job.skillsRequired||[]).length > 0 && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Skills Required</p><div className="flex flex-wrap gap-2">{(job.skillsRequired||[]).map((s:string,i:number) => <span key={i} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full font-medium">{s}</span>)}</div></div>}
+              {(job as any).screeningQuestions?.length > 0 && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Screening Questions ({(job as any).screeningQuestions.length})</p><ol className="space-y-1 list-decimal list-inside">{((job as any).screeningQuestions||[]).map((q:string,i:number) => <li key={i} className="text-sm text-gray-600">{q}</li>)}</ol></div>}
+              {Object.keys(weights).length > 0 && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Scoring Weights</p><div className="grid grid-cols-2 sm:grid-cols-5 gap-3">{[['Location',weights.locationWeight],['Salary',weights.salaryWeight],['Qualifications',weights.qualificationsWeight],['Work Rights',weights.workRightsWeight],['Skills',weights.skillsWeight]].map(([label,val]:any) => <div key={label} className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-[10px] text-gray-500">{label}</p><p className="text-sm font-bold text-blue-600">{val||0}%</p></div>)}</div></div>}
+            </div>
+          </div>
+        );
+      })()}
       {subView === 'create-job' && (
         <div className="space-y-6">
           <button 

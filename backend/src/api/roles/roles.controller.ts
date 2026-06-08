@@ -76,7 +76,10 @@ export class RolesController {
 
   static async getRoles(req: Request, res: Response) {
     try {
-      const jobs = await prisma.job.findMany({ orderBy: { createdAt: 'desc' } });
+      const { recruiterId } = req.query;
+      const where: any = {};
+      if (recruiterId) where.recruiterId = recruiterId as string;
+      const jobs = await prisma.job.findMany({ where, orderBy: { createdAt: 'desc' } });
       return res.json(jobs);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch roles' });

@@ -122,6 +122,9 @@ export const api = {
   getJobs: async (): Promise<Job[]> => {
     try { return await call<Job[]>('/roles'); } catch (_) { return []; }
   },
+  getJobsByRecruiter: async (recruiterId: string): Promise<Job[]> => {
+    try { return await call<Job[]>(`/roles?recruiterId=${recruiterId}`); } catch (_) { return []; }
+  },
 
   getJobById: async (id: string): Promise<Job | null> => {
     try { return await call<Job>(`/roles/${id}`); } catch (_) { return null; }

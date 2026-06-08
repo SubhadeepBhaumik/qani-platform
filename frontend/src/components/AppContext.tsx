@@ -93,10 +93,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearToast = () => setToast(null);
 
-  const refreshStates = async () => {
+  const refreshStates = async (currentUser?: User | null) => {
+    const u = currentUser !== undefined ? currentUser : user;
     try {
       const [j, a, s, n, l] = await Promise.allSettled([
-        api.getJobs(),
+        u?.role === 'recruiter' ? api.getJobsByRecruiter(u.id) : api.getJobs(),
         api.getApplications(),
         api.getSessions(),
         api.getNotifications(user?.email),
@@ -119,7 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const savedUser = await api.validateToken();
         if (savedUser) {
           setUser(savedUser);
-          await refreshStates();
+          await refreshStates(savedUser);
           // Check if there's a specific URL to navigate to
           const currentPath = window.location.pathname;
           const ROUTES: Record<string, string> = {
@@ -222,6 +223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const saveJob = async (job: Job) => {
+    if (!job.id && user) job = { ...job, recruiterId: user.id } as any;
     await api.saveJob(job);
     await refreshStates();
     showToast(`Job "${job.title}" saved.`, 'success');

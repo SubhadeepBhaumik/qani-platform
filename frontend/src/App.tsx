@@ -34,7 +34,9 @@ export const ROUTES: Record<string, string> = {
   'recruiter-app-detail': '/recruiter/application',
   'recruiter-queue': '/recruiter/queue',
   'recruiter-jobs': '/recruiter/jobs',
+  'recruiter-job-detail': '/recruiter/job',
   'recruiter-create-job': '/recruiter/jobs/create',
+  'recruiter-edit-job': '/recruiter/jobs/edit',
   'recruiter-reports': '/recruiter/reports',
   'recruiter-team': '/recruiter/team',
   'recruiter-settings': '/recruiter/settings',
@@ -68,6 +70,10 @@ const RouterSync: React.FC = () => {
       if (activeParams.jobId) params.set('jobId', activeParams.jobId);
       if (activeParams.applicationId) params.set('applicationId', activeParams.applicationId);
       if (activeParams.sessionId) params.set('sessionId', activeParams.sessionId);
+      if (activeParams.editJobId) params.set('editJobId', activeParams.editJobId);
+      if (activeParams.mode) params.set('mode', activeParams.mode);
+      if (activeParams.candidateId) params.set('candidateId', activeParams.candidateId);
+      if (activeParams.recruiterId) params.set('recruiterId', activeParams.recruiterId);
       const search = params.toString() ? `?${params.toString()}` : '';
       routerNavigate(`${targetPath}${search}`, { replace: false });
     }
@@ -82,6 +88,9 @@ const RouterSync: React.FC = () => {
       if (params.get('jobId')) viewParams.jobId = params.get('jobId');
       if (params.get('applicationId')) viewParams.applicationId = params.get('applicationId');
       if (params.get('sessionId')) viewParams.sessionId = params.get('sessionId');
+      if (params.get('editJobId')) viewParams.editJobId = params.get('editJobId');
+      if (params.get('mode')) viewParams.mode = params.get('mode');
+      if (params.get('candidateId')) viewParams.candidateId = params.get('candidateId');
       appNavigate(view as any, viewParams);
       setTimeout(() => { isSyncing.current = false; }, 100);
     }
@@ -122,7 +131,9 @@ const AppContent: React.FC = () => {
       case 'recruiter-app-detail': return <RecruiterPages subView="app-detail" />;
       case 'recruiter-queue': return <RecruiterPages subView="queue" />;
       case 'recruiter-jobs': return <RecruiterPages subView="jobs" />;
+      case 'recruiter-job-detail': return <RecruiterPages subView="job-detail" />;
       case 'recruiter-create-job': return <RecruiterPages subView="create-job" />;
+      case 'recruiter-edit-job': return <RecruiterPages subView="create-job" />;
       case 'recruiter-reports': return <RecruiterPages subView="reports" />;
       case 'recruiter-team': return <RecruiterPages subView="team" />;
       case 'recruiter-settings': return <RecruiterPages subView="settings" />;
