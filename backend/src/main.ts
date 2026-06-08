@@ -96,7 +96,7 @@ app.get('/api/v1/scoring/scores', ScoringController.getSessionScores);
 // Dashboard routes
 app.get('/api/v1/dashboard/stats', DashboardController.getStats);
 app.get('/api/v1/dashboard/applications', DashboardController.getApplications);
-app.get('/api/v1/dashboard/pipeline', DashboardController.getCandidatePipeline);
+app.get('/api/v1/dashboard/pipeline', DashboardController.getPipeline);
 app.get('/api/v1/dashboard/role-metrics', DashboardController.getRoleMetrics);
 app.get('/api/v1/dashboard/screening-progress', DashboardController.getScreeningProgress);
 app.get('/api/v1/dashboard/qualification-breakdown', DashboardController.getQualificationBreakdown);

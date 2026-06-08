@@ -136,13 +136,38 @@ const RecruiterSettings: React.FC<{ user: any; showToast: any }> = ({ user, show
   const sendOTP = async (target: string) => {
     if (!target) { showToast('Please enter a value first.', 'error'); return; }
     setSending(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setOtpSent(true); setSending(false);
-    showToast(`OTP sent to ${target}. Demo OTP: 123456`, 'success');
+    try {
+      const token = localStorage.getItem('qani_auth_token');
+      const type = settingsTab === 'email' ? 'email' : 'sms';
+      const res = await fetch('https://qani.io/api/v1/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ target, type, userId: user?.id }),
+      });
+      const data = await res.json();
+      if (res.ok) { setOtpSent(true); showToast(`OTP sent to ${target}`, 'success'); }
+      else showToast(data.error || 'Failed to send OTP', 'error');
+    } catch(e) {
+      showToast('Failed to send OTP. Try again.', 'error');
+    }
+    setSending(false);
   };
-  const verifyOTP = () => {
-    if (otpValue === '123456') { setOtpVerified(true); showToast('OTP verified!', 'success'); }
-    else showToast('Invalid OTP. Use 123456 for demo.', 'error');
+  const verifyOTP = async () => {
+    try {
+      const token = localStorage.getItem('qani_auth_token');
+      const type = settingsTab === 'email' ? 'email' : 'sms';
+      const target = settingsTab === 'email' ? newEmail : newPhone;
+      const res = await fetch('https://qani.io/api/v1/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ target, type, otp: otpValue, userId: user?.id }),
+      });
+      const data = await res.json();
+      if (res.ok) { setOtpVerified(true); showToast('OTP verified!', 'success'); }
+      else showToast(data.error || 'Invalid OTP', 'error');
+    } catch(e) {
+      showToast('Failed to verify OTP. Try again.', 'error');
+    }
   };
   const saveChange = (type: 'email'|'phone') => {
     showToast(`${type === 'email' ? 'Email' : 'Phone'} updated successfully.`, 'success');

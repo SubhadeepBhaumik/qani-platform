@@ -1197,10 +1197,43 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
             <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
               <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Account</h3>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-700 block">Email Address</label>
                 <input type="text" disabled value={user.email} className="w-full text-xs p-2.5 bg-gray-100 text-gray-500 border rounded cursor-not-allowed" />
-                <p className="text-[10px] text-gray-400">To change email, contact support (OTP verification coming soon)</p>
+                {(() => {
+                  const [newEmail, setNewEmailC] = React.useState('');
+                  const [otpSentC, setOtpSentC] = React.useState(false);
+                  const [otpC, setOtpC] = React.useState('');
+                  const [sendingC, setSendingC] = React.useState(false);
+                  return (
+                    <div className="space-y-2 pt-1">
+                      <input type="email" value={newEmail} onChange={e => setNewEmailC(e.target.value)} placeholder="New email address" className="w-full text-xs p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+                      {!otpSentC ? (
+                        <button onClick={async () => {
+                          if (!newEmail) { showToast('Enter new email first.', 'error'); return; }
+                          setSendingC(true);
+                          const token = localStorage.getItem('qani_auth_token');
+                          const res = await fetch('https://qani.io/api/v1/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ target: newEmail, type: 'email', userId: user?.id }) });
+                          if (res.ok) { setOtpSentC(true); showToast('OTP sent to new email.', 'success'); }
+                          else showToast('Failed to send OTP.', 'error');
+                          setSendingC(false);
+                        }} disabled={sendingC} className="cursor-pointer text-xs font-semibold py-1.5 px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50">
+                          {sendingC ? 'Sending...' : 'Send OTP to New Email'}
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input type="text" value={otpC} onChange={e => setOtpC(e.target.value)} placeholder="Enter OTP" maxLength={6} className="flex-1 text-xs p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+                          <button onClick={async () => {
+                            const token = localStorage.getItem('qani_auth_token');
+                            const res = await fetch('https://qani.io/api/v1/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ target: newEmail, type: 'email', otp: otpC, userId: user?.id }) });
+                            if (res.ok) { updateUser({ email: newEmail }); showToast('Email updated successfully.', 'success'); setOtpSentC(false); setNewEmailC(''); setOtpC(''); }
+                            else showToast('Invalid OTP.', 'error');
+                          }} className="cursor-pointer text-xs font-semibold py-1.5 px-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Verify & Update</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
                 <span className="text-xs font-bold text-gray-800 block">Change Password</span>

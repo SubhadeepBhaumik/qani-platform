@@ -239,8 +239,8 @@ export const api = {
     } catch (_) {}
   },
 
-  clearNotifications: async (): Promise<void> => {
-    console.warn('clearNotifications not implemented on backend');
+  clearNotifications: async (recipientEmail: string): Promise<void> => {
+    await call('/notifications/mark-all-read', { method: 'POST', body: JSON.stringify({ recipientEmail }) });
   },
 
   // ── LOGS ──────────────────────────────────────────────────

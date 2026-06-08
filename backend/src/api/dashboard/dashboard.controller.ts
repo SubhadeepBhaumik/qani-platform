@@ -1,45 +1,26 @@
 import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 
-interface DashboardStats {
-  totalApplications: number;
-  screened: number;
-  progress: number;
-  review: number;
-  rejected: number;
-  conversionRate: number;
-}
-
-interface ApplicationWithScore {
-  applicationId: string;
-  candidateName: string;
-  roleName: string;
-  status: string;
-  score: number;
-  decision: string;
-  appliedAt: string;
-}
-
-const applications: any[] = [];
-const decisions: any[] = [];
-const candidates: any[] = [];
-const roles: any[] = [];
+const prisma = new PrismaClient();
 
 export class DashboardController {
   static async getStats(req: Request, res: Response) {
     try {
-      const { organisationId } = req.query;
-      if (!organisationId) {
-        return res.status(400).json({ error: 'organisationId required' });
-      }
-      const stats: DashboardStats = {
-        totalApplications: 12,
-        screened: 10,
-        progress: 4,
-        review: 3,
-        rejected: 3,
-        conversionRate: 33.3,
-      };
-      return res.json(stats);
+      const [totalJobs, totalApps, totalCandidates, totalRecruiters] = await Promise.all([
+        prisma.job.count(),
+        prisma.application.count(),
+        prisma.user.count({ where: { role: 'candidate' } }),
+        prisma.user.count({ where: { role: 'recruiter' } }),
+      ]);
+      const qualifiedApps = await prisma.application.count({ where: { status: 'qualified' } });
+      const screeningApps = await prisma.application.count({ where: { status: 'screening' } });
+      const rejectedApps = await prisma.application.count({ where: { status: 'rejected' } });
+      return res.json({
+        totalJobs, totalApplications: totalApps, totalCandidates, totalRecruiters,
+        qualifiedApplications: qualifiedApps, screeningApplications: screeningApps,
+        rejectedApplications: rejectedApps,
+        conversionRate: totalApps > 0 ? Math.round((qualifiedApps / totalApps) * 100) : 0,
+      });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch stats' });
     }
@@ -47,26 +28,23 @@ export class DashboardController {
 
   static async getApplications(req: Request, res: Response) {
     try {
-      const { organisationId } = req.query;
-      if (!organisationId) {
-        return res.status(400).json({ error: 'organisationId required' });
-      }
-      const mockApplications: ApplicationWithScore[] = [
-        { applicationId: '1', candidateName: 'Alice Johnson', roleName: 'Senior Developer', status: 'completed', score: 85, decision: 'progress', appliedAt: '2026-05-28T12:14:40.274Z' },
-      ];
-      return res.json(mockApplications);
+      const apps = await prisma.application.findMany({ orderBy: { appliedAt: 'desc' }, take: 50 });
+      return res.json(apps);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch applications' });
     }
   }
 
-  static async getCandidatePipeline(req: Request, res: Response) {
+  static async getPipeline(req: Request, res: Response) {
     try {
-      const { organisationId } = req.query;
-      if (!organisationId) {
-        return res.status(400).json({ error: 'organisationId required' });
-      }
-      return res.json({ applied: 12, screening: 5, qualified: 4, rejected: 3 });
+      const statuses = ['applied', 'screening', 'qualified', 'review', 'rejected', 'hired'];
+      const pipeline = await Promise.all(
+        statuses.map(async (status) => ({
+          status,
+          count: await prisma.application.count({ where: { status } })
+        }))
+      );
+      return res.json(pipeline);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch pipeline' });
     }
@@ -74,11 +52,16 @@ export class DashboardController {
 
   static async getRoleMetrics(req: Request, res: Response) {
     try {
-      const { organisationId } = req.query;
-      if (!organisationId) {
-        return res.status(400).json({ error: 'organisationId required' });
-      }
-      return res.json([{ roleId: '1', roleName: 'Senior Developer', applicants: 8, screened: 6, qualified: 2, avgScore: 78 }]);
+      const jobs = await prisma.job.findMany({ take: 20, orderBy: { createdAt: 'desc' } });
+      const metrics = await Promise.all(jobs.map(async (job) => {
+        const apps = await prisma.application.findMany({ where: { jobId: job.id } });
+        const qualified = apps.filter(a => a.status === 'qualified').length;
+        const avgScore = apps.filter(a => a.aiScore).length > 0
+          ? Math.round(apps.filter(a => a.aiScore).reduce((sum, a) => sum + (a.aiScore || 0), 0) / apps.filter(a => a.aiScore).length)
+          : 0;
+        return { jobId: job.id, title: job.title, company: job.company, totalApps: apps.length, qualified, avgScore };
+      }));
+      return res.json(metrics);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch role metrics' });
     }
@@ -86,11 +69,8 @@ export class DashboardController {
 
   static async getScreeningProgress(req: Request, res: Response) {
     try {
-      const { organisationId } = req.query;
-      if (!organisationId) {
-        return res.status(400).json({ error: 'organisationId required' });
-      }
-      return res.json({ totalSessions: 10, completed: 8, inProgress: 2, avgTimePerSession: 15, avgScorePerSession: 76 });
+      const sessions = await prisma.screeningSession.findMany({ orderBy: { createdAt: 'desc' }, take: 20 });
+      return res.json(sessions);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch screening progress' });
     }
@@ -98,11 +78,13 @@ export class DashboardController {
 
   static async getQualificationBreakdown(req: Request, res: Response) {
     try {
-      const { organisationId, roleId } = req.query;
-      if (!organisationId || !roleId) {
-        return res.status(400).json({ error: 'organisationId and roleId required' });
-      }
-      return res.json({ mandatory: { passed: 4, failed: 2 }, skills: { excellent: 3, good: 2 }, experience: { wellMatched: 4 } });
+      const apps = await prisma.application.findMany({ where: { aiScore: { not: null } } });
+      const breakdown = {
+        qualified: apps.filter(a => (a.aiScore || 0) >= 70).length,
+        review: apps.filter(a => (a.aiScore || 0) >= 45 && (a.aiScore || 0) < 70).length,
+        rejected: apps.filter(a => (a.aiScore || 0) < 45).length,
+      };
+      return res.json(breakdown);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch breakdown' });
     }
@@ -110,11 +92,12 @@ export class DashboardController {
 
   static async getRecommendations(req: Request, res: Response) {
     try {
-      const { organisationId } = req.query;
-      if (!organisationId) {
-        return res.status(400).json({ error: 'organisationId required' });
-      }
-      return res.json([{ type: 'high_performer', message: 'Alice is strong match', actionableId: '1' }]);
+      const topCandidates = await prisma.application.findMany({
+        where: { status: 'qualified', aiScore: { not: null } },
+        orderBy: { aiScore: 'desc' },
+        take: 5,
+      });
+      return res.json(topCandidates);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch recommendations' });
     }

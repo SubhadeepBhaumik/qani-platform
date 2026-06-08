@@ -488,9 +488,9 @@ export const mockSystemLogs: SystemLog[] = [
   },
   {
     id: 'log-4',
-    event: 'Gemini Session Init',
+    event: 'QANI AI Session Init',
     user: 'sarah.recruiter@qani.ai',
-    details: 'Gemini conversational core loaded on engine gemini-3.5-flash.',
+    details: 'QANI AI conversational core loaded on engine gpt-4o-mini.',
     timestamp: '2026-05-29T10:15:00Z',
     type: 'success'
   }
@@ -500,7 +500,7 @@ export const faqArticles: HelpArticle[] = [
   {
     category: 'Getting Started',
     title: 'How do I initiate candidate screening?',
-    content: 'When an applicant applies for an open role that has screening enabled, they are prompted directly on their candidate dashboard or via their notifications. They can tap the "Start Screening" button, which loads a chat terminal powered by our custom server-side Gemini integration. The AI acts as your dedicated assistant, guiding the applicant through your exact pre-configured screening questions.'
+    content: 'When an applicant applies for an open role that has screening enabled, they are prompted directly on their candidate dashboard or via their notifications. They can tap the "Start Screening" button, which loads a chat terminal powered by our custom server-side QANI AI integration using GPT-4o-mini. The AI acts as your dedicated assistant, guiding the applicant through your exact pre-configured screening questions.'
   },
   {
     category: 'Features',
@@ -510,7 +510,7 @@ export const faqArticles: HelpArticle[] = [
   {
     category: 'Security & Keys',
     title: 'How do you secure LLM API Keys?',
-    content: 'All API integrations with AI models (specifically the Gemini SDK) are executed through server-side processes in `server.ts`. This completely prevents client-side exposure of your company API secrets in browser developer consoles.'
+    content: 'All API integrations with AI models (specifically the OpenAI GPT-4o-mini API) are executed through server-side processes in `server.ts`. This completely prevents client-side exposure of your company API secrets in browser developer consoles.'
   },
   {
     category: 'Troubleshooting',
