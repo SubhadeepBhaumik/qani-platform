@@ -62,6 +62,9 @@ app.post('/api/v1/candidates/register', CandidatesController.registerCandidate);
 app.get('/api/v1/candidates', CandidatesController.getCandidates);
 app.get('/api/v1/candidates/:id', CandidatesController.getCandidate);
 app.put('/api/v1/candidates/:id', CandidatesController.updateCandidate);
+app.post('/api/v1/candidates/:id/upload-cv', CandidatesController.uploadCV);
+app.post('/api/v1/candidates/:id/upload-photo', CandidatesController.uploadPhoto);
+app.get('/api/v1/candidates/:id/profile', CandidatesController.getProfile);
 
 // Application routes
 app.post('/api/v1/applications', ApplicationsController.applyForRole);

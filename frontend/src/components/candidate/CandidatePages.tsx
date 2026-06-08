@@ -900,6 +900,47 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Profile Photo Upload */}
+                  <div className="space-y-2">
+                    <label className="text-xs text-gray-500">Profile Photo</label>
+                    <div className="flex items-center gap-4">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} className="w-16 h-16 rounded-full object-cover border-2 border-gray-200" alt="avatar" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">Photo</div>
+                      )}
+                      <label className="cursor-pointer text-xs font-semibold py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+                        {avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 2 * 1024 * 1024) { showToast('Photo too large. Max 2MB.', 'error'); return; }
+                          const reader = new FileReader();
+                          reader.onload = async () => {
+                            const photoData = reader.result as string;
+                            try {
+                              const token = localStorage.getItem('qani_auth_token');
+                              const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}/upload-photo`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                                body: JSON.stringify({ photoData }),
+                              });
+                              if (res.ok) {
+                                setAvatarUrl(photoData);
+                                showToast('Photo uploaded successfully.', 'success');
+                              } else {
+                                showToast('Failed to upload photo.', 'error');
+                              }
+                            } catch(e) {
+                              showToast('Upload failed. Try again.', 'error');
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }} />
+                      </label>
+                      {avatarUrl && <button onClick={() => setAvatarUrl('')} className="cursor-pointer text-xs text-red-500 hover:text-red-700 font-semibold">Remove</button>}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs text-gray-500">First Name</label>
@@ -1001,18 +1042,34 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   </div>
                 ) : (
                   <label className="block p-6 bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-xl text-center cursor-pointer transition">
-                    <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => {
+                    <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       if (file.size > 5 * 1024 * 1024) { showToast('File too large. Max 5MB.', 'error'); return; }
                       setCvUploading(true);
-                      const reader = new FileReader();
-                      reader.onload = () => {
-                        setCvFileName(file.name);
+                      try {
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                          const cvData = reader.result as string;
+                          const token = localStorage.getItem('qani_auth_token');
+                          const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}/upload-cv`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                            body: JSON.stringify({ cvData, cvFilename: file.name }),
+                          });
+                          if (res.ok) {
+                            setCvFileName(file.name);
+                            showToast('CV uploaded successfully.', 'success');
+                          } else {
+                            showToast('Failed to upload CV. Try again.', 'error');
+                          }
+                          setCvUploading(false);
+                        };
+                        reader.readAsDataURL(file);
+                      } catch(e) {
+                        showToast('Upload failed. Try again.', 'error');
                         setCvUploading(false);
-                        showToast('CV uploaded successfully.', 'success');
-                      };
-                      reader.readAsDataURL(file);
+                      }
                     }} />
                     {cvUploading ? (
                       <span className="text-xs text-blue-600">Uploading...</span>

@@ -1,53 +1,40 @@
 import { Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 
-interface Candidate {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  location?: string;
-  resume?: string;
-  createdAt: Date;
-}
-
-const candidates: Candidate[] = [];
+const prisma = new PrismaClient();
 
 export class CandidatesController {
   static async registerCandidate(req: Request, res: Response) {
     try {
-      const { email, firstName, lastName, phone, location, resume } = req.body;
-
+      const { email, firstName, lastName, phone, location } = req.body;
       if (!email || !firstName || !lastName) {
         return res.status(400).json({ error: 'email, firstName, lastName required' });
       }
+      const existing = await prisma.candidateProfile.findFirst({
+        where: { userId: (await prisma.user.findUnique({ where: { email } }))?.id || '' }
+      });
+      if (existing) return res.status(409).json({ error: 'Candidate already exists' });
 
-      const exists = candidates.find(c => c.email === email);
-      if (exists) {
-        return res.status(409).json({ error: 'Candidate already exists' });
-      }
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) return res.status(404).json({ error: 'User not found' });
 
-      const candidate: Candidate = {
-        id: Date.now().toString(),
-        email,
-        firstName,
-        lastName,
-        phone,
-        location,
-        resume,
-        createdAt: new Date(),
-      };
-
-      candidates.push(candidate);
-      return res.status(201).json(candidate);
+      const profile = await prisma.candidateProfile.create({
+        data: { userId: user.id, phone, location }
+      });
+      return res.status(201).json(profile);
     } catch (error) {
+      console.error('Register candidate error:', error);
       return res.status(500).json({ error: 'Failed to register candidate' });
     }
   }
 
   static async getCandidates(req: Request, res: Response) {
     try {
-      return res.json(candidates);
+      const users = await prisma.user.findMany({
+        where: { role: 'candidate' },
+
+      });
+      return res.json(users);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch candidates' });
     }
@@ -56,13 +43,12 @@ export class CandidatesController {
   static async getCandidate(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const candidate = candidates.find(c => c.id === id);
+      const user = await prisma.user.findUnique({
+        where: { id },
 
-      if (!candidate) {
-        return res.status(404).json({ error: 'Candidate not found' });
-      }
-
-      return res.json(candidate);
+      });
+      if (!user) return res.status(404).json({ error: 'Candidate not found' });
+      return res.json(user);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch candidate' });
     }
@@ -71,20 +57,108 @@ export class CandidatesController {
   static async updateCandidate(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { phone, location, resume } = req.body;
+      const {
+        bio, skills, linkedinUrl, githubUrl, workRights,
+        salaryExpectation, availableFrom, phone, location,
+        cvUrl, cvFilename, profilePhotoUrl,
+        firstName, lastName
+      } = req.body;
 
-      const candidate = candidates.find(c => c.id === id);
-      if (!candidate) {
-        return res.status(404).json({ error: 'Candidate not found' });
+      // Update user name if provided
+      if (firstName || lastName) {
+        await prisma.user.update({
+          where: { id },
+          data: {
+            ...(firstName && { firstName }),
+            ...(lastName && { lastName }),
+          }
+        });
       }
 
-      if (phone) candidate.phone = phone;
-      if (location) candidate.location = location;
-      if (resume) candidate.resume = resume;
-
-      return res.json(candidate);
+      // Upsert candidate profile
+      const profile = await prisma.candidateProfile.upsert({
+        where: { userId: id },
+        create: {
+          userId: id,
+          bio, skills: skills || [], linkedinUrl, githubUrl,
+          workRights, salaryExpectation: salaryExpectation ? Number(salaryExpectation) : null,
+          availableFrom: availableFrom ? new Date(availableFrom) : null,
+          phone, location, cvUrl, cvFilename, profilePhotoUrl,
+        },
+        update: {
+          ...(bio !== undefined && { bio }),
+          ...(skills !== undefined && { skills }),
+          ...(linkedinUrl !== undefined && { linkedinUrl }),
+          ...(githubUrl !== undefined && { githubUrl }),
+          ...(workRights !== undefined && { workRights }),
+          ...(salaryExpectation !== undefined && { salaryExpectation: Number(salaryExpectation) }),
+          ...(availableFrom !== undefined && { availableFrom: availableFrom ? new Date(availableFrom) : null }),
+          ...(phone !== undefined && { phone }),
+          ...(location !== undefined && { location }),
+          ...(cvUrl !== undefined && { cvUrl }),
+          ...(cvFilename !== undefined && { cvFilename }),
+          ...(profilePhotoUrl !== undefined && { profilePhotoUrl }),
+        }
+      });
+      return res.json(profile);
     } catch (error) {
+      console.error('Update candidate error:', error);
       return res.status(500).json({ error: 'Failed to update candidate' });
+    }
+  }
+
+  static async uploadCV(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { cvData, cvFilename } = req.body;
+      if (!cvData || !cvFilename) return res.status(400).json({ error: 'cvData and cvFilename required' });
+      if (cvData.length > 7 * 1024 * 1024) return res.status(400).json({ error: 'File too large. Max 5MB.' });
+
+      const profile = await prisma.candidateProfile.upsert({
+        where: { userId: id },
+        create: { userId: id, cvUrl: cvData, cvFilename },
+        update: { cvUrl: cvData, cvFilename },
+      });
+      return res.json({ success: true, cvFilename: profile.cvFilename });
+    } catch (error) {
+      console.error('CV upload error:', error);
+      return res.status(500).json({ error: 'Failed to upload CV' });
+    }
+  }
+
+  static async uploadPhoto(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { photoData } = req.body;
+      if (!photoData) return res.status(400).json({ error: 'photoData required' });
+      if (photoData.length > 3 * 1024 * 1024) return res.status(400).json({ error: 'Photo too large. Max 2MB.' });
+
+      const profile = await prisma.candidateProfile.upsert({
+        where: { userId: id },
+        create: { userId: id, profilePhotoUrl: photoData },
+        update: { profilePhotoUrl: photoData },
+      });
+
+      // Also update user avatar
+      await prisma.user.update({
+        where: { id },
+        data: { avatarUrl: photoData }
+      });
+
+      return res.json({ success: true, profilePhotoUrl: profile.profilePhotoUrl });
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      return res.status(500).json({ error: 'Failed to upload photo' });
+    }
+  }
+
+  static async getProfile(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const profile = await prisma.candidateProfile.findUnique({ where: { userId: id } });
+      return res.json(profile || {});
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch profile' });
     }
   }
 }
