@@ -182,7 +182,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const { user: loggedUser } = await api.login(email, password);
+      const loggedUser = await api.login(email, password) as any;
       setUser(loggedUser);
       await refreshStates();
       showToast(`Welcome back, ${loggedUser.firstName}!`, 'success');

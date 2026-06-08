@@ -2,6 +2,28 @@ import { Job, User, Application, Notification, ScreeningSession, SystemLog, Chat
 
 const API_BASE = 'https://qani.io/api/v1';
 
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const refreshToken = localStorage.getItem('qani_refresh_token');
+    if (!refreshToken) return null;
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('qani_auth_token', data.token);
+      localStorage.setItem('qani_refresh_token', data.refreshToken);
+      return data.token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 const KEYS = {
   AUTH_TOKEN: 'qani_auth_token',
   CURRENT_USER: 'qani_current_user',
@@ -39,6 +61,7 @@ export const api = {
     const token = data.token;
     if (!token) throw new Error('No token from server');
     localStorage.setItem(KEYS.AUTH_TOKEN, token);
+    if (data.refreshToken) localStorage.setItem('qani_refresh_token', data.refreshToken);
     const user: User = data.user || {
       id: data.id || '',
       email: data.email || email,
@@ -54,6 +77,7 @@ export const api = {
   logout: () => {
     localStorage.removeItem(KEYS.AUTH_TOKEN);
     localStorage.removeItem(KEYS.CURRENT_USER);
+    localStorage.removeItem('qani_refresh_token');
   },
 
   getCurrentUser: (): User | null => {

@@ -109,6 +109,24 @@ export class AuthController {
     }
   }
 
+  static async refreshToken(req: Request, res: Response) {
+    try {
+      const { refreshToken } = req.body;
+      if (!refreshToken) return res.status(400).json({ error: 'refreshToken required' });
+
+      const decoded = AuthService.verifyToken(refreshToken) as any;
+      if (!decoded) return res.status(401).json({ error: 'Invalid or expired refresh token' });
+
+      const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const { token, refreshToken: newRefreshToken } = AuthService.generateTokens(user.id, user.email);
+      return res.json({ token, refreshToken: newRefreshToken });
+    } catch (error) {
+      return res.status(401).json({ error: 'Token refresh failed' });
+    }
+  }
+
   static async sendOTP(req: Request, res: Response) {
     try {
       const { target, type, userId } = req.body;
