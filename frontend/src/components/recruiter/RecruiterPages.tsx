@@ -1644,7 +1644,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                         recipientId: teamEmailInvite,
                         type: 'system',
                         title: 'You have been invited to join QANI',
-                        message: `You have been invited to join QANI as a ${teamRoleInvite}. Click here to accept: https://qani.io/accept-invite?email=${encodeURIComponent(teamEmailInvite)}&role=${encodeURIComponent(teamRoleInvite)}`,
+                        message: `You have been invited to join QANI as a ${teamRoleInvite} at ${user?.companyName || 'our company'}. Click here to accept: https://qani.io/accept-invite?email=${encodeURIComponent(teamEmailInvite)}&role=${encodeURIComponent(teamRoleInvite)}&company=${encodeURIComponent(user?.companyName || '')}`,
                       })
                     }).then(() => showToast(`Invite sent to ${teamEmailInvite}`, 'success')).catch(() => showToast('Failed to send invite.', 'error'));
                     setTeamEmailInvite('');
@@ -1686,25 +1686,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
                 <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
               </div>
-              {/* Other recruiters in same company */}
-              {jobs.filter((j:any) => j.recruiterId && j.recruiterId !== user?.id)
-                .reduce((acc: any[], j: any) => {
-                  if (!acc.find((x:any) => x.recruiterId === j.recruiterId)) acc.push(j);
-                  return acc;
-                }, [])
-                .map((j: any) => (
-                  <div key={j.recruiterId} className="flex items-center justify-between pt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-800 text-xs">{(j.company || 'R')[0]}</div>
-                      <div>
-                        <span className="font-bold text-xs text-gray-900 block">{j.company} Recruiter</span>
-                        <span className="text-[10px] text-gray-400 block font-mono">{j.recruiterId}</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">Recruiter</span>
-                  </div>
-                ))
-              }
+              {/* No other team members yet - invite them above */}
+              <div className="pt-4 text-xs text-gray-400 italic">Invite team members using the button above to add them here.</div>
             </div>
           </div>
         </div>

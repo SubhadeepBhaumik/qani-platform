@@ -2,23 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 
 export const AcceptInvitePage: React.FC = () => {
-  const { navigate, showToast } = useApp();
+  const { navigate, showToast, activeParams } = useApp();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('recruiter');
+  const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const emailParam = params.get('email');
-    const roleParam = params.get('role');
+    const emailParam = params.get('email') || activeParams.email;
+    const roleParam = params.get('role') || activeParams.role;
+    const companyParam = params.get('company') || activeParams.company;
     if (emailParam) setEmail(decodeURIComponent(emailParam));
     if (roleParam) setRole(decodeURIComponent(roleParam));
-  }, []);
+    if (companyParam) setCompanyName(decodeURIComponent(companyParam));
+  }, [activeParams]);
 
   const handleAccept = async () => {
     if (!firstName || !lastName || !email || !password) { showToast('Please fill in all fields.', 'error'); return; }
@@ -29,7 +32,7 @@ export const AcceptInvitePage: React.FC = () => {
       const res = await fetch('https://qani.io/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password, role: 'recruiter' }),
+        body: JSON.stringify({ firstName, lastName, email, password, role: 'recruiter', companyName }),
       });
       const data = await res.json();
       if (res.ok) {

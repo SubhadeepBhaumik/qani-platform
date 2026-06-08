@@ -170,7 +170,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           else if (savedUser.role === 'recruiter') setActiveView('recruiter-dashboard');
           else setActiveView('admin-dashboard');
         } else {
-          setActiveView('landing');
+          // Check if URL is a guest-accessible route
+          const currentPath = window.location.pathname;
+          const guestRoutes: Record<string, string> = {
+            '/accept-invite': 'accept-invite',
+            '/login': 'auth-login',
+            '/register/candidate': 'auth-register-candidate-1',
+            '/register/recruiter': 'auth-register-recruiter',
+            '/help': 'help',
+          };
+          const guestView = guestRoutes[currentPath];
+          if (guestView) {
+            const params = new URLSearchParams(window.location.search);
+            const viewParams: any = {};
+            if (params.get('email')) viewParams.email = params.get('email');
+            if (params.get('role')) viewParams.role = params.get('role');
+            setActiveView(guestView as any);
+            setActiveParams(viewParams);
+          } else {
+            setActiveView('landing');
+          }
         }
       } catch (_) {
         setActiveView('landing');
