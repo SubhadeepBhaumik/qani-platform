@@ -36,6 +36,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
     sendCandidateMessage, 
     isGeneratingAI,
     saveUser,
+    updateUser,
     showToast,
     activeParams,
     refreshStates
@@ -869,8 +870,15 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     if (linkedIn && !linkedIn.includes('linkedin.com')) { showToast('LinkedIn URL must be from linkedin.com', 'error'); return; }
                     if (github && !github.includes('github.com')) { showToast('GitHub URL must be from github.com', 'error'); return; }
                     if (phone && !/^[+\d\s\-()]{8,15}$/.test(phone)) { showToast('Please enter a valid phone number', 'error'); return; }
-                    const updated = { ...user, firstName, lastName, bio, phone, location, skills, linkedIn, github, workRights, salaryExpectation, availableFrom, resumeName: cvFileName };
-                    saveUser(updated as any);
+                    // Save to backend
+                    const token = localStorage.getItem('qani_auth_token');
+                    fetch(`https://qani.io/api/v1/candidates/${user?.id}`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                      body: JSON.stringify({ firstName, lastName, bio, phone, location, skills, linkedinUrl: linkedIn, githubUrl: github, workRights, salaryExpectation, availableFrom }),
+                    }).then(() => refreshStates()).catch(console.error);
+                    // Update AppContext user state immediately
+                    updateUser({ firstName, lastName });
                     showToast('Profile saved successfully.', 'success');
                   }
                   setIsEditingProfile(!isEditingProfile);

@@ -64,7 +64,8 @@ interface AppContextType {
   startScreening: (appId: string) => Promise<ScreeningSession>;
   sendCandidateMessage: (sessionId: string, text: string) => Promise<void>;
   updateApplicationStatus: (appId: string, status: Application['status'], notes?: { recruiterName: string; content: string }) => Promise<void>;
-  refreshStates: () => Promise<void>;
+  refreshStates: (currentUser?: User | null) => Promise<void>;
+  updateUser: (updates: Partial<User>) => void;
   isGeneratingAI: boolean;
   toast: { message: string; type: 'success' | 'error' | 'info' | 'warning' } | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
@@ -164,6 +165,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     init();
   }, []);
 
+  const updateUser = (updates: Partial<User>) => {
+    if (!user) return;
+    const updated = { ...user, ...updates };
+    setUser(updated);
+    localStorage.setItem('qani_current_user', JSON.stringify(updated));
+  };
+
   const navigate = (view: AppView, params: ViewParams = {}) => {
     setViewHistory(prev => [...prev, activeView]);
     setActiveView(view);
@@ -182,7 +190,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const loggedUser = await api.login(email, password) as any;
+      const { user: loggedUser, token, refreshToken: rt } = await api.login(email, password) as any;
+      if (rt) localStorage.setItem('qani_refresh_token', rt);
       setUser(loggedUser);
       await refreshStates();
       showToast(`Welcome back, ${loggedUser.firstName}!`, 'success');
@@ -281,7 +290,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notifications, logs, isAppLoading, navigate, previousViews: viewHistory,
       goBack, login, logout, registerCandidate, registerRecruiter,
       saveJob, deleteJob, applyForJob, startScreening, sendCandidateMessage,
-      updateApplicationStatus, refreshStates, isGeneratingAI, toast, showToast, clearToast
+      updateApplicationStatus, refreshStates, updateUser, isGeneratingAI, toast, showToast, clearToast
     }}>
       {children}
     </AppContext.Provider>
