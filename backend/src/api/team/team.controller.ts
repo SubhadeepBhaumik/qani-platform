@@ -20,11 +20,20 @@ export class TeamController {
 
   static async getTeamMembers(req: Request, res: Response) {
     try {
-      const { invitedBy, companyId } = req.query;
+      const { invitedBy, companyId, inviteeEmail } = req.query;
       const where: any = {};
       if (invitedBy) where.invitedBy = invitedBy as string;
       else if (companyId) where.companyId = companyId as string;
+      else if (inviteeEmail) where.email = inviteeEmail as string;
       const members = await prisma.teamMember.findMany({ where, orderBy: { createdAt: 'desc' } });
+      // If fetching by invitee, also get inviter user details
+      if (inviteeEmail && members.length > 0) {
+        const inviterId = members[0].invitedBy;
+        if (inviterId) {
+          const inviter = await prisma.user.findUnique({ where: { id: inviterId } });
+          return res.json(members.map(m => ({ ...m, inviterName: inviter ? inviter.firstName + ' ' + inviter.lastName : null, inviterEmail: inviter?.email })));
+        }
+      }
       return res.json(members);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch team members' });

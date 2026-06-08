@@ -346,12 +346,28 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   // Team setup modal triggers
   const [teamEmailInvite, setTeamEmailInvite] = useState('');
   const [teamMembers, setTeamMembers] = React.useState<any[]>([]);
+  const [inviter, setInviter] = React.useState<any>(null);
   React.useEffect(() => {
     if (subView === 'team' && user?.id) {
       const token = localStorage.getItem('qani_auth_token');
+      // Fetch members I invited
       fetch(`https://qani.io/api/v1/team/members?invitedBy=${user.id}`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
       }).then(r => r.json()).then(d => Array.isArray(d) && setTeamMembers(d)).catch(console.error);
+      // Check if I was invited by someone
+      fetch(`https://qani.io/api/v1/team/members?inviteeEmail=${encodeURIComponent(user.email || '')}`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+      }).then(r => r.json()).then(async (d) => {
+        if (Array.isArray(d) && d.length > 0) {
+          const invitedByUserId = d[0].invitedBy;
+          // Fetch inviter user details
+          const userRes = await fetch(`https://qani.io/api/v1/auth/me`, {
+            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+          });
+          // Just store invitedBy ID to display
+          setInviter({ id: invitedByUserId, inviterName: d[0].inviterName, inviterEmail: d[0].inviterEmail });
+        }
+      }).catch(console.error);
     }
   }, [subView, user?.id]);
   const [teamRoleInvite, setTeamRoleInvite] = useState('Recruiter');
@@ -1691,6 +1707,19 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
             </div>
 
             <div className="space-y-4 pt-4 divide-y divide-gray-100">
+              {/* Show inviter if current user was invited */}
+              {inviter && inviter.inviterName && (
+                <div className="flex items-center justify-between pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-blue-700 rounded-full flex items-center justify-center font-bold text-white text-xs">{inviter.inviterName[0]}</div>
+                    <div>
+                      <span className="font-bold text-xs text-gray-900 block">{inviter.inviterName}</span>
+                      <span className="text-[10px] text-gray-400 block font-mono">{inviter.inviterEmail}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
+                </div>
+              )}
               {/* Current user */}
               <div className="flex items-center justify-between pt-4">
                 <div className="flex items-center gap-3">
@@ -1700,7 +1729,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     <span className="text-[10px] text-gray-400 block font-mono">{user?.email}</span>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-blue-600 uppercase">Admin</span>
+                <span className="text-[10px] font-bold text-blue-600 uppercase">{inviter ? 'Recruiter' : 'Admin'}</span>
               </div>
               {/* Invited team members from DB */}
               {teamMembers.length === 0 ? (
