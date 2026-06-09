@@ -77,6 +77,8 @@ export class ScreeningController {
       };
 
       sessions.push(session);
+      // Update application status to 'screening'
+      ApplicationsController.setApplicationStatus(applicationId, 'screening');
       return res.status(201).json(session);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to start screening' });
@@ -200,8 +202,23 @@ export class ScreeningController {
         questionIdx: session.currentQuestionIdx,
       });
 
-      const assistantCount = session.messages.filter(m => m.role === 'assistant').length;
-      session.currentQuestionIdx = Math.max(0, assistantCount - 1);
+      // Only advance question counter if AI moved to a NEW question (not a follow-up)
+      const isFollowUp = aiResponse.toLowerCase().includes('could you') ||
+        aiResponse.toLowerCase().includes('could you please') ||
+        aiResponse.toLowerCase().includes('can you clarify') ||
+        aiResponse.toLowerCase().includes('can you elaborate') ||
+        aiResponse.toLowerCase().includes('could you clarify') ||
+        aiResponse.toLowerCase().includes('could you provide') ||
+        aiResponse.toLowerCase().includes('could you give') ||
+        aiResponse.toLowerCase().includes('could you elaborate') ||
+        aiResponse.toLowerCase().includes('please clarify') ||
+        aiResponse.toLowerCase().includes('please provide') ||
+        aiResponse.toLowerCase().includes('please elaborate') ||
+        aiResponse.toLowerCase().includes('what do you mean') ||
+        aiResponse.toLowerCase().includes('can you be more specific');
+      if (!isFollowUp) {
+        session.currentQuestionIdx = Math.min(session.totalQuestions, session.currentQuestionIdx + 1);
+      }
 
       return res.json(session);
     } catch (error) {

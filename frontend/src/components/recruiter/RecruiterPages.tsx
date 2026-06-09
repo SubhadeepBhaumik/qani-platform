@@ -320,7 +320,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
           setScreeningQueries(existingJob.screeningQuestions || []);
-          if (existingJob.mandatoryQuestions) setMandatoryQuestions({ ...existingJob.mandatoryQuestions, driversLicence: existingJob.mandatoryQuestions.driversLicence ?? true });
+          if (existingJob.mandatoryQuestions) setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true, ...existingJob.mandatoryQuestions, driversLicence: true });
           if (existingJob.qualificationWeights) {
             setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
             setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
@@ -1185,7 +1185,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     <button
                       onClick={async () => {
                         await fetch('/api/v1/applications/' + app.id + '/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'screening' }) });
-                        await fetch('/api/v1/notifications/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to: app.candidateEmail, subject: 'You have been invited to screen for ' + (app.jobTitle || 'a role'), message: 'Hi ' + (app.candidateName || 'there') + ', you have been invited to complete your AI screening interview for the role of ' + (app.jobTitle || 'a position') + ' at ' + (app.company || 'our company') + '. Please login to QANI to begin.' }) });
+                        await fetch('https://qani.io/api/v1/notifications/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipientId: app.candidateId, recipientEmail: app.candidateEmail, type: 'invite_sent', title: 'Screening Invite — ' + (app.jobTitle || 'a role'), message: 'Hi ' + (app.candidateName || 'there') + ', you have been invited to complete your AI screening for ' + (app.jobTitle || 'a position') + ' at ' + (app.company || 'our company') + '. Click to begin your screening.', relatedApplicationId: app.id, relatedJobId: app.jobId || app.roleId }) });
                         showToast('Screening invite sent to ' + app.candidateName, 'success');
                         refreshStates();
                       }}

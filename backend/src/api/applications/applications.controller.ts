@@ -55,14 +55,13 @@ export class ApplicationsController {
           candidateId,
           candidateName: candidateName || 'Unknown',
           candidateEmail: candidateEmail || '',
-          jobId: roleId,
+          job: roleId ? { connect: { id: roleId } } : undefined,
           jobTitle: jobTitle || 'Unknown Role',
           company: company || 'Unknown Company',
           status: 'applied',
           appliedDate: new Date(),
           notes: [],
           ...(cvUrl && { cvUrl }),
-          ...(cvFilename && { cvFilename: cvFilename }),
         }
       });
 

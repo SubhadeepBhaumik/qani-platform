@@ -228,7 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const { user: loggedUser, token, refreshToken: rt } = await api.login(email, password) as any;
       if (rt) localStorage.setItem('qani_refresh_token', rt);
       setUser(loggedUser);
-      await refreshStates();
+      await refreshStates(loggedUser as any);
       showToast(`Welcome back, ${loggedUser.firstName}!`, 'success');
       if (loggedUser.role === 'candidate') navigate('candidate-dashboard');
       else if (loggedUser.role === 'recruiter') navigate('recruiter-dashboard');
@@ -286,12 +286,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     const job = jobs.find((j: any) => j.id === jobId);
-    // Get candidate CV from profile if available
-    const profileRes = await fetch(`https://qani.io/api/v1/candidates/${user.id}/profile`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('qani_auth_token')}` }
-    }).then(r => r.json()).catch(() => ({}));
-    const cvUrl = profileRes?.cvUrl || null;
-    const cvFilename = profileRes?.cvFilename || null;
+    let cvUrl = null;
+    let cvFilename = null;
+    try {
+      const profileRes = await fetch(`https://qani.io/api/v1/candidates/${user.id}/profile`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('qani_auth_token')}` }
+      }).then(r => r.json());
+      cvUrl = profileRes?.cvUrl || null;
+      cvFilename = profileRes?.cvFilename || null;
+    } catch(_) {}
     const app = await api.applyForJob(jobId, user.id, user.firstName + ' ' + user.lastName, user.email, job?.title, (job as any)?.company, cvUrl, cvFilename);
     await refreshStates();
     showToast('Applied! Screening queue unlocked.', 'success');

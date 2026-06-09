@@ -75,7 +75,7 @@ export const Header: React.FC = () => {
                         }
                         setShowNotifDropdown(false);
                         if (n.type === 'invite_sent' && (n as any).interviewDateTime) {
-                          if (user?.role === 'recruiter') {
+                          if ((n as any).interviewDateTime && user?.role === 'recruiter') {
                             // Open Google Calendar for recruiter
                             const dt = new Date((n as any).interviewDateTime);
                             const dtEnd = new Date(dt.getTime() + 3600000);
@@ -92,15 +92,36 @@ export const Header: React.FC = () => {
                           }
                         } else if (n.relatedApplicationId) {
                           const role = user?.role;
-                          if (role === 'candidate') navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
-                          else navigate('recruiter-applications');
+                          const ntype = (n as any).type || '';
+                          if (role === 'candidate' && (ntype === 'invite_sent' || ntype === 'screening_complete' || ntype === 'new_application')) {
+                            navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
+                          } else if (role === 'candidate') {
+                            navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
+                          } else navigate('recruiter-applications');
                         } else if (n.relatedJobId) {
                           const role = user?.role;
                           if (role === 'candidate') navigate('candidate-job-detail', { jobId: n.relatedJobId });
                           else navigate('recruiter-jobs');
                         } else {
-                          if (user?.role === 'candidate') navigate('candidate-notifications');
-                          else navigate('recruiter-dashboard');
+                          // Route system notifications by type and content
+                          const type = (n as any).type || '';
+                          const title = (n as any).title || '';
+                          const msg = (n as any).message || '';
+                          if (type === 'new_application' || title.toLowerCase().includes('application')) {
+                            if (user?.role === 'candidate') navigate('candidate-applications');
+                            else navigate('recruiter-applications');
+                          } else if (type === 'screening_complete' || title.toLowerCase().includes('screening')) {
+                            if (user?.role === 'candidate') navigate('candidate-applications');
+                            else navigate('recruiter-applications');
+                          } else if (type === 'job_expiring' || msg.toLowerCase().includes('job') || title.toLowerCase().includes('job')) {
+                            if (user?.role === 'candidate') navigate('candidate-jobs');
+                            else navigate('recruiter-jobs');
+                          } else if (type === 'candidate_qualified' || title.toLowerCase().includes('qualified')) {
+                            navigate('recruiter-applications');
+                          } else {
+                            if (user?.role === 'candidate') navigate('candidate-notifications');
+                            else navigate('recruiter-dashboard');
+                          }
                         }
                       }}
                       className={`cursor-pointer p-3 hover:bg-gray-50 border-b border-gray-50 transition ${n.status === 'unread' ? 'bg-blue-50/40' : ''}`}

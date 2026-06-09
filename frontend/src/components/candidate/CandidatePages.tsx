@@ -72,6 +72,28 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [github, setGithub] = useState((user as any)?.github || '');
   const [avatarUrl, setAvatarUrl] = useState((user as any)?.avatarUrl || '');
 
+  // Load profile from DB on mount
+  React.useEffect(() => {
+    if (!user?.id) return;
+    const token = localStorage.getItem('qani_auth_token');
+    fetch(`https://qani.io/api/v1/candidates/${user.id}/profile`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+    }).then(r => r.json()).then(p => {
+      if (!p || !p.userId) return;
+      if (p.bio) setBio(p.bio);
+      if (p.phone) setPhone(p.phone);
+      if (p.location) setLocation(p.location);
+      if (p.skills?.length) setSkills(p.skills);
+      if (p.linkedinUrl) setLinkedIn(p.linkedinUrl);
+      if (p.githubUrl) setGithub(p.githubUrl);
+      if (p.workRights) setWorkRights(p.workRights);
+      if (p.salaryExpectation) setSalaryExpectation(p.salaryExpectation.toString());
+      if (p.availableFrom) setAvailableFrom(p.availableFrom.split('T')[0]);
+      if (p.cvFilename) setCvFileName(p.cvFilename);
+      if (p.profilePhotoUrl) setAvatarUrl(p.profilePhotoUrl);
+    }).catch(() => {});
+  }, [user?.id, subView]);
+
   // Screening active chat states
   const [userAnswer, setUserAnswer] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -711,7 +733,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const job = jobs.find(j => j.id === app?.jobId);
 
         const totalQuestions = (session as any).totalQuestions || ((job?.screeningQuestions?.length || 0) + (session as any).mandatoryCount || 5);
-        const answeredCount = session.messages.filter(m => m.role === 'user').length;
+        const answeredCount = (session as any).currentQuestionIdx || 0;
         const currentQ = Math.min(answeredCount + 1, totalQuestions);
         const progressPercent = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
 
@@ -736,8 +758,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               </button>
               <div className="text-right">
                 <span className="text-[10px] font-mono text-gray-500 uppercase block">Interview Progress</span>
-                <span className="text-xs font-bold text-blue-600">Question {answeredCount >= totalQuestions ? totalQuestions : currentQ} of {totalQuestions}</span>
-                <span className="text-[10px] text-gray-400 block">{progressPercent}% completed</span>
+                <span className="text-xs font-bold text-blue-600">{progressPercent}% completed</span>
               </div>
             </div>
 
@@ -1334,8 +1355,14 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   setInterviewModal({ title: n.title, dateTime: (n as any).interviewDateTime });
                   return;
                 }
+                if (n.type === 'invite_sent' && n.relatedApplicationId) {
+                  navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
+                  return;
+                }
                 if (n.relatedApplicationId) navigate('candidate-app-detail', { applicationId: n.relatedApplicationId });
                 else if (n.relatedJobId) navigate('candidate-job-detail', { jobId: n.relatedJobId });
+                else if (n.type === 'system' && ((n as any).message || '').toLowerCase().includes('job')) navigate('candidate-jobs');
+                else navigate('candidate-notifications');
               };
               return (
                 <div key={n.id} onClick={handleNotifClick}
