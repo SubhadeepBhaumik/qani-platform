@@ -1,36 +1,17 @@
 import twilio from 'twilio';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const client = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
-async function getSmsConfig() {
-  try {
-    const settings = await prisma.platformSetting.findMany({
-      where: { key: { in: ['twilioAccountSid', 'twilioAuthToken', 'twilioPhoneNumber'] } }
-    });
-    const map: Record<string, string> = {};
-    settings.forEach(s => { map[s.key] = s.value; });
-    return {
-      accountSid: map['twilioAccountSid'] || process.env.TWILIO_ACCOUNT_SID || '',
-      authToken: map['twilioAuthToken'] || process.env.TWILIO_AUTH_TOKEN || '',
-      phoneNumber: map['twilioPhoneNumber'] || process.env.TWILIO_PHONE_NUMBER || '+12182154146',
-    };
-  } catch {
-    return {
-      accountSid: process.env.TWILIO_ACCOUNT_SID || '',
-      authToken: process.env.TWILIO_AUTH_TOKEN || '',
-      phoneNumber: process.env.TWILIO_PHONE_NUMBER || '+12182154146',
-    };
-  }
-}
+const FROM_NUMBER = process.env.TWILIO_PHONE_NUMBER || '+12182154146';
 
 export async function sendSMS(to: string, message: string): Promise<boolean> {
   try {
-    const config = await getSmsConfig();
-    const client = twilio(config.accountSid, config.authToken);
     await client.messages.create({
       body: message,
-      from: config.phoneNumber,
+      from: FROM_NUMBER,
       to,
     });
     console.log('SMS sent to:', to);

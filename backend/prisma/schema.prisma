@@ -171,3 +171,12 @@ model OtpRecord {
 
   @@map("otp_records")
 }
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
+}

@@ -137,6 +137,130 @@ app.get('/api/v1/users', async (_req, res) => {
   } catch(e) { res.json([]); }
 });
 
+// ─── PLATFORM SETTINGS API ───────────────────────────────────────────────────
+const settingsPrisma = new (require('@prisma/client').PrismaClient)();
+
+app.get('/api/v1/admin/settings', async (_req, res) => {
+  try {
+    const settings = await settingsPrisma.platformSetting.findMany();
+    const map: Record<string, string> = {};
+    settings.forEach((s: any) => { map[s.key] = s.value; });
+    // Return current config (mask sensitive keys)
+    res.json({
+      sendgridFromEmail: map['sendgridFromEmail'] || process.env.SENDGRID_FROM_EMAIL || '',
+      sendgridFromName: map['sendgridFromName'] || process.env.SENDGRID_FROM_NAME || 'QANI AI Recruitment',
+      sendgridApiKey: map['sendgridApiKey'] ? '***configured***' : (process.env.SENDGRID_API_KEY ? '***configured***' : ''),
+      twilioAccountSid: map['twilioAccountSid'] || process.env.TWILIO_ACCOUNT_SID || '',
+      twilioPhoneNumber: map['twilioPhoneNumber'] || process.env.TWILIO_PHONE_NUMBER || '',
+      twilioAuthToken: map['twilioAuthToken'] ? '***configured***' : (process.env.TWILIO_AUTH_TOKEN ? '***configured***' : ''),
+      openaiApiKey: map['openaiApiKey'] ? '***configured***' : (process.env.OPENAI_API_KEY ? '***configured***' : ''),
+      openaiModel: map['openaiModel'] || 'gpt-4o-mini',
+      otpExpiryMinutes: map['otpExpiryMinutes'] || '10',
+      otpRetryLimit: map['otpRetryLimit'] || '3',
+      featureAiScreening: map['featureAiScreening'] || 'true',
+      featureOtpEnforcement: map['featureOtpEnforcement'] || 'true',
+    });
+  } catch(e) { res.status(500).json({ error: 'Failed to load settings' }); }
+});
+
+app.post('/api/v1/admin/settings', async (req: any, res: any) => {
+  try {
+    const allowed = ['sendgridFromEmail','sendgridFromName','sendgridApiKey','twilioAccountSid','twilioPhoneNumber','twilioAuthToken','openaiApiKey','openaiModel','otpExpiryMinutes','otpRetryLimit','featureAiScreening','featureOtpEnforcement'];
+    const updates = req.body;
+    for (const key of allowed) {
+      if (updates[key] !== undefined && updates[key] !== '' && updates[key] !== '***configured***') {
+        await settingsPrisma.platformSetting.upsert({
+          where: { key },
+          create: { key, value: updates[key] },
+          update: { value: updates[key] },
+        });
+      }
+    }
+    res.json({ success: true, message: 'Settings saved successfully' });
+  } catch(e) { res.status(500).json({ error: 'Failed to save settings' }); }
+});
+
+app.post('/api/v1/admin/settings/test-email', async (_req, res) => {
+  try {
+    const { sendEmail } = require('./services/email.service');
+    await sendEmail(process.env.SENDGRID_FROM_EMAIL || 'bhaumiksubhadeep@gmail.com', 'QANI — Email Test', '<p>This is a test email from QANI Admin Panel. Email delivery is working correctly.</p>');
+    res.json({ success: true, message: 'Test email sent successfully' });
+  } catch(e: any) { res.status(500).json({ error: 'Failed to send test email: ' + e.message }); }
+});
+
+app.post('/api/v1/admin/settings/test-sms', async (req: any, res: any) => {
+  try {
+    const { sendSMS } = require('./services/sms.service');
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: 'Phone number required' });
+    await sendSMS(phone, 'QANI Test SMS — Your SMS delivery is working correctly.');
+    res.json({ success: true, message: 'Test SMS sent successfully' });
+  } catch(e: any) { res.status(500).json({ error: 'Failed to send test SMS: ' + e.message }); }
+});
+
+// DB Backup trigger
+app.post('/api/v1/admin/backup', async (_req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    execSync('bash /home/qani/backups/backup.sh', { timeout: 60000 });
+    res.json({ success: true, message: 'Backup completed successfully', timestamp: new Date().toISOString() });
+  } catch(e: any) { res.status(500).json({ error: 'Backup failed: ' + e.message }); }
+});
+
+// Last backup info
+app.get('/api/v1/admin/backup/status', async (_req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    const files = execSync('ls -lt /home/qani/backups/*.gz 2>/dev/null | head -5').toString().trim();
+    const lastBackup = execSync('ls -lt /home/qani/backups/*.gz 2>/dev/null | head -1').toString().trim();
+    const lastBackupTime = lastBackup ? lastBackup.split(/\s+/).slice(5,8).join(' ') : 'No backups found';
+    res.json({ success: true, lastBackup: lastBackupTime, files: files.split('\n').filter(Boolean) });
+  } catch(e) { res.json({ success: false, lastBackup: 'No backups found', files: [] }); }
+});
+
+// SSL status
+app.get('/api/v1/admin/ssl/status', async (_req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    const result = execSync('certbot certificates 2>/dev/null | grep -E "Expiry|Domains"').toString().trim();
+    res.json({ success: true, info: result });
+  } catch(e) { res.json({ success: false, info: 'Could not read SSL status' }); }
+});
+
+// Danger zone — clear OTPs
+app.post('/api/v1/admin/danger/clear-otps', async (_req, res) => {
+  try {
+    const dangerPrisma = new (require('@prisma/client').PrismaClient)();
+    const result = await dangerPrisma.otpRecord.deleteMany({});
+    res.json({ success: true, message: `Cleared ${result.count} OTP records` });
+  } catch(e: any) { res.status(500).json({ error: 'Failed: ' + e.message }); }
+});
+
+// Danger zone — clear screening sessions
+app.post('/api/v1/admin/danger/clear-sessions', async (_req, res) => {
+  try {
+    const dangerPrisma = new (require('@prisma/client').PrismaClient)();
+    const result = await dangerPrisma.screeningSession.deleteMany({ where: { status: 'completed' } });
+    res.json({ success: true, message: `Cleared ${result.count} completed screening sessions` });
+  } catch(e: any) { res.status(500).json({ error: 'Failed: ' + e.message }); }
+});
+
+app.get('/api/v1/admin/health', async (_req, res) => {
+  try {
+    await settingsPrisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'healthy',
+      database: 'connected',
+      api: 'online',
+      uptime: Math.floor(process.uptime()),
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+    });
+  } catch(e) {
+    res.json({ status: 'degraded', database: 'disconnected', api: 'online', uptime: Math.floor(process.uptime()) });
+  }
+});
+
 AuthController.seedDemoUsers().then(() => console.log('Demo users ready'));
 syncRolesToMemory().then(() => console.log('Jobs synced from DB:', require('./api/roles/roles.controller').roles.length));
 syncApplicationsToMemory().then(() => console.log('Applications synced from DB:', require('./api/applications/applications.controller').applications.length));

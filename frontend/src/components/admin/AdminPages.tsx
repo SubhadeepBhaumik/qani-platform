@@ -184,6 +184,269 @@ const UserModal: React.FC<{ user: any; onClose: () => void; onSave: (u: any) => 
 };
 
 // ─── MAIN ADMIN PAGES ─────────────────────────────────────────────────────────
+// ─── ADMIN SETTINGS COMPONENT ────────────────────────────────────────────────
+const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }> = ({ showToast }) => {
+  const token = localStorage.getItem('qani_auth_token');
+  const hdrs = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+
+  const [sSettings, setSSettings] = useState<any>({});
+  const [sLoading, setSLoading] = useState(true);
+  const [sHealth, setSHealth] = useState<any>(null);
+  const [testSmsPhone, setTestSmsPhone] = useState('');
+  const [backupStatus, setBackupStatus] = useState<any>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [sslInfo, setSslInfo] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('https://qani.io/api/v1/admin/settings', { headers: hdrs }).then(r => r.json()).then(setSSettings).finally(() => setSLoading(false));
+    fetch('https://qani.io/api/v1/admin/health', { headers: hdrs }).then(r => r.json()).then(setSHealth);
+    fetch('https://qani.io/api/v1/admin/backup/status', { headers: hdrs }).then(r => r.json()).then(setBackupStatus);
+    fetch('https://qani.io/api/v1/admin/ssl/status', { headers: hdrs }).then(r => r.json()).then(setSslInfo);
+  }, []);
+
+  const saveSettings = async () => {
+    const r = await fetch('https://qani.io/api/v1/admin/settings', { method: 'POST', headers: hdrs, body: JSON.stringify(sSettings) });
+    const d = await r.json();
+    if (d.success) showToast('Settings saved successfully', 'success');
+    else showToast('Failed to save settings', 'error');
+  };
+
+  const testEmail = async () => {
+    const r = await fetch('https://qani.io/api/v1/admin/settings/test-email', { method: 'POST', headers: hdrs });
+    const d = await r.json();
+    if (d.success) showToast('Test email sent!', 'success');
+    else showToast(d.error || 'Failed', 'error');
+  };
+
+  const testSms = async () => {
+    const r = await fetch('https://qani.io/api/v1/admin/settings/test-sms', { method: 'POST', headers: hdrs, body: JSON.stringify({ phone: testSmsPhone }) });
+    const d = await r.json();
+    if (d.success) showToast('Test SMS sent!', 'success');
+    else showToast(d.error || 'Failed', 'error');
+  };
+
+  const runBackup = async () => {
+    setBackupLoading(true);
+    const r = await fetch('https://qani.io/api/v1/admin/backup', { method: 'POST', headers: hdrs });
+    const d = await r.json();
+    if (d.success) { showToast('Backup completed!', 'success'); fetch('https://qani.io/api/v1/admin/backup/status', { headers: hdrs }).then(r => r.json()).then(setBackupStatus); }
+    else showToast(d.error || 'Backup failed', 'error');
+    setBackupLoading(false);
+  };
+
+  const Field = ({ label, k, type='text', placeholder='' }: { label: string; k: string; type?: string; placeholder?: string }) => (
+    <div>
+      <label className="text-xs font-semibold text-gray-700">{label}</label>
+      <input type={type} value={sSettings[k] || ''} placeholder={placeholder}
+        onChange={e => setSSettings((p: any) => ({ ...p, [k]: e.target.value }))}
+        className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+    </div>
+  );
+
+  if (sLoading) return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900">Super Admin Settings</h2>
+        <p className="text-xs text-gray-500 mt-1">Manage API keys, services, feature flags and platform health</p>
+      </div>
+
+      {/* Platform Health */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Activity className="w-4 h-4 text-green-600" /> Platform Health</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: 'API Status', value: sHealth?.api || 'checking...', ok: sHealth?.api === 'online' },
+            { label: 'Database', value: sHealth?.database || 'checking...', ok: sHealth?.database === 'connected' },
+            { label: 'Environment', value: sHealth?.environment || '—', ok: true },
+            { label: 'Uptime', value: sHealth?.uptime ? `${Math.floor(sHealth.uptime/3600)}h ${Math.floor((sHealth.uptime%3600)/60)}m` : '—', ok: true },
+          ].map(h => (
+            <div key={h.label} className={`p-3 rounded-xl border text-center ${h.ok ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+              <p className={`text-sm font-bold capitalize ${h.ok ? 'text-green-700' : 'text-red-700'}`}>{h.value}</p>
+              <p className="text-[10px] text-gray-500 font-semibold uppercase mt-0.5">{h.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* SendGrid */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Mail className="w-4 h-4 text-blue-600" /> Email — SendGrid</h3>
+          <Field label="From Email" k="sendgridFromEmail" placeholder="noreply@qani.io" />
+          <Field label="From Name" k="sendgridFromName" placeholder="QANI AI Recruitment" />
+          <Field label="SendGrid API Key" k="sendgridApiKey" type="password" placeholder={sSettings.sendgridApiKey === '***configured***' ? '***configured***' : 'SG.xxxx...'} />
+          <button onClick={testEmail} className="cursor-pointer w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg transition">
+            <Mail className="w-3.5 h-3.5" /> Send Test Email
+          </button>
+        </div>
+
+        {/* Twilio */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bell className="w-4 h-4 text-orange-600" /> SMS — Twilio</h3>
+          <Field label="Account SID" k="twilioAccountSid" placeholder="ACxxxx..." />
+          <Field label="Auth Token" k="twilioAuthToken" type="password" placeholder={sSettings.twilioAuthToken === '***configured***' ? '***configured***' : 'Auth token...'} />
+          <Field label="From Phone Number" k="twilioPhoneNumber" placeholder="+12182154146" />
+          <div>
+            <label className="text-xs font-semibold text-gray-700">Test Phone Number</label>
+            <div className="flex gap-2 mt-1">
+              <input type="text" value={testSmsPhone} onChange={e => setTestSmsPhone(e.target.value)} placeholder="+61412345678"
+                className="flex-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+              <button onClick={testSms} className="cursor-pointer px-3 py-1.5 text-xs font-semibold bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded-lg transition">Send Test</button>
+            </div>
+          </div>
+        </div>
+
+        {/* OpenAI */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bot className="w-4 h-4 text-green-600" /> AI — OpenAI</h3>
+          <Field label="OpenAI API Key" k="openaiApiKey" type="password" placeholder={sSettings.openaiApiKey === '***configured***' ? '***configured***' : 'sk-...'} />
+          <div>
+            <label className="text-xs font-semibold text-gray-700">AI Model</label>
+            <select value={sSettings.openaiModel || 'gpt-4o-mini'} onChange={e => setSSettings((p: any) => ({ ...p, openaiModel: e.target.value }))}
+              className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
+              <option value="gpt-4o-mini">gpt-4o-mini (Default — Fast & Efficient)</option>
+              <option value="gpt-4o">gpt-4o (Best Quality)</option>
+              <option value="gpt-4-turbo">gpt-4-turbo (Legacy)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* OTP + Feature Flags */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Shield className="w-4 h-4 text-purple-600" /> OTP & Feature Flags</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-700">OTP Expiry (minutes)</label>
+              <input type="number" value={sSettings.otpExpiryMinutes || '10'} onChange={e => setSSettings((p: any) => ({ ...p, otpExpiryMinutes: e.target.value }))}
+                className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-700">OTP Retry Limit</label>
+              <input type="number" value={sSettings.otpRetryLimit || '3'} onChange={e => setSSettings((p: any) => ({ ...p, otpRetryLimit: e.target.value }))}
+                className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+            </div>
+          </div>
+          <div className="space-y-3 pt-2 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-700">Feature Flags</p>
+            {[
+              { label: 'AI Screening Enabled', k: 'featureAiScreening' },
+              { label: 'OTP Enforcement Enabled', k: 'featureOtpEnforcement' },
+            ].map(f => (
+              <div key={f.k} className="flex items-center justify-between py-1.5">
+                <span className="text-xs text-gray-700">{f.label}</span>
+                <button onClick={() => setSSettings((p: any) => ({ ...p, [f.k]: p[f.k] === 'false' ? 'true' : 'false' }))}
+                  className={`cursor-pointer w-10 h-5 rounded-full transition relative ${sSettings[f.k] !== 'false' ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${sSettings[f.k] !== 'false' ? 'left-5' : 'left-0.5'}`} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Platform Info */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Platform Info</h3>
+          <Field label="Platform Name" k="platformName" placeholder="QANI Platform" />
+          <Field label="Support Email" k="supportEmail" placeholder="support@qani.io" />
+          <div>
+            <label className="text-xs font-semibold text-gray-700">Region</label>
+            <select value={sSettings.region || 'ap-southeast-2'} onChange={e => setSSettings((p: any) => ({ ...p, region: e.target.value }))}
+              className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
+              <option value="ap-southeast-2">Australia (ap-southeast-2)</option>
+              <option value="ap-southeast-1">Singapore (ap-southeast-1)</option>
+              <option value="us-east-1">US East (us-east-1)</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Screening Thresholds */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bot className="w-4 h-4 text-green-600" /> Screening Thresholds</h3>
+          <div>
+            <label className="text-xs font-semibold text-gray-700">Auto-Qualify Threshold (%)</label>
+            <input type="number" min="1" max="100" value={sSettings.autoQualifyThreshold || '70'}
+              onChange={e => setSSettings((p: any) => ({ ...p, autoQualifyThreshold: e.target.value }))}
+              className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+            <p className="text-[10px] text-gray-400 mt-1">Candidates scoring above this are marked Qualified</p>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-700">Auto-Reject Threshold (%)</label>
+            <input type="number" min="1" max="100" value={sSettings.autoRejectThreshold || '45'}
+              onChange={e => setSSettings((p: any) => ({ ...p, autoRejectThreshold: e.target.value }))}
+              className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+            <p className="text-[10px] text-gray-400 mt-1">Candidates scoring below this are marked Rejected</p>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-700">Max Screening Questions</label>
+            <input type="number" min="1" max="20" value={sSettings.maxScreeningQuestions || '10'}
+              onChange={e => setSSettings((p: any) => ({ ...p, maxScreeningQuestions: e.target.value }))}
+              className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        {/* DB Backup */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Database className="w-4 h-4 text-blue-600" /> Database Backup</h3>
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs font-semibold text-gray-700">Last Backup</p>
+            <p className="text-xs text-gray-500 mt-1">{backupStatus?.lastBackup || 'Loading...'}</p>
+          </div>
+          {backupStatus?.files?.slice(0,3).map((f: string, i: number) => (
+            <p key={i} className="text-[10px] font-mono text-gray-400 truncate">{f}</p>
+          ))}
+          <button onClick={runBackup} disabled={backupLoading} className="cursor-pointer w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg transition disabled:opacity-50">
+            <Database className="w-3.5 h-3.5" /> {backupLoading ? 'Running backup...' : 'Run Manual Backup Now'}
+          </button>
+          <p className="text-[10px] text-gray-400">Auto backup runs daily at 2AM. 7-day retention.</p>
+        </div>
+
+        {/* SSL */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Shield className="w-4 h-4 text-green-600" /> SSL Certificate</h3>
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <p className="text-xs font-semibold text-green-700">SSL Status: Active</p>
+            <p className="text-[10px] text-green-600 mt-1 whitespace-pre-wrap">{sslInfo?.info || 'Loading...'}</p>
+          </div>
+          <p className="text-[10px] text-gray-400">Auto-renewal via certbot cron (daily 12PM). Let's Encrypt TLS 1.2+</p>
+        </div>
+      </div>
+
+      {/* Save */}
+      <div className="flex justify-end">
+        <button onClick={saveSettings} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
+          <Save className="w-4 h-4" /> Save All Settings
+        </button>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="bg-white border border-red-200 rounded-xl p-5 space-y-4">
+        <h3 className="text-sm font-bold text-red-600 flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Danger Zone</h3>
+        <p className="text-xs text-gray-500">These actions are irreversible. Use with caution.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onClick={async () => {
+            if (!window.confirm('Clear all OTP records from DB? This will invalidate any pending OTPs.')) return;
+            const r = await fetch('https://qani.io/api/v1/admin/danger/clear-otps', { method: 'POST', headers: hdrs });
+            const d = await r.json();
+            if (d.success) showToast(d.message, 'success'); else showToast(d.error || 'Failed', 'error');
+          }} className="cursor-pointer flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg transition">
+            <Trash2 className="w-3.5 h-3.5" /> Clear All OTP Records
+          </button>
+          <button onClick={async () => {
+            if (!window.confirm('Clear all completed screening sessions? Active sessions will not be affected.')) return;
+            const r = await fetch('https://qani.io/api/v1/admin/danger/clear-sessions', { method: 'POST', headers: hdrs });
+            const d = await r.json();
+            if (d.success) showToast(d.message, 'success'); else showToast(d.error || 'Failed', 'error');
+          }} className="cursor-pointer flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg transition">
+            <Trash2 className="w-3.5 h-3.5" /> Clear Completed Sessions
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   const { user, jobs, applications, logs, navigate, refreshStates, showToast } = useApp();
   const { navigate: appNavigate } = useApp();
@@ -1037,98 +1300,7 @@ Question 1: Describe your most relevant experience for this role.` },
           <AdminCMS />
         )}
         {/* ── SETTINGS ── */}
-        {activeTab === 'settings' && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Platform Settings</h2>
-              <p className="text-xs text-gray-500 mt-1">Security, notifications, AI configuration</p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Shield className="w-4 h-4 text-blue-600" /> Security</h3>
-                {[
-                  { label: 'Require email verification for new accounts', on: true },
-                  { label: 'Two-factor authentication for admins', on: true },
-                  { label: 'Rate limiting on API endpoints', on: true },
-                  { label: 'Auto-lockout after 5 failed logins', on: false },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between py-2 border-b border-gray-50">
-                    <span className="text-xs text-gray-700">{s.label}</span>
-                    <button onClick={() => showToast('Setting updated', 'success')} className={`cursor-pointer w-10 h-5 rounded-full transition relative ${s.on ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${s.on ? 'left-5' : 'left-0.5'}`} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bell className="w-4 h-4 text-orange-600" /> Notifications</h3>
-                {[
-                  { label: 'Email alerts for new applications', on: true },
-                  { label: 'Email alerts when AI screening completes', on: true },
-                  { label: 'Weekly digest to recruiters', on: false },
-                  { label: 'Candidate status update notifications', on: true },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between py-2 border-b border-gray-50">
-                    <span className="text-xs text-gray-700">{s.label}</span>
-                    <button onClick={() => showToast('Setting updated', 'success')} className={`cursor-pointer w-10 h-5 rounded-full transition relative ${s.on ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${s.on ? 'left-5' : 'left-0.5'}`} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bot className="w-4 h-4 text-green-600" /> AI Recruiter Settings</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">AI Model</label>
-                    <select className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
-                      <option>gpt-4o (Recommended)</option>
-                      <option>gpt-4o-mini</option>
-                      <option>gpt-4-turbo</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Auto-qualify threshold (%)</label>
-                    <input type="number" defaultValue={80} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Auto-reject threshold (%)</label>
-                    <input type="number" defaultValue={50} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Max questions per screening</label>
-                    <input type="number" defaultValue={4} className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Platform Info</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Platform Name</label>
-                    <input type="text" defaultValue="QANI Platform" className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Support Email</label>
-                    <input type="email" defaultValue="support@qani.io" className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-700">Region</label>
-                    <select className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 bg-white">
-                      <option>Australia (ap-southeast-2)</option>
-                      <option>Singapore (ap-southeast-1)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button onClick={() => showToast('Settings saved!', 'success')} className="cursor-pointer flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition shadow-md">
-                <Save className="w-4 h-4" /> Save Settings
-              </button>
-            </div>
-          </div>
-        )}
+        {activeTab === 'settings' && <AdminSettings showToast={showToast} />}
 
       </div>
     </div>
