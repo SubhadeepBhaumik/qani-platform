@@ -30,14 +30,11 @@ export class CandidatesController {
 
   static async getCandidates(req: Request, res: Response) {
     try {
-      const users = await prisma.user.findMany({ where: { role: 'candidate' } });
-      const profiles = await prisma.candidateProfile.findMany();
-      const merged = users.map((u: any) => {
-        const profile = profiles.find((p: any) => p.userId === u.id);
-        const skills = profile && Array.isArray((profile as any).skills) ? (profile as any).skills : [];
-        return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, avatarUrl: u.avatarUrl || null, bio: (profile as any)?.bio || '', skills, location: (profile as any)?.location || '', workRights: (profile as any)?.workRights || '', linkedinUrl: (profile as any)?.linkedinUrl || '', cvFilename: (profile as any)?.cvFilename || '' };
+      const users = await prisma.user.findMany({
+        where: { role: 'candidate' },
+
       });
-      return res.json(merged);
+      return res.json(users);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch candidates' });
     }

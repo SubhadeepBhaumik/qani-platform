@@ -160,6 +160,7 @@ export class ApplicationsController {
         status: data.status,
         screeningSessionId: data.screeningSessionId,
         screeningCompletedAt: data.screeningCompletedAt ? new Date(data.screeningCompletedAt) : new Date(),
+        ...(data.transcript && { transcript: data.transcript }),
       }
     }).then(() => syncApplicationsToMemory()).catch(console.error);
   }

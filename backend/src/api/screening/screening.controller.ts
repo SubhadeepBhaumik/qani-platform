@@ -324,10 +324,16 @@ export class ScreeningController {
       session.score = overallScore;
 
       try {
+        const transcriptForSave = session.messages.map((m: any) => ({
+          role: m.role,
+          message: m.content,
+          timestamp: m.timestamp,
+        }));
         ApplicationsController.updateApplicationAfterScreening(session.applicationId, {
           score: overallScore, scorecard, aiFeedback: feedback,
           status: recommendation, screeningSessionId: session.id,
           screeningCompletedAt: new Date().toISOString(),
+          transcript: transcriptForSave,
         });
 
         const app = applications.find((a: any) => a.id === session.applicationId);

@@ -80,6 +80,7 @@ model Application {
   screeningStartedAt   DateTime?
   screeningCompletedAt DateTime?
   screeningSessionId   String?
+  transcript           Json?
   interviewDateTime    DateTime?
   updatedAt            DateTime @updatedAt
 

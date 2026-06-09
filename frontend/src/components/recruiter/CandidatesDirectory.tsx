@@ -13,14 +13,13 @@ export const CandidatesDirectory: React.FC = () => {
   const [invited, setInvited] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('/api/v1/candidates')
+    fetch('https://qani.io/api/v1/candidates')
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data)) setCandidates(data);
-        else setCandidates(DEMO_CANDIDATES);
+        if (Array.isArray(data) && data.length > 0) setCandidates(data);
+        setLoading(false);
       })
-      .catch(() => setCandidates(DEMO_CANDIDATES))
-      .finally(() => setLoading(false));
+      .catch(() => setLoading(false));
   }, []);
 
   const DEMO_CANDIDATES = [

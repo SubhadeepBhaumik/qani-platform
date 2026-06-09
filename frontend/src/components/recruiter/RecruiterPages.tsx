@@ -962,11 +962,11 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 )}
 
                 {/* transcribing transcript histories if exists */}
-                {(session || (app.transcript && app.transcript.length > 0)) && (
+                {(session || ((app as any).transcript && (app as any).transcript.length > 0)) && (
                   <div className="space-y-4 pt-6 border-t border-gray-100">
                     <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">AI Screening Transcript</h3>
                     <div className="space-y-3 bg-gray-50 p-4 rounded-xl max-h-80 overflow-y-auto border border-gray-200">
-                      {(session ? session.messages.map(msg => ({ role: msg.role, message: msg.content, timestamp: msg.timestamp, id: msg.id })) : app.transcript || []).map((msg: any, idx: number) => (
+                      {(session ? session.messages.map(msg => ({ role: msg.role, message: msg.content, timestamp: msg.timestamp, id: msg.id })) : ((app as any).transcript || [])).map((msg: any, idx: number) => (
                         <div key={msg.id || idx} className="text-xs border-b border-gray-200/50 pb-2 mb-2">
                           <span className={`font-bold block tracking-wider uppercase text-[10px] ${(msg.role === 'assistant' || msg.role === 'ai') ? 'text-blue-600' : 'text-gray-900'}`}>
                             {(msg.role === 'assistant' || msg.role === 'ai') ? 'QANI AI Interviewer' : (app.candidateName || candidate?.firstName || 'Candidate')}
@@ -1864,7 +1864,14 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <tr className="bg-gray-50/50">
                     <td className="p-3 font-semibold text-gray-700">AI Feedback</td>
                     {compareModalApps.map((app: any) => (
-                      <td key={app.id} className="p-3 text-gray-600 italic text-[11px]">{app.aiFeedback || '—'}</td>
+                      <td key={app.id} className="p-3 text-gray-600 italic text-[11px]">
+                        {app.aiFeedback || '—'}
+                        {(app.scorecard as any)?.salaryScore !== undefined && (app.scorecard as any).salaryScore < 70 && (
+                          <span className="block mt-1 text-[10px] text-orange-600 font-semibold not-italic">
+                            ⚠ Salary score: {(app.scorecard as any).salaryScore}% — candidate may have salary expectations above budget.
+                          </span>
+                        )}
+                      </td>
                     ))}
                   </tr>
                   <tr>
