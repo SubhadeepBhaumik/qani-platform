@@ -158,3 +158,16 @@ model TeamMember {
 
   @@map("team_members")
 }
+
+model OtpRecord {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  otp       String
+  target    String
+  type      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("otp_records")
+}

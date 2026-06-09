@@ -1,26 +1,10 @@
 import { Request, Response } from 'express';
 import { OpenAI } from 'openai';
-import { ApplicationsController, applications } from '../applications/applications.controller';
+import { PrismaClient } from '@prisma/client';
+import { ApplicationsController } from '../applications/applications.controller';
 import { pushNotification } from '../notifications/notifications.controller';
-import { roles } from '../roles/roles.controller';
 
-interface ScreeningSession {
-  id: string;
-  applicationId: string;
-  status: 'active' | 'completed' | 'paused';
-  messages: Array<{ id: string; role: 'user' | 'assistant'; content: string; timestamp: string; questionIdx?: number }>;
-  currentQuestionIdx: number;
-  totalQuestions: number;
-  mandatoryCount: number;
-  jobData?: any;
-  startDate: string;
-  score?: number;
-  decision?: 'progress' | 'review' | 'reject';
-  createdAt: Date;
-  completedAt?: Date;
-}
-
-const sessions: ScreeningSession[] = [];
+const prisma = new PrismaClient();
 
 export class ScreeningController {
   static async startScreening(req: Request, res: Response) {
@@ -29,14 +13,18 @@ export class ScreeningController {
       if (!applicationId) return res.status(400).json({ error: 'applicationId required' });
 
       const now = new Date().toISOString();
+
+      // Fetch application + job from DB
       let jobData: any = {};
       try {
-        const app = applications.find((a: any) => a.id === applicationId);
-        if (app) {
-          const job = roles.find((r: any) => r.id === (app.roleId || (app as any).jobId));
-          if (job) jobData = { ...job, candidateName };
+        const app = await prisma.application.findUnique({
+          where: { id: applicationId },
+          include: { job: true },
+        });
+        if (app && app.job) {
+          jobData = { ...app.job, candidateName };
         }
-      } catch(_) {}
+      } catch (_) {}
 
       const mandQ = jobData.mandatoryQuestions || {};
       const mandatoryCount = [
@@ -63,24 +51,28 @@ export class ScreeningController {
       const jobTitle = jobData.title || 'this position';
       const greeting = 'Hi ' + name + '! Welcome to the QANI AI screening for the ' + jobTitle + ' role. I have ' + totalQuestions + ' questions to assess your suitability. Let\'s start:\r\n\r\n' + firstQ;
 
-      const session: ScreeningSession = {
-        id: Date.now().toString(),
-        applicationId,
-        status: 'active',
-        currentQuestionIdx: 0,
-        totalQuestions,
-        mandatoryCount,
-        startDate: now,
-        messages: [{ id: 'msg-1', role: 'assistant', content: greeting, timestamp: now, questionIdx: 0 }],
-        createdAt: new Date(),
-        jobData,
-      };
+      const initialMessages = [{ id: 'msg-1', role: 'assistant', content: greeting, timestamp: now, questionIdx: 0 }];
 
-      sessions.push(session);
-      // Update application status to 'screening'
+      // Save session to DB
+      const session = await prisma.screeningSession.create({
+        data: {
+          applicationId,
+          status: 'active',
+          currentQuestionIdx: 0,
+          totalQuestions,
+          mandatoryCount,
+          startDate: new Date(),
+          messages: initialMessages as any,
+          jobData: jobData as any,
+        },
+      });
+
+      // Update application status to screening
       ApplicationsController.setApplicationStatus(applicationId, 'screening');
+
       return res.status(201).json(session);
     } catch (error) {
+      console.error('startScreening error:', error);
       return res.status(500).json({ error: 'Failed to start screening' });
     }
   }
@@ -90,11 +82,15 @@ export class ScreeningController {
       const { sessionId, message } = req.body;
       if (!sessionId || !message) return res.status(400).json({ error: 'sessionId and message required' });
 
-      const session = sessions.find(s => s.id === sessionId);
+      // Load session from DB
+      const session = await prisma.screeningSession.findUnique({ where: { id: sessionId } });
       if (!session) return res.status(404).json({ error: 'Session not found' });
       if (session.status !== 'active') return res.status(400).json({ error: 'Session is not active' });
 
-      session.messages.push({
+      const messages: any[] = Array.isArray(session.messages) ? session.messages : [];
+
+      // Add user message
+      messages.push({
         id: 'msg-' + Date.now() + '-u',
         role: 'user',
         content: message,
@@ -102,14 +98,10 @@ export class ScreeningController {
       });
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const job = session.jobData || {};
+      const job: any = session.jobData || {};
       const mandQ = job.mandatoryQuestions || {};
       const weights = job.qualificationWeights || {
-        locationWeight: 20,
-        salaryWeight: 20,
-        qualificationsWeight: 20,
-        workRightsWeight: 20,
-        skillsWeight: 20,
+        locationWeight: 20, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 20,
       };
 
       const mandatoryList = [
@@ -121,7 +113,7 @@ export class ScreeningController {
       ].filter(Boolean).join('\r\n');
 
       const customQ = (job.screeningQuestions || []).map((q: string, i: number) => (i + 1) + '. ' + q).join('\r\n');
-      const salaryRange = job.salaryMin ? '$' + Math.round(job.salaryMin/1000) + 'k-$' + Math.round(job.salaryMax/1000) + 'k AUD' : 'not specified';
+      const salaryRange = job.salaryMin ? '$' + Math.round(job.salaryMin / 1000) + 'k-$' + Math.round(job.salaryMax / 1000) + 'k AUD' : 'not specified';
 
       const systemPrompt = [
         'You are QANI, an expert AI recruitment interviewer for Australian companies.',
@@ -152,9 +144,7 @@ export class ScreeningController {
         'REQUIREMENTS: ' + (job.requirementsMust || []).join(', '),
       ].filter(s => s !== undefined).join('\r\n');
 
-      // Build answered questions summary to prevent re-asking
-      const allMessages = session.messages;
-      const answeredSummary: string[] = [];
+      // Build answered questions summary
       const mandatoryLabels = [
         mandQ.locationCommute ? 'Location/commute' : '',
         mandQ.workRights ? 'Work rights' : '',
@@ -163,24 +153,22 @@ export class ScreeningController {
         mandQ.driversLicence ? 'Driver licence' : '',
       ].filter(Boolean);
 
-      // Pair AI questions with candidate answers
+      const answeredSummary: string[] = [];
       let qIdx = 0;
-      for (let i = 0; i < allMessages.length - 1; i++) {
-        if (allMessages[i].role === 'assistant' && allMessages[i+1] && allMessages[i+1].role === 'user') {
+      for (let i = 0; i < messages.length - 1; i++) {
+        if (messages[i].role === 'assistant' && messages[i + 1] && messages[i + 1].role === 'user') {
           const label = qIdx < mandatoryLabels.length ? mandatoryLabels[qIdx] : 'Job-specific Q' + (qIdx - mandatoryLabels.length + 1);
-          answeredSummary.push(label + ': ' + allMessages[i+1].content.substring(0, 80));
+          answeredSummary.push(label + ': ' + messages[i + 1].content.substring(0, 80));
           qIdx++;
         }
       }
 
       const answeredBlock = answeredSummary.length > 0
-        ? '\r\nALREADY ANSWERED — DO NOT ASK THESE AGAIN:\r\n' + answeredSummary.map((s,i) => (i+1) + '. ' + s).join('\r\n')
+        ? '\r\nALREADY ANSWERED — DO NOT ASK THESE AGAIN:\r\n' + answeredSummary.map((s, i) => (i + 1) + '. ' + s).join('\r\n')
         : '';
 
       const fullSystemPrompt = systemPrompt + answeredBlock;
-
-      // Send full history but cap at 20 messages for token efficiency
-      const recentMessages = session.messages.slice(-20);
+      const recentMessages = messages.slice(-20);
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -194,7 +182,7 @@ export class ScreeningController {
 
       const aiResponse = completion.choices[0].message.content || 'Thank you for your response.';
 
-      session.messages.push({
+      messages.push({
         id: 'msg-' + Date.now() + '-ai',
         role: 'assistant',
         content: aiResponse,
@@ -202,9 +190,7 @@ export class ScreeningController {
         questionIdx: session.currentQuestionIdx,
       });
 
-      // Only advance question counter if AI moved to a NEW question (not a follow-up)
       const isFollowUp = aiResponse.toLowerCase().includes('could you') ||
-        aiResponse.toLowerCase().includes('could you please') ||
         aiResponse.toLowerCase().includes('can you clarify') ||
         aiResponse.toLowerCase().includes('can you elaborate') ||
         aiResponse.toLowerCase().includes('could you clarify') ||
@@ -216,13 +202,23 @@ export class ScreeningController {
         aiResponse.toLowerCase().includes('please elaborate') ||
         aiResponse.toLowerCase().includes('what do you mean') ||
         aiResponse.toLowerCase().includes('can you be more specific');
-      if (!isFollowUp) {
-        session.currentQuestionIdx = Math.min(session.totalQuestions, session.currentQuestionIdx + 1);
-      }
 
-      return res.json(session);
+      const newQuestionIdx = isFollowUp
+        ? session.currentQuestionIdx
+        : Math.min(session.totalQuestions, session.currentQuestionIdx + 1);
+
+      // Save updated session to DB
+      const updatedSession = await prisma.screeningSession.update({
+        where: { id: sessionId },
+        data: {
+          messages: messages as any,
+          currentQuestionIdx: newQuestionIdx,
+        },
+      });
+
+      return res.json(updatedSession);
     } catch (error) {
-      console.error('OpenAI Error:', error);
+      console.error('sendMessage error:', error);
       return res.status(500).json({ error: 'Failed to process message' });
     }
   }
@@ -232,15 +228,13 @@ export class ScreeningController {
       const { sessionId, decision } = req.body;
       if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
 
-      const session = sessions.find(s => s.id === sessionId);
+      // Load session from DB
+      const session = await prisma.screeningSession.findUnique({ where: { id: sessionId } });
       if (!session) return res.status(404).json({ error: 'Session not found' });
 
-      session.status = 'completed';
-      session.completedAt = new Date();
-      session.decision = decision || 'review';
-
-      const userMsgs = session.messages.filter((m: any) => m.role === 'user');
-      const transcript = session.messages
+      const messages: any[] = Array.isArray(session.messages) ? session.messages : [];
+      const userMsgs = messages.filter((m: any) => m.role === 'user');
+      const transcript = messages
         .map((m: any) => (m.role === 'assistant' ? 'Interviewer' : 'Candidate') + ': ' + m.content)
         .join('\r\n');
 
@@ -251,13 +245,13 @@ export class ScreeningController {
 
       try {
         const openaiScorer = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const job = session.jobData || {};
+        const job: any = session.jobData || {};
         const weights = job.qualificationWeights || {
           locationWeight: 20, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 20,
         };
         const salaryMin = job.salaryMin || 0;
         const salaryMax = job.salaryMax || 0;
-        const salaryRange = salaryMin > 0 ? '$' + Math.round(salaryMin/1000) + 'k-$' + Math.round(salaryMax/1000) + 'k AUD' : 'not specified';
+        const salaryRange = salaryMin > 0 ? '$' + Math.round(salaryMin / 1000) + 'k-$' + Math.round(salaryMax / 1000) + 'k AUD' : 'not specified';
         const requirements = (job.requirementsMust || []).join(', ') || 'not specified';
         const jobLocation = job.location || 'not specified';
 
@@ -309,10 +303,10 @@ export class ScreeningController {
           skillsScore: Math.min(100, Math.max(0, Number(p.skillsScore) || 0)),
         };
         overallScore = Math.min(100, Math.max(0, Number(p.overallScore) || 0));
-        recommendation = ['qualified','review','rejected'].includes(p.recommendation) ? p.recommendation : 'review';
+        recommendation = ['qualified', 'review', 'rejected'].includes(p.recommendation) ? p.recommendation : 'review';
         feedback = p.feedback || 'Screening evaluated.';
 
-      } catch(aiErr) {
+      } catch (aiErr) {
         console.error('AI scoring error:', aiErr);
         const base = Math.min(50, 10 + (userMsgs.length * 7));
         overallScore = base;
@@ -321,25 +315,43 @@ export class ScreeningController {
         feedback = 'Scored based on response volume due to AI error.';
       }
 
-      session.score = overallScore;
+      // Update session in DB
+      const updatedSession = await prisma.screeningSession.update({
+        where: { id: sessionId },
+        data: {
+          status: 'completed',
+          completedAt: new Date(),
+          decision: decision || recommendation,
+          score: overallScore,
+        },
+      });
 
+      // Update application
       try {
-        const transcriptForSave = session.messages.map((m: any) => ({
+        const transcriptForSave = messages.map((m: any) => ({
           role: m.role,
           message: m.content,
           timestamp: m.timestamp,
         }));
+
         ApplicationsController.updateApplicationAfterScreening(session.applicationId, {
-          score: overallScore, scorecard, aiFeedback: feedback,
-          status: recommendation, screeningSessionId: session.id,
+          score: overallScore,
+          scorecard,
+          aiFeedback: feedback,
+          status: recommendation,
+          screeningSessionId: session.id,
           screeningCompletedAt: new Date().toISOString(),
           transcript: transcriptForSave,
         });
 
-        const app = applications.find((a: any) => a.id === session.applicationId);
+        // Fetch app for notifications
+        const app = await prisma.application.findUnique({
+          where: { id: session.applicationId },
+          include: { job: true },
+        });
+
         if (app) {
-          const job = roles.find((r: any) => r.id === (app.roleId || (app as any).jobId));
-          const jobTitle = job?.title || 'the position';
+          const jobTitle = app.job?.title || 'the position';
           const candidateEmail = app.candidateEmail || '';
           const candidateId = app.candidateId || '';
 
@@ -348,29 +360,35 @@ export class ScreeningController {
             'screening_complete',
             'AI Screening Complete — ' + jobTitle,
             'Your AI screening for ' + jobTitle + ' is complete. Score: ' + Math.round(overallScore) + '%. Status: ' + recommendation.charAt(0).toUpperCase() + recommendation.slice(1) + '.',
-            job?.id, session.applicationId
+            app.job?.id, session.applicationId
           );
 
-          const recruiterEmail = job?.recruiterId || 'recruiter@qani.io';
-          const candidateName = (app as any).candidateName || 'A candidate';
+          const recruiterEmail = app.job?.recruiterId || 'recruiter@qani.io';
+          const candidateName = app.candidateName || 'A candidate';
           pushNotification(
             'recruiter-' + recruiterEmail, recruiterEmail,
             'screening_complete',
             'Screening Complete — ' + candidateName,
             candidateName + ' completed AI screening for ' + jobTitle + '. Score: ' + Math.round(overallScore) + '%. Recommendation: ' + recommendation + '.',
-            job?.id, session.applicationId
+            app.job?.id, session.applicationId
           );
         }
-      } catch(e) { console.error('App update error:', e); }
+      } catch (e) {
+        console.error('App update error:', e);
+      }
 
-      return res.json({ ...session, scorecard, aiFeedback: feedback });
+      return res.json({ ...updatedSession, scorecard, aiFeedback: feedback });
     } catch (error) {
+      console.error('endScreening error:', error);
       return res.status(500).json({ error: 'Failed to end screening' });
     }
   }
 
   static async getAllSessions(req: Request, res: Response) {
     try {
+      const sessions = await prisma.screeningSession.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
       return res.json(sessions);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch sessions' });
@@ -380,7 +398,7 @@ export class ScreeningController {
   static async getSession(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const session = sessions.find(s => s.id === id);
+      const session = await prisma.screeningSession.findUnique({ where: { id } });
       if (!session) return res.status(404).json({ error: 'Session not found' });
       return res.json(session);
     } catch (error) {

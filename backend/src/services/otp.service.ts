@@ -1,40 +1,40 @@
-// In-memory OTP store — will move to DB in full production
-// Each OTP expires in 10 minutes
+import { PrismaClient } from '@prisma/client';
 
-interface OTPRecord {
-  otp: string;
-  target: string;
-  type: 'email' | 'sms';
-  expiresAt: Date;
-  used: boolean;
-}
-
-const otpStore: Map<string, OTPRecord> = new Map();
+const prisma = new PrismaClient();
 
 export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export function storeOTP(key: string, otp: string, target: string, type: 'email' | 'sms'): void {
-  otpStore.set(key, {
-    otp,
-    target,
-    type,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
-    used: false,
+export async function storeOTP(key: string, otp: string, target: string, type: 'email' | 'sms'): Promise<void> {
+  // Delete any existing OTP for this key first
+  await prisma.otpRecord.deleteMany({ where: { key } });
+  await prisma.otpRecord.create({
+    data: {
+      key,
+      otp,
+      target,
+      type,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      used: false,
+    },
   });
 }
 
-export function verifyOTP(key: string, otp: string): { valid: boolean; reason?: string } {
-  const record = otpStore.get(key);
+export async function verifyOTP(key: string, otp: string): Promise<{ valid: boolean; reason?: string }> {
+  const record = await prisma.otpRecord.findUnique({ where: { key } });
   if (!record) return { valid: false, reason: 'OTP not found or expired' };
   if (record.used) return { valid: false, reason: 'OTP already used' };
   if (new Date() > record.expiresAt) {
-    otpStore.delete(key);
+    await prisma.otpRecord.delete({ where: { key } });
     return { valid: false, reason: 'OTP expired' };
   }
   if (record.otp !== otp) return { valid: false, reason: 'Invalid OTP' };
-  record.used = true;
-  otpStore.delete(key);
+  await prisma.otpRecord.delete({ where: { key } });
   return { valid: true };
+}
+
+// Cleanup expired OTPs — call periodically if needed
+export async function cleanupExpiredOTPs(): Promise<void> {
+  await prisma.otpRecord.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 }

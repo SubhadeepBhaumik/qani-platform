@@ -157,7 +157,7 @@ export class AuthController {
 
       const otp = generateOTP();
       const key = userId + ':' + type + ':' + target;
-      storeOTP(key, otp, target, type);
+      await storeOTP(key, otp, target, type);
 
       if (type === 'sms') {
         await sendOTPSMS(target, otp);
@@ -186,7 +186,7 @@ export class AuthController {
       if (!target || !type || !otp) return res.status(400).json({ error: 'target, type and otp required' });
 
       const key = userId + ':' + type + ':' + target;
-      const result = verifyOTP(key, otp);
+      const result = await verifyOTP(key, otp);
 
       if (!result.valid) return res.status(400).json({ error: result.reason });
       return res.json({ success: true, message: 'OTP verified' });
