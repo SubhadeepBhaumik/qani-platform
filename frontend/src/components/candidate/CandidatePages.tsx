@@ -1062,12 +1062,17 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <div className="space-y-3 pt-6 border-t border-gray-100">
                 <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Resume / CV</h3>
                 {cvFileName ? (
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <FileCheck className="w-5 h-5 text-green-600" />
-                      <span className="font-medium text-gray-800">{cvFileName}</span>
-                    </div>
+                  <div className="relative group p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-200">
                     <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-blue-100 shadow-sm flex items-center justify-center flex-shrink-0">
+                        <FileCheck className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-900 truncate max-w-[180px]">{cvFileName}</p>
+                        <p className="text-[10px] text-green-600 font-medium mt-0.5 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Uploaded successfully</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button onClick={async () => {
                         const token = localStorage.getItem('qani_auth_token');
                         const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}/profile`, { headers: { Authorization: `Bearer ${token}` } });
@@ -1078,8 +1083,14 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           a.download = cvFileName || 'cv';
                           a.click();
                         }
-                      }} className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer">Download CV</button>
-                      <button onClick={() => setCvFileName('')} className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer">Remove</button>
+                      }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all duration-150 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+                        Download
+                      </button>
+                      <button onClick={() => setCvFileName('')} className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-500 hover:text-red-700 border border-red-200 text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        Remove
+                      </button>
                     </div>
                   </div>
                 ) : (

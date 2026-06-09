@@ -869,33 +869,70 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
               {/* Profile and Scoring details */}
               <div className="lg:col-span-8 bg-white border border-gray-200 rounded-xl p-6 sm:p-8 space-y-6 shadow-sm">
                 
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b border-gray-100">
+                <div className="pb-6 border-b border-gray-100 space-y-4">
+                  {/* Row 1: Avatar + Name + Role */}
                   <div className="flex items-center gap-4">
-                    <img 
-                      src={candidate?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=64&h=64'} 
-                      alt="Avatar" 
+                    <img
+                      src={candidate?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=64&h=64'}
+                      alt="Avatar"
                       referrerPolicy="no-referrer"
-                      className="w-16 h-16 rounded-full border object-cover ring-4 ring-gray-100"
+                      className="w-16 h-16 rounded-full border-2 border-gray-200 object-cover ring-4 ring-gray-50 flex-shrink-0"
                     />
                     <div>
-                      <h1 className="text-2xl font-extrabold text-gray-950">{app.candidateName || `${candidate?.firstName || ""} ${candidate?.lastName || ""}`}</h1>
-                      <span className="text-xs text-gray-500 font-semibold block uppercase tracking-wide">Applying For: {app.jobTitle || job?.title || "Unknown Role"} {app.company ? `· ${app.company}` : ""}</span>
+                      <h1 className="text-2xl font-extrabold text-gray-950 leading-tight">{app.candidateName || `${candidate?.firstName || ""} ${candidate?.lastName || ""}`}</h1>
+                      <p className="text-sm text-gray-500 font-medium mt-0.5">{app.jobTitle || job?.title || "Unknown Role"}{app.company ? ` · ${app.company}` : ""}</p>
                     </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-gray-500">{app.candidateEmail}</span>
-                        {app.cvUrl ? (
-                          <a href={app.cvUrl} target="_blank" rel="noopener noreferrer" className="cursor-pointer inline-flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-semibold">📄 View CV</a>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-400 px-3 py-1 rounded-lg">No CV uploaded</span>
-                        )}
-                      </div>
                   </div>
-
-                  <div className="text-right">
-                    <span className="text-[10px] font-mono text-gray-400 block uppercase">Matching Score</span>
-                    <span className="font-mono text-3xl font-extrabold text-blue-600 bg-blue-50 py-1 px-4 rounded-xl border border-blue-100 inline-block mt-1">
-                      {(app.aiScore ?? app.score) !== undefined ? `${app.aiScore ?? app.score}%` : 'N/A'}
-                    </span>
+                  {/* Row 2: Email + CV buttons + AI Score */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-gray-500 font-medium">{app.candidateEmail}</span>
+                    <div className="h-4 w-px bg-gray-200" />
+                    {app.cvUrl ? (
+                      <>
+                        <button onClick={() => {
+                          const a = document.createElement('a');
+                          a.href = app.cvUrl as string;
+                          a.download = (app as any).cvFilename || 'candidate-cv';
+                          a.click();
+                        }} className="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg shadow-sm transition-all cursor-pointer">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+                          Download CV
+                        </button>
+                        <button onClick={() => {
+                          const cvFilename = (app as any).cvFilename || 'candidate-cv';
+                          const isPdf = cvFilename.toLowerCase().endsWith('.pdf');
+                          if (isPdf) {
+                            const win = window.open();
+                            if (win) { win.document.write('<iframe src="' + app.cvUrl + '" style="width:100%;height:100vh;border:none;"></iframe>'); win.document.close(); }
+                          } else {
+                            const modal = document.createElement('div');
+                            modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+                            modal.innerHTML = '<div style="background:white;border-radius:16px;padding:32px;max-width:420px;width:90%;text-align:center;box-shadow:0 25px 50px rgba(0,0,0,0.3)"><div style="width:52px;height:52px;background:#eff6ff;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#2563eb" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><h3 style="font-size:16px;font-weight:700;color:#111827;margin-bottom:6px">' + cvFilename + '</h3><p style="font-size:13px;color:#6b7280;margin-bottom:24px">Word documents cannot be previewed in browser. Click Download to open.</p><div style="display:flex;gap:10px;justify-content:center"><button id="dl-btn" style="background:#2563eb;color:white;border:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">Download CV</button><button id="cl-btn" style="background:#f3f4f6;color:#374151;border:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">Cancel</button></div></div>';
+                            document.body.appendChild(modal);
+                            (modal.querySelector('#dl-btn') as HTMLElement).onclick = () => { const a = document.createElement('a'); a.href = app.cvUrl as string; a.download = cvFilename; a.click(); document.body.removeChild(modal); };
+                            (modal.querySelector('#cl-btn') as HTMLElement).onclick = () => document.body.removeChild(modal);
+                            modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
+                          }
+                        }} className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-3 py-1.5 rounded-lg transition-all cursor-pointer">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                          View CV
+                        </button>
+                      </>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-400 px-3 py-1.5 rounded-lg font-medium">No CV uploaded</span>
+                    )}
+                    <div className="h-4 w-px bg-gray-200" />
+                    {/* AI Score pill */}
+                    {(app.aiScore ?? (app as any).score) != null ? (
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-semibold text-sm ${(app.aiScore ?? (app as any).score) >= 70 ? 'bg-green-50 border-green-200 text-green-700' : (app.aiScore ?? (app as any).score) >= 45 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-red-50 border-red-200 text-red-600'}`}>
+                        <span className="text-lg font-black">{app.aiScore ?? (app as any).score}%</span>
+                        <span className="text-xs font-bold opacity-80">{(app.aiScore ?? (app as any).score) >= 70 ? 'Qualified' : (app.aiScore ?? (app as any).score) >= 45 ? 'Review' : 'Rejected'}</span>
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-semibold">
+                        <span>AI Score</span><span className="font-black text-sm">—</span><span>Unscreened</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
