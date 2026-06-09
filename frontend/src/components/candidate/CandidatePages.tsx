@@ -1067,7 +1067,20 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       <FileCheck className="w-5 h-5 text-green-600" />
                       <span className="font-medium text-gray-800">{cvFileName}</span>
                     </div>
-                    <button onClick={() => setCvFileName('')} className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer">Remove</button>
+                    <div className="flex items-center gap-3">
+                      <button onClick={async () => {
+                        const token = localStorage.getItem('qani_auth_token');
+                        const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}/profile`, { headers: { Authorization: `Bearer ${token}` } });
+                        const p = await res.json();
+                        if (p.cvUrl) {
+                          const a = document.createElement('a');
+                          a.href = p.cvUrl;
+                          a.download = cvFileName || 'cv';
+                          a.click();
+                        }
+                      }} className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer">Download CV</button>
+                      <button onClick={() => setCvFileName('')} className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer">Remove</button>
+                    </div>
                   </div>
                 ) : (
                   <label className="block p-6 bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-xl text-center cursor-pointer transition">

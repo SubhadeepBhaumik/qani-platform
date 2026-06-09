@@ -320,7 +320,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
           setScreeningQueries(existingJob.screeningQuestions || []);
-          if (existingJob.mandatoryQuestions) setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true, ...existingJob.mandatoryQuestions, driversLicence: true });
+          if (existingJob.mandatoryQuestions) setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true, ...existingJob.mandatoryQuestions });
           if (existingJob.qualificationWeights) {
             setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
             setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
