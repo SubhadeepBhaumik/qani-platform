@@ -126,7 +126,16 @@ app.post('/api/v1/screening/message', (_req, res) => res.json({ id: _req.body.se
 app.post('/api/v1/screening/end', (_req, res) => res.json({ id: _req.body.sessionId, status: 'completed' }));
 app.get('/api/v1/audit-logs', (_req, res) => res.json([]));
 app.post('/api/v1/audit-logs', (_req, res) => res.status(201).json({}));
-app.get('/api/v1/users', (_req, res) => res.json([]));
+app.get('/api/v1/users', async (_req, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    const users = await prisma.user.findMany({
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, companyName: true, suspended: true, createdAt: true }
+    });
+    res.json(users);
+  } catch(e) { res.json([]); }
+});
 
 AuthController.seedDemoUsers().then(() => console.log('Demo users ready'));
 syncRolesToMemory().then(() => console.log('Jobs synced from DB:', require('./api/roles/roles.controller').roles.length));

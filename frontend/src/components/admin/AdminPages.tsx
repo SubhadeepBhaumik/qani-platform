@@ -198,6 +198,21 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
   const financePerPage = 15;
 
   const activeTab = subView || 'overview';
+
+  const [dashStats, setDashStats] = useState<any>(null);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+
+  useEffect(() => {
+    const token = localStorage.getItem('qani_auth_token');
+    const headers = { Authorization: `Bearer ${token}` };
+    fetch('https://qani.io/api/v1/dashboard/stats', { headers })
+      .then(r => r.json()).then(setDashStats).catch(() => {});
+    fetch('https://qani.io/api/v1/users', { headers })
+      .then(r => r.json()).then((u: any[]) => setTotalUsers(u.length)).catch(() => {});
+    fetch('https://qani.io/api/v1/notifications', { headers })
+      .then(r => r.json()).then((n: any[]) => setRecentNotifications(n.slice(0, 6))).catch(() => {});
+  }, []);
   const setActiveTab = (tab: string) => {
     const viewMap: Record<string, string> = {
       'overview': 'admin-dashboard',
@@ -660,33 +675,28 @@ Question 1: Describe your most relevant experience for this role.` },
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label="Total Users" value={25} icon={<Users className="w-5 h-5 text-blue-600" />} color="bg-blue-50" sub="+8 this month" />
-              <StatCard label="Active Jobs" value={9} icon={<Briefcase className="w-5 h-5 text-green-600" />} color="bg-green-50" sub="1 draft pending" />
-              <StatCard label="Applications" value={15} icon={<FileText className="w-5 h-5 text-purple-600" />} color="bg-purple-50" sub="3 need review" />
-              <StatCard label="Monthly Revenue" value="$47,200" icon={<DollarSign className="w-5 h-5 text-orange-600" />} color="bg-orange-50" sub="+12% vs last month" />
+              <StatCard label="Total Users" value={totalUsers || 0} icon={<Users className="w-5 h-5 text-blue-600" />} color="bg-blue-50" sub={`${dashStats?.totalCandidates || 0} candidates · ${dashStats?.totalRecruiters || 0} recruiters`} />
+              <StatCard label="Active Jobs" value={dashStats?.totalJobs || 0} icon={<Briefcase className="w-5 h-5 text-green-600" />} color="bg-green-50" sub={`${dashStats?.qualifiedApplications || 0} qualified candidates`} />
+              <StatCard label="Applications" value={dashStats?.totalApplications || 0} icon={<FileText className="w-5 h-5 text-purple-600" />} color="bg-purple-50" sub={`${dashStats?.screeningApplications || 0} in screening`} />
+              <StatCard label="Conversion Rate" value={`${dashStats?.conversionRate || 0}%`} icon={<TrendingUp className="w-5 h-5 text-orange-600" />} color="bg-orange-50" sub={`${dashStats?.qualifiedApplications || 0} qualified of ${dashStats?.totalApplications || 0}`} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
                 <h3 className="text-sm font-bold text-gray-900">Recent Activity</h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {[
-                    { event: 'AI Screening Completed', detail: 'Liam Nguyen — Score 92/100 — Qualified', type: 'success', time: '10:28' },
-                    { event: 'New Job Posted', detail: 'Senior Full Stack Developer — Atlassian', type: 'info', time: '09:00' },
-                    { event: 'Application Rejected', detail: 'James Wilson — Score below threshold', type: 'warning', time: '08:45' },
-                    { event: 'New User Registered', detail: 'Priya Sharma — Candidate', type: 'success', time: '08:30' },
-                    { event: 'AI Screening Completed', detail: 'Tom Williams — Score 94/100 — Qualified', type: 'success', time: '08:15' },
-                    { event: 'Payment Received', detail: 'Atlassian — Enterprise Plan — $999', type: 'success', time: '07:00' },
-                  ].map((l, i) => (
+                  {recentNotifications.length > 0 ? recentNotifications.map((n: any, i: number) => (
                     <div key={i} className="flex items-start gap-3 text-xs">
-                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${l.type === 'success' ? 'bg-green-500' : l.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${n.type === 'screening_complete' ? 'bg-green-500' : n.type === 'new_application' ? 'bg-blue-500' : 'bg-orange-500'}`} />
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{l.event}</p>
-                        <p className="text-gray-500">{l.detail}</p>
+                        <p className="font-semibold text-gray-900">{n.title}</p>
+                        <p className="text-gray-500">{n.message?.substring(0, 80)}</p>
                       </div>
-                      <span className="text-[10px] text-gray-400 shrink-0">{l.time}</span>
+                      <span className="text-[10px] text-gray-400 shrink-0">{new Date(n.createdAt).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-xs text-gray-400 italic">No recent activity</p>
+                  )}
                 </div>
               </div>
 
