@@ -280,36 +280,44 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'u25', firstName: 'William', lastName: 'Young', email: 'william.young@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
   ]);
 
-  const demoApps = [
-    { id: 'a1', candidate: 'Liam Nguyen', email: 'candidate@qani.io', job: 'Senior Full Stack Developer', score: 92, status: 'qualified', date: '2026-05-16' },
-    { id: 'a2', candidate: 'Priya Sharma', email: 'priya.sharma@gmail.com', job: 'Product Manager — Platform', score: 89, status: 'qualified', date: '2026-05-19' },
-    { id: 'a3', candidate: 'Tom Williams', email: 'tom.williams@gmail.com', job: 'DevOps / Platform Engineer', score: 94, status: 'qualified', date: '2026-05-21' },
-    { id: 'a4', candidate: 'Jessica Lee', email: 'jessica.lee@gmail.com', job: 'UX/UI Product Designer', score: 78, status: 'review', date: '2026-05-23' },
-    { id: 'a5', candidate: 'Marcus Vance', email: 'marcus.vance@gmail.com', job: 'Data Scientist — AI/ML', score: 91, status: 'qualified', date: '2026-05-25' },
-    { id: 'a6', candidate: 'Sophie Martin', email: 'sophie.martin@gmail.com', job: 'Backend Engineer — Go', score: 88, status: 'qualified', date: '2026-05-27' },
-    { id: 'a7', candidate: 'Noah Anderson', email: 'noah.anderson@gmail.com', job: 'QA Automation Engineer', score: 87, status: 'qualified', date: '2026-05-28' },
-    { id: 'a8', candidate: 'Natalie Kim', email: 'natalie.kim@gmail.com', job: 'Cybersecurity Analyst', score: 93, status: 'qualified', date: '2026-05-29' },
-    { id: 'a9', candidate: 'Ava Thomas', email: 'ava.thomas@gmail.com', job: 'ML Engineer — LLM Systems', score: 82, status: 'review', date: '2026-05-30' },
-    { id: 'a10', candidate: 'David Patel', email: 'david.patel@gmail.com', job: 'Senior Full Stack Developer', score: 76, status: 'review', date: '2026-05-17' },
-    { id: 'a11', candidate: 'James Wilson', email: 'james.wilson@gmail.com', job: 'Product Manager — Platform', score: 45, status: 'rejected', date: '2026-05-20' },
-    { id: 'a12', candidate: 'Ethan Brown', email: 'ethan.brown@gmail.com', job: 'DevOps / Platform Engineer', score: 96, status: 'qualified', date: '2026-05-22' },
-    { id: 'a13', candidate: 'Grace White', email: 'grace.white@gmail.com', job: 'Data Scientist — AI/ML', score: undefined, status: 'screening', date: '2026-05-26' },
-    { id: 'a14', candidate: 'Emily Clark', email: 'emily.clark@gmail.com', job: 'UX/UI Product Designer', score: undefined, status: 'applied', date: '2026-05-31' },
-    { id: 'a15', candidate: 'Amelia Hall', email: 'amelia.hall@gmail.com', job: 'Growth Engineer', score: undefined, status: 'applied', date: '2026-05-31' },
-  ];
+  const [demoApps, setDemoApps] = useState<any[]>([]);
 
-  const [demoJobs, setDemoJobs] = useState([
-    { id: 'job-1', title: 'Senior Full Stack Developer', company: 'Atlassian', location: 'Sydney, NSW', salary: '$130k–$160k', status: 'open', posted: '2026-05-15', apps: 8 },
-    { id: 'job-2', title: 'Product Manager — Platform', company: 'Canva', location: 'Melbourne, VIC', salary: '$120k–$150k', status: 'open', posted: '2026-05-18', apps: 5 },
-    { id: 'job-3', title: 'DevOps / Platform Engineer', company: 'Seek', location: 'Remote (AU)', salary: '$120k–$145k', status: 'open', posted: '2026-05-20', apps: 6 },
-    { id: 'job-4', title: 'UX/UI Product Designer', company: 'REA Group', location: 'Sydney, NSW', salary: '$95k–$125k', status: 'open', posted: '2026-05-22', apps: 4 },
-    { id: 'job-5', title: 'Data Scientist — AI/ML', company: 'Afterpay', location: 'Melbourne, VIC', salary: '$130k–$165k', status: 'open', posted: '2026-05-24', apps: 3 },
-    { id: 'job-6', title: 'Backend Engineer — Go', company: 'Atlassian', location: 'Brisbane, QLD', salary: '$120k–$150k', status: 'open', posted: '2026-05-26', apps: 2 },
-    { id: 'job-7', title: 'QA Automation Engineer', company: 'Canva', location: 'Remote (AU)', salary: '$90k–$110k', status: 'open', posted: '2026-05-28', apps: 3 },
-    { id: 'job-8', title: 'Cybersecurity Analyst', company: 'Commonwealth Bank', location: 'Sydney, NSW', salary: '$110k–$140k', status: 'open', posted: '2026-05-29', apps: 4 },
-    { id: 'job-9', title: 'ML Engineer — LLM Systems', company: 'Canva', location: 'Sydney, NSW', salary: '$150k–$190k', status: 'open', posted: '2026-05-30', apps: 2 },
-    { id: 'job-10', title: 'Growth Engineer', company: 'Seek', location: 'Melbourne, VIC', salary: '$110k–$135k', status: 'draft', posted: '2026-05-31', apps: 0 },
-  ]);
+  useEffect(() => {
+    const token = localStorage.getItem('qani_auth_token');
+    fetch('https://qani.io/api/v1/applications', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((apps: any[]) => {
+        setDemoApps(apps.map(a => ({
+          id: a.id,
+          candidate: a.candidateName || 'Unknown',
+          email: a.candidateEmail || '',
+          job: a.jobTitle || 'Unknown Role',
+          score: a.aiScore ?? undefined,
+          status: a.status,
+          date: a.appliedDate ? new Date(a.appliedDate).toISOString().split('T')[0] : new Date(a.appliedAt).toISOString().split('T')[0],
+        })));
+      }).catch(() => {});
+  }, []);
+
+  const [demoJobs, setDemoJobs] = useState<any[]>([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('qani_auth_token');
+    fetch('https://qani.io/api/v1/roles', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((jobList: any[]) => {
+        setDemoJobs(jobList.map(j => ({
+          id: j.id,
+          title: j.title,
+          company: j.company || 'Unknown',
+          location: j.location,
+          salary: j.salaryMin ? `$${Math.round(j.salaryMin/1000)}k–$${Math.round(j.salaryMax/1000)}k` : 'Not specified',
+          status: j.status,
+          posted: j.postedDate ? new Date(j.postedDate).toISOString().split('T')[0] : new Date(j.createdAt).toISOString().split('T')[0],
+          apps: 0,
+        })));
+      }).catch(() => {});
+  }, []);
 
   const allTransactions = [
     { id: 't1', user: 'Atlassian', email: 'billing@atlassian.com', plan: 'Enterprise', amount: '$999', raw: 999, date: '2026-05-01', status: 'paid', inv: 'INV-2026-001' },
@@ -873,11 +881,11 @@ Question 1: Describe your most relevant experience for this role.` },
             </div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { label: 'Total', value: 15, color: 'bg-gray-50 border-gray-200' },
-                { label: 'Qualified', value: 9, color: 'bg-green-50 border-green-200' },
-                { label: 'Review', value: 3, color: 'bg-orange-50 border-orange-200' },
-                { label: 'Screening', value: 1, color: 'bg-blue-50 border-blue-200' },
-                { label: 'Rejected', value: 2, color: 'bg-red-50 border-red-200' },
+                { label: 'Total', value: demoApps.length, color: 'bg-gray-50 border-gray-200' },
+                { label: 'Qualified', value: demoApps.filter(a => a.status === 'qualified').length, color: 'bg-green-50 border-green-200' },
+                { label: 'Review', value: demoApps.filter(a => a.status === 'review').length, color: 'bg-orange-50 border-orange-200' },
+                { label: 'Screening', value: demoApps.filter(a => a.status === 'screening').length, color: 'bg-blue-50 border-blue-200' },
+                { label: 'Rejected', value: demoApps.filter(a => a.status === 'rejected').length, color: 'bg-red-50 border-red-200' },
               ].map(s => (
                 <div key={s.label} className={`p-3 rounded-xl border text-center ${s.color}`}>
                   <p className="text-xl font-extrabold text-gray-900">{s.value}</p>
