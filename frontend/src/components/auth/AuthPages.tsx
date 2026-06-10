@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../AppContext';
+import { useCMS } from '../admin/AdminCMS';
 import { 
   Eye, 
   EyeOff, 
@@ -17,6 +18,7 @@ import {
 
 export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | 'register-recruiter' | 'verify-email' }> = ({ subView }) => {
   const { login, registerCandidate, registerRecruiter, navigate, showToast } = useApp();
+  const cms = useCMS();
 
   // Common authentication state
   const [email, setEmail] = useState('');
@@ -210,8 +212,8 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
           {subView === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div className="space-y-1">
-                <h3 className="text-2xl font-bold tracking-tight text-gray-900">Login to Account</h3>
-                <p className="text-gray-500 text-xs">Enter credentials to manage candidate screening</p>
+                <h3 className="text-2xl font-bold tracking-tight text-gray-900">{cms.loginPage?.tagline || "Welcome back to QANI"}</h3>
+                <p className="text-gray-500 text-xs">{cms.loginPage?.subtagline || "Your AI recruitment platform"}</p>
               </div>
 
               <div className="space-y-4 pt-2">
@@ -311,8 +313,8 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
             <form onSubmit={handleCandidateRegister} className="space-y-4">
               <div className="space-y-1">
                 <span className="text-[10px] uppercase text-blue-600 font-bold tracking-wider">Candidate Hub</span>
-                <h3 className="text-2xl font-bold tracking-tight text-gray-900">Create Candidate Account</h3>
-                <p className="text-gray-500 text-xs">Step {step} of 2 - {step === 1 ? 'Basic Coordinates' : 'Experience & Setup'}</p>
+                <h3 className="text-2xl font-bold tracking-tight text-gray-900">{cms.registerCandidate?.title || "Join as a Candidate"}</h3>
+                <p className="text-gray-500 text-xs">{cms.registerCandidate?.subtitle || "Create your profile and get AI-screened for top Australian jobs."}</p>
               </div>
 
               {/* Step 1 input fields */}
@@ -502,8 +504,8 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
             <form onSubmit={handleRecruiterRegister} className="space-y-4">
               <div className="space-y-1">
                 <span className="text-[10px] uppercase text-blue-600 font-bold tracking-wider">Hiring Workspace</span>
-                <h3 className="text-2xl font-bold tracking-tight text-gray-900">Setup Enterprise Portal</h3>
-                <p className="text-gray-500 text-xs">Verify your corporate email framework</p>
+                <h3 className="text-2xl font-bold tracking-tight text-gray-900">{cms.registerRecruiter?.title || "Start Recruiting with AI"}</h3>
+                <p className="text-gray-500 text-xs">{cms.registerRecruiter?.subtitle || "Post jobs and let QANI's AI screen candidates 24/7."}</p>
               </div>
 
               <div className="space-y-3 pt-2">

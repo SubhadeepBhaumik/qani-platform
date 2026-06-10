@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp, AppView } from '../AppContext';
+import { useCMS } from '../admin/AdminCMS';
 import {
   Home, Briefcase, FileText, User, Settings, Bell, LogOut,
   HelpCircle, BarChart2, Users, UserCheck, Activity, PlusCircle,
@@ -8,6 +9,7 @@ import {
 
 export const Sidebar: React.FC = () => {
   const { user, activeView, navigate, logout, notifications } = useApp();
+  const cms = useCMS();
 
   if (!user) return null;
 
@@ -64,8 +66,8 @@ export const Sidebar: React.FC = () => {
             <div className="relative w-full h-full bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-extrabold text-white text-xs">Q</div>
           </div>
           <div>
-            <span className="font-extrabold text-sm text-white group-hover:text-blue-400 transition">QANI</span>
-            <span className="text-[9px] text-gray-500 block">AI Recruitment · AU</span>
+            <span className="font-extrabold text-sm text-white group-hover:text-blue-400 transition">{cms.global?.logoText || "QANI"}</span>
+            <span className="text-[9px] text-gray-500 block">{cms.global?.logoSubtext || "AI Recruitment · AU"}</span>
           </div>
         </div>
         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${roleBg}`}>

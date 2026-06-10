@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useApp } from '../AppContext';
 import { api } from '../../lib/api';
 import { Bell, ChevronDown, CheckCircle2, MapPin } from 'lucide-react';
+import { useCMS } from '../admin/AdminCMS';
 
 export const Header: React.FC = () => {
   const { user, notifications, navigate, refreshStates } = useApp();
+  const cms = useCMS();
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
   const unreadNotifs = notifications.filter(n => n.status === 'unread');
@@ -13,7 +15,7 @@ export const Header: React.FC = () => {
     if (!user) return 'QANI — AI Recruitment Australia';
     if (user.role === 'recruiter') return user.companyName ? `${user.companyName} — Recruiter Portal` : 'Recruiter Portal';
     if (user.role === 'candidate') return `Welcome, ${user.firstName}`;
-    return 'Admin Panel';
+    return cms.global?.logoText ? `${cms.global.logoText} Admin` : 'Admin Panel';
   };
 
   return (

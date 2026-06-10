@@ -172,12 +172,13 @@ export const HomePage: React.FC = () => {
     <div className="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
       {/* Top banner */}
+      {(cms.global?.announcementBarEnabled !== false) && (
       <div className="bg-blue-600 text-white text-xs text-center py-2 px-4 flex items-center justify-center gap-2">
         <Zap className="w-3.5 h-3.5" />
-        <span className="font-semibold">Australia's AI Recruitment Platform —</span>
-        <span>Screen 10x more candidates with zero extra headcount.</span>
+        <span>{cms.global?.announcementBar || "Australia's AI Recruitment Platform — Screen 10x more candidates with zero extra headcount."}</span>
         <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer underline font-bold ml-1 hover:text-blue-200 transition">Start free →</button>
       </div>
+      )}
 
       {/* Nav */}
       <nav className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 h-16 px-6 sm:px-12 flex items-center justify-between z-30 shadow-sm">
@@ -275,8 +276,8 @@ export const HomePage: React.FC = () => {
       <section id="jobs" className="py-20 px-6 sm:px-12 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Top Job Opportunities</h2>
-            <p className="text-sm text-gray-500 mt-1">AI-screened positions from Australia's leading companies</p>
+            <h2 className="text-2xl font-bold text-gray-900">{cms.homepage?.jobs?.title || "Top Job Opportunities"}</h2>
+            <p className="text-sm text-gray-500 mt-1">{cms.homepage?.jobs?.subtitle || "AI-screened positions from Australia's leading companies"}</p>
           </div>
           <button onClick={() => navigate('auth-login')} className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition">
             View all jobs <ArrowRight className="w-4 h-4" />
@@ -360,8 +361,8 @@ export const HomePage: React.FC = () => {
       <section className="py-20 px-6 sm:px-12 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Top Recruiting Companies</h2>
-            <p className="text-sm text-gray-500 mt-1">Australia's most active hirers using QANI AI</p>
+            <h2 className="text-2xl font-bold text-gray-900">{cms.homepage?.companies?.title || "Top Recruiting Companies"}</h2>
+            <p className="text-sm text-gray-500 mt-1">{cms.homepage?.companies?.subtitle || "Australia's most active hirers using QANI AI"}</p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -390,8 +391,8 @@ export const HomePage: React.FC = () => {
       <section id="features" className="py-20 bg-white border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-6 sm:px-12 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900">Why Australian Recruiters Choose QANI</h2>
-            <p className="text-gray-500">Stop spending 80% of your time on first-round phone screens. Let the AI do it.</p>
+            <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.features?.title || "Why Australian Recruiters Choose QANI"}</h2>
+            <p className="text-gray-500">{cms.homepage?.features?.subtitle || "Stop spending 80% of your time on first-round phone screens. Let the AI do it."}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -412,8 +413,8 @@ export const HomePage: React.FC = () => {
       {/* How it works */}
       <section id="how" className="py-20 max-w-7xl mx-auto px-6 sm:px-12">
         <div className="text-center space-y-3 max-w-xl mx-auto mb-12">
-          <h2 className="text-3xl font-bold text-gray-900">How QANI Works</h2>
-          <p className="text-gray-500">From job post to qualified shortlist in under 24 hours.</p>
+          <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.howItWorks?.title || "How QANI Works"}</h2>
+          <p className="text-gray-500">{cms.homepage?.howItWorks?.subtitle || "From job post to qualified shortlist in under 24 hours."}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
@@ -435,8 +436,8 @@ export const HomePage: React.FC = () => {
       <section id="pricing" className="py-20 bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-6 sm:px-12 space-y-12">
           <div className="text-center space-y-3 max-w-xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900">Simple, Transparent Pricing</h2>
-            <p className="text-gray-500">No per-candidate fees. No hidden costs. Scale as you grow.</p>
+            <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.pricing?.title || "Simple, Transparent Pricing"}</h2>
+            <p className="text-gray-500">{cms.homepage?.pricing?.subtitle || "No per-candidate fees. No hidden costs. Scale as you grow."}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -478,16 +479,16 @@ export const HomePage: React.FC = () => {
             <h3 className="text-2xl font-bold text-gray-900">What Australian recruiters say</h3>
             <p className="text-gray-500 text-sm">Real results from real recruitment agencies using QANI.</p>
             <div className="flex items-center gap-4 pt-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold">SC</div>
+              <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold">{(cms.homepage?.testimonial?.author || "Sarah Chen").split(' ').map((n: string) => n[0]).join('')}</div>
               <div>
-                <span className="text-sm font-bold text-gray-900 block">Sarah Chen</span>
-                <span className="text-xs text-gray-500">Head of Talent — Atlassian</span>
+                <span className="text-sm font-bold text-gray-900 block">{cms.homepage?.testimonial?.author || "Sarah Chen"}</span>
+                <span className="text-xs text-gray-500">{cms.homepage?.testimonial?.role || "Head of Talent — Atlassian"}</span>
               </div>
             </div>
           </div>
           <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 italic text-gray-700 text-sm leading-relaxed flex gap-4 items-start">
             <Quote className="w-8 h-8 text-blue-300 shrink-0 mt-1" />
-            <p>"QANI cut our time-to-shortlist from 4 days to 6 hours. The AI asks better screening questions than most of our junior recruiters, and the work rights check alone saves us from wasting time on ineligible candidates. It's the best investment we've made in our recruitment stack."</p>
+            <p>"{cms.homepage?.testimonial?.quote || "QANI cut our time-to-shortlist from 4 days to 6 hours. The AI asks better screening questions than most of our junior recruiters."}"</p>
           </div>
         </div>
       </section>
@@ -495,8 +496,8 @@ export const HomePage: React.FC = () => {
       {/* CTA Banner */}
       <section className="py-16 px-6 sm:px-12 bg-blue-600">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-extrabold text-white">Ready to hire smarter?</h2>
-          <p className="text-blue-100 text-lg">Join 340+ Australian companies screening candidates with AI. Start free, no credit card required.</p>
+          <h2 className="text-3xl font-extrabold text-white">{cms.homepage?.cta?.title || "Ready to hire smarter?"}</h2>
+          <p className="text-blue-100 text-lg">{cms.homepage?.cta?.subtitle || "Join 340+ Australian companies screening candidates with AI. Start free, no credit card required."}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer bg-white text-blue-600 font-bold py-3.5 px-8 rounded-xl hover:bg-blue-50 transition shadow-lg text-sm">
               Start Recruiting Free →
@@ -522,7 +523,7 @@ export const HomePage: React.FC = () => {
                 <span className="text-[10px] text-gray-500 block">{cms.global?.logoSubtext || "AI Recruitment · Australia"}</span>
               </div>
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">Australia's leading AI recruitment platform. Screen more candidates, faster, with zero extra headcount.</p>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "Australia's leading AI recruitment platform. Screen more candidates, faster, with zero extra headcount."}</p>
           </div>
           <div className="lg:col-span-2 space-y-4">
             <h5 className="text-white text-xs font-bold uppercase tracking-wider">For Candidates</h5>
@@ -550,7 +551,7 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
         <div className="max-w-7xl mx-auto pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-gray-500">
-          <span>© 2026 QANI Platform Pty Ltd. ABN 00 000 000 000. All rights reserved.</span>
+          <span>{cms.footer?.copyright || "© 2026 QANI Platform Pty Ltd. ABN 00 000 000 000. All rights reserved."}</span>
           <div className="flex items-center gap-2 bg-blue-950/40 border border-blue-900/30 text-blue-400 py-1 px-3 rounded-full">
             <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
             <span>All systems operational</span>

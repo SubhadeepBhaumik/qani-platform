@@ -1,9 +1,11 @@
 import React from 'react';
 import { useApp } from '../AppContext';
+import { useCMS } from '../admin/AdminCMS';
 import { HelpCircle, ChevronRight, FileText, ShieldCheck, ArrowLeft, RefreshCw, Layers } from 'lucide-react';
 
 export const HelpPage: React.FC = () => {
   const { navigate, goBack, refreshStates, showToast } = useApp();
+  const cms = useCMS();
 
   const handleFullReset = () => {
     localStorage.clear();
@@ -29,36 +31,25 @@ export const HelpPage: React.FC = () => {
       <div className="space-y-2">
         <h1 className="text-3xl font-extrabold text-gray-950 flex items-center gap-2">
           <HelpCircle className="w-7 h-7 text-blue-600" />
-          <span>Documentation & Platform FAQs</span>
+          <span>{cms.helpPage?.title || "Help & Support"}</span>
         </h1>
-        <p className="text-xs text-gray-500">Understand automated matches, security layers, and how QANI AI scores candidate criteria.</p>
+        <p className="text-xs text-gray-500">{cms.helpPage?.subtitle || "Find answers to common questions about QANI."}</p>
       </div>
 
       {/* FAQs blocks */}
       <div className="space-y-4 pt-4">
-        
-        <div className="p-5 bg-white border border-gray-200 rounded-xl space-y-2 shadow-sm">
-          <h3 className="font-bold text-sm text-gray-950">How are the 5 qualification match scores computed?</h3>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            The candidate scores are calculated inside the custom server (server.ts) after the screening conversation finishes. 
-            The server analyzes geographic location expectations, compensation ranges, work rights, and technical skills against the weights defined by the recruiter.
-          </p>
-        </div>
-
-        <div className="p-5 bg-white border border-gray-200 rounded-xl space-y-2 shadow-sm">
-          <h3 className="font-bold text-sm text-gray-950">Is my OpenAI API key secure on the QANI Platform?</h3>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            Yes, absolutely. QANI implements a clean full-stack architecture where all API requests are proxied securely through the Express backend. This guarantees that your private OpenAI API key is never transmitted or exposed in the user's browser DevTools.
-          </p>
-        </div>
-
-        <div className="p-5 bg-white border border-gray-200 rounded-xl space-y-2 shadow-sm">
-          <h3 className="font-bold text-sm text-gray-950">How do I test different user views in this sandbox?</h3>
-          <p className="text-xs text-gray-600 leading-relaxed">
-            Use the <strong className="text-blue-600">Switch Role (Demo)</strong> utility menu in the header bar. This allows you to log in instantly as a pre-configured candidate or recruiter, allowing you to experience both side of the conversational screening process.
-          </p>
-        </div>
-
+        {(cms.helpPage?.faqs || [
+          { question: "How does AI screening work?", answer: "QANI uses GPT-4o to conduct natural language interviews. The AI asks job-specific questions, evaluates responses in real-time, and scores candidates across 5 key dimensions." },
+          { question: "How long does a screening take?", answer: "Most screenings take 10-20 minutes depending on the number of questions configured by the recruiter." },
+          { question: "Can I customise the screening questions?", answer: "Yes! Recruiters can add custom questions, set question order, and configure scoring weights for each job role." },
+          { question: "How is the score calculated?", answer: "Candidates are scored across Work Rights, Salary Alignment, Location Match, Technical Skills, and Qualifications. Each dimension has a recruiter-set weight." },
+          { question: "Is my data safe?", answer: "All data is encrypted at rest and in transit. QANI is compliant with Australian Privacy Principles (APPs)." },
+        ]).map((faq: any, i: number) => (
+          <div key={i} className="p-5 bg-white border border-gray-200 rounded-xl space-y-2 shadow-sm">
+            <h3 className="font-bold text-sm text-gray-950">{faq.question}</h3>
+            <p className="text-xs text-gray-600 leading-relaxed">{faq.answer}</p>
+          </div>
+        ))}
       </div>
 
       {/* Reset simulator states */}

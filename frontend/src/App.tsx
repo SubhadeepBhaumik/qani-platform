@@ -13,6 +13,7 @@ import { CandidatesDirectory } from './components/recruiter/CandidatesDirectory'
 import { AdminPages } from './components/admin/AdminPages';
 import { SupportChatbot } from './components/shared/SupportChatbot';
 import { Check, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
+import { useCMS } from './components/admin/AdminCMS';
 
 export const ROUTES: Record<string, string> = {
   'landing': '/',
@@ -103,6 +104,7 @@ const RouterSync: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const { user, activeView, toast, clearToast, isAppLoading } = useApp();
+  const cms = useCMS();
 
   useEffect(() => {
     if (toast) {
@@ -110,6 +112,15 @@ const AppContent: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // Wire SEO meta title from CMS
+  useEffect(() => {
+    if (cms.seo?.metaTitle) document.title = cms.seo.metaTitle;
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && cms.seo?.metaDescription) metaDesc.setAttribute('content', cms.seo.metaDescription);
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords && cms.seo?.keywords) metaKeywords.setAttribute('content', cms.seo.keywords);
+  }, [cms.seo]);
 
   const renderPage = () => {
     switch (activeView) {
