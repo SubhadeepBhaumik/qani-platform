@@ -193,6 +193,7 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
   const [sLoading, setSLoading] = useState(true);
   const [sHealth, setSHealth] = useState<any>(null);
   const [testSmsPhone, setTestSmsPhone] = useState('');
+  const [testEmailRecipient, setTestEmailRecipient] = useState('');
   const [backupStatus, setBackupStatus] = useState<any>(null);
   const [backupLoading, setBackupLoading] = useState(false);
   const [sslInfo, setSslInfo] = useState<any>(null);
@@ -212,7 +213,7 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
   };
 
   const testEmail = async () => {
-    const r = await fetch('https://qani.io/api/v1/admin/settings/test-email', { method: 'POST', headers: hdrs });
+    const r = await fetch('https://qani.io/api/v1/admin/settings/test-email', { method: 'POST', headers: hdrs, body: JSON.stringify({ recipient: testEmailRecipient || '' }) });
     const d = await r.json();
     if (d.success) showToast('Test email sent!', 'success');
     else showToast(d.error || 'Failed', 'error');
@@ -234,14 +235,8 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
     setBackupLoading(false);
   };
 
-  const Field = ({ label, k, type='text', placeholder='' }: { label: string; k: string; type?: string; placeholder?: string }) => (
-    <div>
-      <label className="text-xs font-semibold text-gray-700">{label}</label>
-      <input type={type} value={sSettings[k] || ''} placeholder={placeholder}
-        onChange={e => setSSettings((p: any) => ({ ...p, [k]: e.target.value }))}
-        className="w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-    </div>
-  );
+  // Field defined as stable ref to avoid re-render focus loss
+  const fieldClass = "w-full mt-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 
   if (sLoading) return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -274,20 +269,58 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
         {/* SendGrid */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Mail className="w-4 h-4 text-blue-600" /> Email — SendGrid</h3>
-          <Field label="From Email" k="sendgridFromEmail" placeholder="noreply@qani.io" />
-          <Field label="From Name" k="sendgridFromName" placeholder="QANI AI Recruitment" />
-          <Field label="SendGrid API Key" k="sendgridApiKey" type="password" placeholder={sSettings.sendgridApiKey === '***configured***' ? '***configured***' : 'SG.xxxx...'} />
-          <button onClick={testEmail} className="cursor-pointer w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg transition">
-            <Mail className="w-3.5 h-3.5" /> Send Test Email
-          </button>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">From Email</label>
+              <input type="text" value={sSettings['sendgridFromEmail'] || ''} placeholder="noreply@qani.io"
+                onChange={e => setSSettings((p: any) => ({...p, sendgridFromEmail: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">From Name</label>
+              <input type="text" value={sSettings['sendgridFromName'] || ''} placeholder="QANI AI Recruitment"
+                onChange={e => setSSettings((p: any) => ({...p, sendgridFromName: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">SendGrid API Key</label>
+              <input type="password" value={sSettings['sendgridApiKey'] || ''} placeholder={sSettings.sendgridApiKey === '***configured***' ? '***configured***' : 'SG.xxxx...'}
+                onChange={e => setSSettings((p: any) => ({...p, sendgridApiKey: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-700">Test Email Recipient</label>
+            <div className="flex gap-2 mt-1">
+              <input type="email" value={testEmailRecipient} onChange={e => setTestEmailRecipient(e.target.value)} placeholder="hello@qani.io"
+                className="flex-1 h-9 border border-gray-300 rounded-lg px-3 text-xs outline-none focus:border-blue-500" />
+              <button onClick={testEmail} className="cursor-pointer px-3 py-1.5 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg transition flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5" /> Send Test
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1">Leave empty to send to configured from email</p>
+          </div>
         </div>
 
         {/* Twilio */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bell className="w-4 h-4 text-orange-600" /> SMS — Twilio</h3>
-          <Field label="Account SID" k="twilioAccountSid" placeholder="ACxxxx..." />
-          <Field label="Auth Token" k="twilioAuthToken" type="password" placeholder={sSettings.twilioAuthToken === '***configured***' ? '***configured***' : 'Auth token...'} />
-          <Field label="From Phone Number" k="twilioPhoneNumber" placeholder="+12182154146" />
+          <div>
+              <label className="text-xs font-semibold text-gray-700">Account SID</label>
+              <input type="text" value={sSettings['twilioAccountSid'] || ''} placeholder="ACxxxx..."
+                onChange={e => setSSettings((p: any) => ({...p, twilioAccountSid: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">Auth Token</label>
+              <input type="password" value={sSettings['twilioAuthToken'] || ''} placeholder={sSettings.twilioAuthToken === '***configured***' ? '***configured***' : 'Auth token...'}
+                onChange={e => setSSettings((p: any) => ({...p, twilioAuthToken: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">From Phone Number</label>
+              <input type="text" value={sSettings['twilioPhoneNumber'] || ''} placeholder="+12182154146"
+                onChange={e => setSSettings((p: any) => ({...p, twilioPhoneNumber: e.target.value}))}
+                className={fieldClass} />
+            </div>
           <div>
             <label className="text-xs font-semibold text-gray-700">Test Phone Number</label>
             <div className="flex gap-2 mt-1">
@@ -301,7 +334,12 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
         {/* OpenAI */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bot className="w-4 h-4 text-green-600" /> AI — OpenAI</h3>
-          <Field label="OpenAI API Key" k="openaiApiKey" type="password" placeholder={sSettings.openaiApiKey === '***configured***' ? '***configured***' : 'sk-...'} />
+          <div>
+              <label className="text-xs font-semibold text-gray-700">OpenAI API Key</label>
+              <input type="password" value={sSettings['openaiApiKey'] || ''} placeholder={sSettings.openaiApiKey === '***configured***' ? '***configured***' : 'sk-...'}
+                onChange={e => setSSettings((p: any) => ({...p, openaiApiKey: e.target.value}))}
+                className={fieldClass} />
+            </div>
           <div>
             <label className="text-xs font-semibold text-gray-700">AI Model</label>
             <select value={sSettings.openaiModel || 'gpt-4o-mini'} onChange={e => setSSettings((p: any) => ({ ...p, openaiModel: e.target.value }))}
@@ -348,8 +386,18 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
         {/* Platform Info */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Globe className="w-4 h-4 text-purple-600" /> Platform Info</h3>
-          <Field label="Platform Name" k="platformName" placeholder="QANI Platform" />
-          <Field label="Support Email" k="supportEmail" placeholder="support@qani.io" />
+          <div>
+              <label className="text-xs font-semibold text-gray-700">Platform Name</label>
+              <input type="text" value={sSettings['platformName'] || ''} placeholder="QANI Platform"
+                onChange={e => setSSettings((p: any) => ({...p, platformName: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">Support Email</label>
+              <input type="text" value={sSettings['supportEmail'] || ''} placeholder="support@qani.io"
+                onChange={e => setSSettings((p: any) => ({...p, supportEmail: e.target.value}))}
+                className={fieldClass} />
+            </div>
           <div>
             <label className="text-xs font-semibold text-gray-700">Region</label>
             <select value={sSettings.region || 'ap-southeast-2'} onChange={e => setSSettings((p: any) => ({ ...p, region: e.target.value }))}

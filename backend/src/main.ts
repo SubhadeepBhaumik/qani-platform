@@ -203,11 +203,12 @@ app.post('/api/v1/admin/settings', async (req: any, res: any) => {
   } catch(e) { res.status(500).json({ error: 'Failed to save settings' }); }
 });
 
-app.post('/api/v1/admin/settings/test-email', async (_req, res) => {
+app.post('/api/v1/admin/settings/test-email', async (req: any, res: any) => {
   try {
     const { sendEmail } = require('./services/email.service');
-    await sendEmail(process.env.SENDGRID_FROM_EMAIL || 'bhaumiksubhadeep@gmail.com', 'QANI — Email Test', '<p>This is a test email from QANI Admin Panel. Email delivery is working correctly.</p>');
-    res.json({ success: true, message: 'Test email sent successfully' });
+    const recipient = req.body?.recipient || process.env.SENDGRID_FROM_EMAIL || 'bhaumiksubhadeep@gmail.com';
+    await sendEmail(recipient, 'QANI — Email Test', '<p>This is a test email from QANI Admin Panel. Email delivery is working correctly.</p>');
+    res.json({ success: true, message: 'Test email sent to ' + recipient });
   } catch(e: any) { res.status(500).json({ error: 'Failed to send test email: ' + e.message }); }
 });
 
