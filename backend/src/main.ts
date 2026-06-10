@@ -137,6 +137,29 @@ app.get('/api/v1/users', async (_req, res) => {
   } catch(e) { res.json([]); }
 });
 
+// ─── CMS API ─────────────────────────────────────────────────────────────────
+const cmsPrisma = new (require('@prisma/client').PrismaClient)();
+
+app.get('/api/v1/admin/cms', async (_req, res) => {
+  try {
+    const record = await cmsPrisma.platformSetting.findUnique({ where: { key: 'cms_content' } });
+    if (record) return res.json({ success: true, data: JSON.parse(record.value) });
+    return res.json({ success: false, data: null });
+  } catch(e) { res.json({ success: false, data: null }); }
+});
+
+app.post('/api/v1/admin/cms', async (req: any, res: any) => {
+  try {
+    const data = req.body;
+    await cmsPrisma.platformSetting.upsert({
+      where: { key: 'cms_content' },
+      create: { key: 'cms_content', value: JSON.stringify(data) },
+      update: { value: JSON.stringify(data) },
+    });
+    res.json({ success: true });
+  } catch(e: any) { res.status(500).json({ error: 'Failed to save CMS: ' + e.message }); }
+});
+
 // ─── PLATFORM SETTINGS API ───────────────────────────────────────────────────
 const settingsPrisma = new (require('@prisma/client').PrismaClient)();
 

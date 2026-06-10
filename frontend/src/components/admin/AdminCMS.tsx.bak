@@ -187,7 +187,6 @@ function useCMSStore() {
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
-  const cmsRef = useRef<any>(DEFAULT_CMS);
 
   const update = useCallback((path: string[], value: unknown) => {
     setCms(prev => {
@@ -195,51 +194,21 @@ function useCMSStore() {
       let obj: any = next;
       for (let i = 0; i < path.length - 1; i++) obj = obj[path[i]];
       obj[path[path.length - 1]] = value;
-      cmsRef.current = next;
       return next;
     });
     setDirty(true);
   }, []);
 
-  // Load from DB on mount
-  useEffect(() => {
-    const token = localStorage.getItem('qani_auth_token');
-    fetch('https://qani.io/api/v1/admin/cms', { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(res => {
-        if (res.success && res.data) {
-          const merged = { ...DEFAULT_CMS, ...res.data };
-          cmsRef.current = merged;
-          setCms(merged);
-          localStorage.setItem(CMS_KEY, JSON.stringify(merged));
-        }
-      }).catch(() => {});
-  }, []);
-
   const save = useCallback(() => {
-    const current = cmsRef.current;
-    localStorage.setItem(CMS_KEY, JSON.stringify(current));
-    const token = localStorage.getItem('qani_auth_token');
-    fetch('https://qani.io/api/v1/admin/cms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(current),
-    }).catch(() => {});
+    setCms(prev => { localStorage.setItem(CMS_KEY, JSON.stringify(prev)); return prev; });
     setSavedAt(new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }));
     setDirty(false);
     window.dispatchEvent(new StorageEvent('storage', { key: CMS_KEY }));
   }, []);
 
   const reset = useCallback(() => {
-    cmsRef.current = DEFAULT_CMS;
     setCms(DEFAULT_CMS);
     localStorage.setItem(CMS_KEY, JSON.stringify(DEFAULT_CMS));
-    const token = localStorage.getItem('qani_auth_token');
-    fetch('https://qani.io/api/v1/admin/cms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(DEFAULT_CMS),
-    }).catch(() => {});
     setSavedAt(null);
     setDirty(false);
   }, []);
@@ -708,20 +677,8 @@ const PAGES = [
 
 export function AdminCMS() {
   const { cms, update, save, reset, savedAt, dirty } = useCMSStore();
-  const [activePage, setActivePage] = useState<CMSPage>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const section = params.get('section') as CMSPage;
-    const valid = ['global','header','footer','homepage','auth','candidate','recruiter','help','seo'];
-    return (section && valid.includes(section)) ? section : 'global';
-  });
+  const [activePage, setActivePage] = useState<CMSPage>('global');
   const [showReset, setShowReset] = useState(false);
-
-  const setActivePageWithUrl = (page: CMSPage) => {
-    setActivePage(page);
-    const url = new URL(window.location.href);
-    url.searchParams.set('section', page);
-    window.history.pushState({}, '', url.toString());
-  };
 
   const renderEditor = () => {
     switch (activePage) {
@@ -748,7 +705,7 @@ export function AdminCMS() {
         </div>
         <nav className="flex-1 p-2 overflow-y-auto">
           {PAGES.map(page => (
-            <button key={page.id} onClick={() => setActivePageWithUrl(page.id)}
+            <button key={page.id} onClick={() => setActivePage(page.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-1 text-left transition-colors cursor-pointer ${activePage === page.id ? 'bg-blue-600/20 text-blue-400 border border-blue-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'}`}>
               <span className={activePage === page.id ? 'text-blue-400' : 'text-gray-600'}>{page.icon}</span>
               <p className="text-xs font-medium truncate">{page.label}</p>
@@ -814,20 +771,6 @@ export function useCMS() {
     } catch {}
     return DEFAULT_CMS;
   });
-
-  // Load from DB on mount — DB is source of truth
-  useEffect(() => {
-    fetch('https://qani.io/api/v1/admin/cms')
-      .then(r => r.json())
-      .then(res => {
-        if (res.success && res.data) {
-          const merged = { ...DEFAULT_CMS, ...res.data };
-          setCms(merged);
-          localStorage.setItem(CMS_KEY, JSON.stringify(merged));
-        }
-      }).catch(() => {});
-  }, []);
-
   useEffect(() => {
     const handler = (e: StorageEvent) => {
       if (e.key === CMS_KEY) {
@@ -840,7 +783,6 @@ export function useCMS() {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
-
   return cms;
 }
 

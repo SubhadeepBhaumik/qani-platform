@@ -168,7 +168,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setActiveParams(viewParams);
           } else if (savedUser.role === 'candidate') setActiveView('candidate-dashboard');
           else if (savedUser.role === 'recruiter') setActiveView('recruiter-dashboard');
-          else setActiveView('admin-dashboard');
+          else {
+            // Allow admin to preview landing page with ?preview=true
+            const previewParam = new URLSearchParams(window.location.search).get('preview');
+            if (previewParam === 'true') setActiveView('landing');
+            else setActiveView('admin-dashboard');
+          }
         } else {
           // Check if URL is a guest-accessible route
           const currentPath = window.location.pathname;

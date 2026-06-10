@@ -905,7 +905,7 @@ Question 1: Describe your most relevant experience for this role.` },
       )}
 
       {/* Admin top nav */}
-      <div className="bg-gray-950 border-b border-gray-800 px-6 py-3 flex items-center gap-2 overflow-x-auto shrink-0">
+      <div className={`bg-gray-950 border-b border-gray-800 px-6 py-3 flex items-center gap-2 overflow-x-auto shrink-0 ${activeTab === 'cms' ? 'hidden' : ''}`}>
         <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest mr-3 shrink-0">SUPER ADMIN</span>
         {navTabs.map(t => {
           const Icon = t.icon;

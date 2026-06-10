@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
+import { useCMS } from '../admin/AdminCMS';
 import {
   ArrowRight, Cpu, TrendingUp, Bolt, CheckCircle, ChevronRight,
   Quote, ShieldCheck, ChevronLeft, Sparkles, MapPin, DollarSign,
@@ -8,6 +9,7 @@ import {
 
 export const HomePage: React.FC = () => {
   const { navigate, showToast } = useApp();
+  const cms = useCMS();
   const [activeSlide, setActiveSlide] = useState(0);
 
   const slides = [
@@ -186,7 +188,7 @@ export const HomePage: React.FC = () => {
           </div>
           <div>
             <span className="font-extrabold tracking-tight text-lg text-gray-900 group-hover:text-blue-600 transition">QANI</span>
-            <span className="text-[10px] text-gray-400 block -mt-1">AI Recruitment · Australia</span>
+            <span className="text-[10px] text-gray-400 block -mt-1">{cms.global?.logoSubtext || "AI Recruitment · Australia"}</span>
           </div>
         </div>
 
@@ -517,7 +519,7 @@ export const HomePage: React.FC = () => {
               </div>
               <div>
                 <span className="font-black text-white text-base">QANI Platform</span>
-                <span className="text-[10px] text-gray-500 block">AI Recruitment · Australia</span>
+                <span className="text-[10px] text-gray-500 block">{cms.global?.logoSubtext || "AI Recruitment · Australia"}</span>
               </div>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed max-w-sm">Australia's leading AI recruitment platform. Screen more candidates, faster, with zero extra headcount.</p>
