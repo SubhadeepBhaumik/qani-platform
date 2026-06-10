@@ -12,6 +12,8 @@ export const AcceptInvitePage: React.FC = () => {
   const [companyName, setCompanyName] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [userExists, setUserExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -21,35 +23,65 @@ export const AcceptInvitePage: React.FC = () => {
     if (emailParam) setEmail(decodeURIComponent(emailParam));
     if (roleParam) setRole(decodeURIComponent(roleParam));
     if (companyParam) setCompanyName(decodeURIComponent(companyParam));
+    // Check if user already exists
+    if (emailParam) {
+      setCheckingEmail(true);
+      fetch('https://qani.io/api/v1/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: decodeURIComponent(emailParam) }),
+      }).then(r => r.json()).then(d => { setUserExists(d.exists); }).finally(() => setCheckingEmail(false));
+    }
   }, [activeParams]);
 
   const handleAccept = async () => {
-    if (!firstName || !lastName || !email || !password) { showToast('Please fill in all fields.', 'error'); return; }
-    if (password !== confirmPassword) { showToast('Passwords do not match.', 'error'); return; }
-    if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+    if (!email) { showToast('Email is required.', 'error'); return; }
     setLoading(true);
     try {
-      const res = await fetch('https://qani.io/api/v1/auth/register', {
+      // First check if user already exists
+      const checkRes = await fetch('https://qani.io/api/v1/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password, role: 'recruiter', companyName }),
+        body: JSON.stringify({ email }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        // Mark invite as accepted in DB
-        fetch('https://qani.io/api/v1/team/accept', {
+      const checkData = await checkRes.json();
+
+      if (checkData.exists) {
+        // User already exists — just accept the invite and redirect to login
+        await fetch('https://qani.io/api/v1/team/accept', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email }),
         }).catch(console.error);
         setDone(true);
-        showToast('Account created! You can now log in.', 'success');
+        showToast('Invite accepted! Please log in with your existing account.', 'success');
         setTimeout(() => navigate('auth-login'), 2000);
       } else {
-        showToast(data.error || 'Failed to create account.', 'error');
+        // New user — register first
+        if (!firstName || !lastName || !password) { showToast('Please fill in all fields.', 'error'); setLoading(false); return; }
+        if (password !== confirmPassword) { showToast('Passwords do not match.', 'error'); setLoading(false); return; }
+        if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); setLoading(false); return; }
+        const res = await fetch('https://qani.io/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, email, password, role: 'recruiter', companyName }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          await fetch('https://qani.io/api/v1/team/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+          }).catch(console.error);
+          setDone(true);
+          showToast('Account created! You can now log in.', 'success');
+          setTimeout(() => navigate('auth-login'), 2000);
+        } else {
+          showToast(data.error || 'Failed to create account.', 'error');
+        }
       }
     } catch(e) {
-      showToast('Failed to create account. Try again.', 'error');
+      showToast('Failed to process invite. Try again.', 'error');
     }
     setLoading(false);
   };
@@ -80,34 +112,43 @@ export const AcceptInvitePage: React.FC = () => {
             <span className="font-black text-lg text-gray-900 tracking-tight">QANI</span>
           </div>
           <h2 className="text-xl font-bold text-gray-900">Accept Invitation</h2>
-          <p className="text-xs text-gray-500">You have been invited to join QANI as a Recruiter. Complete your profile to get started.</p>
+          <p className="text-xs text-gray-500">{userExists ? "You already have a QANI account. Click below to accept the invite and log in with your existing credentials." : "You have been invited to join QANI as a Recruiter. Complete your profile to get started."}</p>
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">First Name</label>
-              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="John" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+          {userExists && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 font-medium">
+              ✓ Account found for <strong>{email}</strong>. Click below to accept the invite — no registration needed.
+            </div>
+          )}
+          {!userExists && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-700">First Name</label>
+                <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="John" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-700">Last Name</label>
+                <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Smith" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+              </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Last Name</label>
-              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Smith" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+              <label className="text-xs font-semibold text-gray-700">Email Address</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="w-full text-xs p-2.5 border border-gray-200 bg-gray-50 rounded-lg outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700">Create Password</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 8 characters" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700">Confirm Password</label>
+              <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat password" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
             </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Email Address</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="w-full text-xs p-2.5 border border-gray-200 bg-gray-50 rounded-lg outline-none" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Create Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 8 characters" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Confirm Password</label>
-            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Repeat password" className="w-full text-xs p-2.5 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
-          </div>
-          <button onClick={handleAccept} disabled={loading} className="cursor-pointer w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-lg transition">
-            {loading ? 'Creating Account...' : 'Accept Invitation & Join QANI'}
+          )}
+          <button onClick={handleAccept} disabled={loading || checkingEmail} className="cursor-pointer w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-lg transition">
+            {checkingEmail ? 'Checking...' : loading ? 'Processing...' : userExists ? 'Accept Invitation & Log In' : 'Accept Invitation & Join QANI'}
           </button>
           <p className="text-center text-xs text-gray-400">Already have an account? <button onClick={() => navigate('auth-login')} className="cursor-pointer text-blue-600 hover:underline font-semibold">Sign in</button></p>
         </div>

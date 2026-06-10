@@ -285,6 +285,16 @@ app.get('/api/v1/admin/health', async (_req, res) => {
   }
 });
 
+// Check if email already registered
+app.post('/api/v1/auth/check-email', async (req: any, res: any) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const p = new PrismaClient();
+    const user = await p.user.findUnique({ where: { email: req.body.email } });
+    res.json({ exists: !!user });
+  } catch(e) { res.json({ exists: false }); }
+});
+
 AuthController.seedDemoUsers().then(() => console.log('Demo users ready'));
 syncRolesToMemory().then(() => console.log('Jobs synced from DB:', require('./api/roles/roles.controller').roles.length));
 syncApplicationsToMemory().then(() => console.log('Applications synced from DB:', require('./api/applications/applications.controller').applications.length));

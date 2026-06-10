@@ -62,6 +62,9 @@ export class AuthController {
       if (!passwordMatch) {
         return res.status(401).json({ error: 'Invalid email or password' });
       }
+      if (user.suspended) {
+        return res.status(403).json({ error: 'Your account has been suspended. Please contact your administrator.' });
+      }
       const { token, refreshToken } = AuthService.generateTokens(user.id, user.email);
       return res.json({
         id: user.id,
@@ -94,6 +97,9 @@ export class AuthController {
       const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
+      }
+      if (user.suspended) {
+        return res.status(403).json({ error: 'Account suspended' });
       }
       return res.json({
         id: user.id,

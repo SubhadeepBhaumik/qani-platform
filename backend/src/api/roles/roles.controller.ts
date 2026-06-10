@@ -78,7 +78,32 @@ export class RolesController {
     try {
       const { recruiterId } = req.query;
       const where: any = {};
-      if (recruiterId) where.recruiterId = recruiterId as string;
+      if (recruiterId) {
+        // Check if this user is a team member — if so, use their inviter's ID
+        const teamMembership = await prisma.teamMember.findFirst({
+          where: { 
+            invitedBy: { not: null },
+            status: 'active',
+          },
+          select: { invitedBy: true, email: true }
+        });
+        // Find user by recruiterId to get their email
+        const user = await prisma.user.findUnique({ where: { id: recruiterId as string }, select: { email: true } });
+        if (user) {
+          const membership = await prisma.teamMember.findFirst({
+            where: { email: user.email, status: 'active' },
+            select: { invitedBy: true }
+          });
+          if (membership?.invitedBy) {
+            // Use inviter's ID to fetch jobs
+            where.recruiterId = membership.invitedBy;
+          } else {
+            where.recruiterId = recruiterId as string;
+          }
+        } else {
+          where.recruiterId = recruiterId as string;
+        }
+      }
       const jobs = await prisma.job.findMany({ where, orderBy: { createdAt: 'desc' } });
       return res.json(jobs);
     } catch (error) {
