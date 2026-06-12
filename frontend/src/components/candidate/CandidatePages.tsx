@@ -800,7 +800,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           {/* Message lines */}
                           <div className="space-y-3">
                             {msg.content.split(/\r?\n\r?\n/).filter(Boolean).map((para: string, pi: number) => (
-                              <p key={pi} className={`text-xs leading-relaxed ${pi === 0 ? 'text-white font-semibold text-sm' : 'text-blue-100'}`}>{para}</p>
+                              <p key={pi} className={`leading-relaxed ${pi === 0 ? 'text-white font-bold text-sm' : 'text-blue-100 text-xs'}`}>{para}</p>
                             ))}
                           </div>
                           {/* Footer prompt */}
