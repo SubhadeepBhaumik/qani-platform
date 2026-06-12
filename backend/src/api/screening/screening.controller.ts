@@ -33,23 +33,15 @@ export class ScreeningController {
         mandQ.salaryExpectation,
         mandQ.yearsExperience,
         mandQ.driversLicence,
+        mandQ.postcode,
       ].filter(Boolean).length;
       const customCount = (jobData.screeningQuestions || []).length;
       const totalQuestions = mandatoryCount + customCount;
 
-      const firstQ = mandQ.locationCommute
-        ? 'Are you currently based in ' + (jobData.location || 'the required location') + ', or are you willing to commute or relocate?'
-        : mandQ.workRights
-        ? 'Do you have full working rights in Australia (citizen, permanent resident, or valid work visa)?'
-        : mandQ.salaryExpectation
-        ? 'What is your expected annual salary in AUD for this role?'
-        : mandQ.yearsExperience
-        ? 'How many years of relevant experience do you have for this type of role?'
-        : 'What is your current role and how many years of relevant experience do you have?';
-
       const name = candidateName || 'there';
       const jobTitle = jobData.title || 'this position';
-      const greeting = 'Hi ' + name + '! Welcome to the QANI AI screening for the ' + jobTitle + ' role. I have ' + totalQuestions + ' questions to assess your suitability. Let\'s start:\r\n\r\n' + firstQ;
+      const company = jobData.company || 'our team';
+      const greeting = 'Hi ' + name + ', I\'m QANI from ' + company + '.\r\n\r\nThanks for applying for the ' + jobTitle + ' position and for taking the time to speak with me today.\r\n\r\nI\'m an AI recruitment assistant and my job is to help ' + company + ' work through the large number of applications we receive for roles like this. By doing that, our recruiters can spend more time speaking with candidates who are a good match for the position.\r\n\r\nThis first stage is called Screening and should only take around 3 to 5 minutes to complete.\r\n\r\nI\'ll ask you a series of straightforward questions about things like your work rights, location, salary expectations and the essential requirements for the role. Please answer as honestly and as accurately as you can.\r\n\r\nBased on your answers, I\'ll either move you through to the next stage of the process or let you know if we\'re unable to continue.\r\n\r\nReady to get started?';
 
       const initialMessages = [{ id: 'msg-1', role: 'assistant', content: greeting, timestamp: now, questionIdx: 0 }];
 
@@ -105,11 +97,12 @@ export class ScreeningController {
       };
 
       const mandatoryList = [
-        mandQ.locationCommute ? '1. Location: Are you based in ' + (job.location || 'the required location') + ' or willing to commute/relocate?' : '',
-        mandQ.workRights ? '2. Work Rights: Do you have full working rights in Australia (citizen, PR, or valid work visa)?' : '',
-        mandQ.salaryExpectation ? '3. Salary: What is your expected annual salary in AUD?' : '',
-        mandQ.yearsExperience ? '4. Experience: How many years of relevant experience do you have?' : '',
-        mandQ.driversLicence ? '5. Licence: Do you hold a valid Australian driver licence?' : '',
+        mandQ.postcode ? '1. Suburb & Postcode: What is your current suburb and postcode?' : '',
+        mandQ.locationCommute ? '2. Location: Are you based in ' + (job.location || 'the required location') + ' or willing to commute/relocate?' : '',
+        mandQ.workRights ? '3. Work Rights: Do you have full working rights in Australia (citizen, PR, or valid work visa)?' : '',
+        mandQ.salaryExpectation ? '4. Salary: What is your expected annual salary in AUD?' : '',
+        mandQ.yearsExperience ? '5. Experience: How many years of relevant experience do you have?' : '',
+        mandQ.driversLicence ? '6. Licence: Do you hold a valid Australian driver licence?' : '',
       ].filter(Boolean).join('\r\n');
 
       const customQ = (job.screeningQuestions || []).map((q: string, i: number) => (i + 1) + '. ' + q).join('\r\n');
@@ -122,9 +115,11 @@ export class ScreeningController {
         'STRICT RULES:',
         '- Ask ONE question at a time. Never ask two questions together.',
         '- Ask ALL mandatory questions first IN ORDER before any job-specific questions.',
+        '- The greeting ends with "Ready to get started?". Wait for the candidate to confirm they are ready (yes/sure/ok etc). ONLY AFTER confirmation, ask the first mandatory question: their current suburb and postcode. Use their response to assess commute distance to job location (' + (job.location || 'not specified') + '). If beyond 20km, ask if they are willing to commute that distance daily.',
         '- FOLLOW-UP RULE: If a candidate gives a vague, one-word, or evasive answer (under 10 words or no specifics), ask ONE clarifying follow-up before moving to the next question. Example: if asked salary and they say "negotiable" — ask "Could you give me a specific figure or range in AUD?"',
+        '- For salary questions: note the job budget is ' + salaryRange + '. If candidate expects more than 20% above max, note this will negatively impact their score.',
         '- Never skip a mandatory question.',
-        '- Be professional, concise, and conversational.',
+        '- Be warm, professional, and conversational — like a real HR person, not a robot.',
         '- Do not give scoring or feedback during the interview.',
         '- When all questions are done, say exactly: "Thank you for completing the screening. Please click End Screening to receive your results."',
         '',
@@ -146,6 +141,7 @@ export class ScreeningController {
 
       // Build answered questions summary
       const mandatoryLabels = [
+        mandQ.postcode ? 'Suburb & Postcode' : '',
         mandQ.locationCommute ? 'Location/commute' : '',
         mandQ.workRights ? 'Work rights' : '',
         mandQ.salaryExpectation ? 'Salary expectation' : '',

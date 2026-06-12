@@ -773,20 +773,55 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               ref={scrollRef}
               className="flex-1 overflow-y-auto bg-gray-50 rounded-2xl p-4 sm:p-6 space-y-4 border border-gray-200"
             >
-              {session.messages.map(msg => {
+              {session.messages.map((msg, msgIdx) => {
                 const isAI = msg.role === 'assistant';
+                const isGreeting = isAI && msgIdx === 0;
                 return (
                   <div key={msg.id} className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
-                    <div className={`max-w-xl p-4 rounded-2xl text-xs leading-relaxed space-y-1 shadow-sm ${
-                      isAI 
-                        ? 'bg-white border border-gray-200 text-gray-950' 
-                        : 'bg-blue-600 text-white'
-                    }`}>
-                      <span className={`text-[9px] font-bold block uppercase ${isAI ? 'text-blue-600' : 'text-blue-100'}`}>
-                        {isAI ? 'QANI Virtual Recruiter' : 'Candidate'}
-                      </span>
-                      <p className="whitespace-pre-line">{msg.content}</p>
-                    </div>
+                    {isGreeting ? (
+                      <div className="w-full max-w-2xl">
+                        {/* Greeting card — special design */}
+                        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 shadow-lg shadow-blue-500/20 border border-blue-500/30">
+                          {/* Header */}
+                          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/20">
+                            <div className="relative w-9 h-9 shrink-0">
+                              <div className="absolute inset-0 bg-white/20 rounded-xl transform rotate-3" />
+                              <div className="relative w-full h-full bg-gray-900 rounded-lg border border-gray-700 flex items-center justify-center font-mono font-black text-white text-sm">Q</div>
+                            </div>
+                            <div>
+                              <p className="text-white font-bold text-sm">QANI</p>
+                              <p className="text-blue-200 text-[10px]">AI Recruitment Assistant</p>
+                            </div>
+                            <div className="ml-auto flex items-center gap-1.5 bg-white/10 rounded-full px-2.5 py-1">
+                              <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                              <span className="text-[10px] text-white font-medium">Live</span>
+                            </div>
+                          </div>
+                          {/* Message lines */}
+                          <div className="space-y-3">
+                            {msg.content.split(/\r?\n\r?\n/).filter(Boolean).map((para: string, pi: number) => (
+                              <p key={pi} className={`text-xs leading-relaxed ${pi === 0 ? 'text-white font-semibold text-sm' : 'text-blue-100'}`}>{para}</p>
+                            ))}
+                          </div>
+                          {/* Footer prompt */}
+                          <div className="mt-4 pt-3 border-t border-white/20 flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" />
+                            <p className="text-[11px] text-blue-200 font-medium">Type <span className="text-white font-bold">"Yes"</span> below when you're ready to begin</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`max-w-xl p-4 rounded-2xl text-xs leading-relaxed space-y-1 shadow-sm ${
+                        isAI
+                          ? 'bg-white border border-gray-200 text-gray-950'
+                          : 'bg-blue-600 text-white'
+                      }`}>
+                        <span className={`text-[9px] font-bold block uppercase ${isAI ? 'text-blue-600' : 'text-blue-100'}`}>
+                          {isAI ? 'QANI Virtual Recruiter' : 'You'}
+                        </span>
+                        <p className="whitespace-pre-line">{msg.content}</p>
+                      </div>
+                    )}
                   </div>
                 );
               })}

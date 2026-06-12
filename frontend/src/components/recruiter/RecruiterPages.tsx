@@ -265,6 +265,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   // Search & sorting state for applications
   const [appSearch, setAppSearch] = useState('');
   const [appFilterStatus, setAppFilterStatus] = useState('All');
+  const [candidateProfile, setCandidateProfile] = React.useState<any>(null);
   const [bulkChecked, setBulkChecked] = useState<string[]>([]);
 
   // Create Job States
@@ -289,12 +290,29 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   const [newQuestionText, setNewQuestionText] = useState('');
   const [mandatoryQuestions, setMandatoryQuestions] = useState({
     driversLicence: true,
+    postcode: true,
     locationCommute: true,
     workRights: true,
     salaryExpectation: true,
     yearsExperience: true,
   });
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  // Fetch candidate profile when viewing app detail
+  React.useEffect(() => {
+    if (subView === 'recruiter-app-detail' || subView === 'app-detail') {
+      const appId = activeParams?.applicationId;
+      const app = applications?.find((a: any) => a.id === appId);
+      if (app?.candidateId) {
+        const token = localStorage.getItem('qani_auth_token');
+        fetch(`https://qani.io/api/v1/candidates/${app.candidateId}/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r => r.json()).then(setCandidateProfile).catch(() => setCandidateProfile(null));
+      } else {
+        setCandidateProfile(null);
+      }
+    }
+  }, [subView, activeParams?.applicationId]);
 
   // Load existing job data when editing
   useEffect(() => {
@@ -320,7 +338,17 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
           setScreeningQueries(existingJob.screeningQuestions || []);
-          if (existingJob.mandatoryQuestions) setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true, ...existingJob.mandatoryQuestions });
+          if (existingJob.mandatoryQuestions) {
+            const mq = existingJob.mandatoryQuestions;
+            setMandatoryQuestions({
+              locationCommute: mq.locationCommute !== false,
+              workRights: mq.workRights !== false,
+              salaryExpectation: mq.salaryExpectation !== false,
+              yearsExperience: mq.yearsExperience !== false,
+              driversLicence: mq.driversLicence !== false,
+              postcode: mq.postcode !== false,
+            });
+          }
           if (existingJob.qualificationWeights) {
             setLocationWeight(existingJob.qualificationWeights.locationWeight || 80);
             setSalaryWeight(existingJob.qualificationWeights.salaryWeight || 90);
@@ -350,7 +378,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       setQualificationsWeight(85);
       setWorkRightsWeight(95);
       setSkillsWeight(100);
-      setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true });
+      setMandatoryQuestions({ locationCommute: true, workRights: true, salaryExpectation: true, yearsExperience: true, driversLicence: true, postcode: true });
       const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       setJobExpiresAt(newExpiry);
     }
@@ -936,6 +964,72 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   </div>
                 </div>
 
+                {/* Candidate Profile Details */}
+                {candidateProfile && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+                    <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Candidate Profile</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      {candidateProfile.bio && (
+                        <div className="sm:col-span-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Bio</p>
+                          <p className="text-gray-700 leading-relaxed">{candidateProfile.bio}</p>
+                        </div>
+                      )}
+                      {candidateProfile.skills?.length > 0 && (
+                        <div className="sm:col-span-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Skills</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {candidateProfile.skills.map((s: string) => (
+                              <span key={s} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full font-medium">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {candidateProfile.linkedinUrl && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">LinkedIn</p>
+                          <a href={candidateProfile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate block">{candidateProfile.linkedinUrl}</a>
+                        </div>
+                      )}
+                      {candidateProfile.githubUrl && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">GitHub</p>
+                          <a href={candidateProfile.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate block">{candidateProfile.githubUrl}</a>
+                        </div>
+                      )}
+                      {candidateProfile.workRights && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Work Rights</p>
+                          <p className="text-gray-700 font-semibold">{candidateProfile.workRights}</p>
+                        </div>
+                      )}
+                      {candidateProfile.salaryExpectation && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Salary Expectation</p>
+                          <p className="text-gray-700 font-semibold">${candidateProfile.salaryExpectation.toLocaleString()} AUD</p>
+                        </div>
+                      )}
+                      {candidateProfile.location && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Location</p>
+                          <p className="text-gray-700 font-semibold">{candidateProfile.location}</p>
+                        </div>
+                      )}
+                      {candidateProfile.phone && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Phone</p>
+                          <p className="text-gray-700 font-semibold">{candidateProfile.phone}</p>
+                        </div>
+                      )}
+                      {candidateProfile.availableFrom && (
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Available From</p>
+                          <p className="text-gray-700 font-semibold">{new Date(candidateProfile.availableFrom).toLocaleDateString('en-AU')}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {/* score details micro sliders */}
                 {(app.scorecard || app.scoreBreakdown) ? (
                   <div className="space-y-6">
@@ -1419,6 +1513,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     { key: 'salaryExpectation', label: 'Salary Expectation', desc: 'What is your expected annual salary (AUD)?' },
                     { key: 'yearsExperience', label: 'Years of Experience', desc: 'How many years of relevant experience do you have?' },
                     { key: 'driversLicence', label: "Driver's Licence", desc: "Do you hold a valid Australian driver's licence?" },
+                    { key: 'postcode', label: 'Suburb & Postcode', desc: 'What is your current suburb and postcode? (Used to calculate commute distance to job location)' },
                   ].map(item => (
                     <label key={item.key} className="flex items-start gap-3 p-2.5 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
                       <input type="checkbox"
