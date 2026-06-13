@@ -735,7 +735,10 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const totalQuestions = (session as any).totalQuestions || ((job?.screeningQuestions?.length || 0) + (session as any).mandatoryCount || 5);
         const answeredCount = (session as any).currentQuestionIdx || 0;
         const currentQ = Math.min(answeredCount + 1, totalQuestions);
-        const progressPercent = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
+        const messages = (session as any).messages || [];
+        const lastAiMsg = [...messages].reverse().find((m: any) => m.role === 'assistant');
+        const screeningDone = lastAiMsg?.content?.includes('Please click End Screening');
+        const progressPercent = screeningDone ? 100 : Math.min(99, Math.round((answeredCount / totalQuestions) * 100));
 
         const handleChatSubmit = (e: React.FormEvent) => {
           e.preventDefault();

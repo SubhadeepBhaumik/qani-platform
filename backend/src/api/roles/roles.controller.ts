@@ -74,7 +74,24 @@ export class RolesController {
               postcode: body.mandatoryQuestions.postcode !== false,
             } : {}),
           },
-          qualificationWeights: body.qualificationWeights || null,
+          qualificationWeights: body.qualificationWeights || (() => {
+            const qCount = (body.screeningQuestions || []).length;
+            const bonus = Math.min(qCount * 5, 25);
+            const skills = 20 + Math.round(bonus * 0.55);
+            const qualifications = 20 + Math.round(bonus * 0.45);
+            const workRights = 20;
+            const location = 20 - Math.round(bonus * 0.5);
+            const salary = 20 - Math.round(bonus * 0.5);
+            const total = skills + qualifications + workRights + location + salary;
+            const diff = 100 - total;
+            return {
+              skillsWeight: skills + diff,
+              qualificationsWeight: qualifications,
+              workRightsWeight: workRights,
+              locationWeight: location,
+              salaryWeight: salary,
+            };
+          })(),
           status: body.status || 'open',
           recruiterId: body.recruiterId || null,
           company: body.company || null,

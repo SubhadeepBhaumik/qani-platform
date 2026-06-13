@@ -6,88 +6,6 @@ import { pushNotification } from '../notifications/notifications.controller';
 
 const prisma = new PrismaClient();
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-async function getPostcodeLatLng(postcode: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const res = await fetch(`https://api.zippopotam.us/au/${postcode.trim()}`);
-    if (!res.ok) return null;
-    const data: any = await res.json();
-    const place = data.places?.[0];
-    if (!place) return null;
-    return { lat: parseFloat(place.latitude), lng: parseFloat(place.longitude) };
-  } catch { return null; }
-}
-
-async function getCityLatLng(city: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city + ', Australia')}&format=json&limit=1`,
-      { headers: { 'User-Agent': 'QANI-Platform/1.0 (hello@qani.io)' } }
-    );
-    if (!res.ok) return null;
-    const data: any = await res.json();
-    if (!data?.[0]) return null;
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  } catch { return null; }
-}
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function calcLocationScore(distanceKm: number, willingToCommute: boolean): number {
-  if (distanceKm <= 20) return 100;
-  if (!willingToCommute) return 10;
-  const roundTrip = distanceKm * 2;
-  return Math.max(30, 100 - (roundTrip - 20) * 1.0);
-}
-
-function calcSalaryScore(candidateSalary: number, salaryMax: number): number {
-  if (salaryMax <= 0 || candidateSalary <= salaryMax) return 100;
-  const overagePct = ((candidateSalary - salaryMax) / salaryMax) * 100;
-  return Math.max(0, 100 - overagePct * 2.5);
-}
-
-function extractPostcodeFromTranscript(messages: any[]): string | null {
-  for (const m of messages) {
-    if (m.role === 'user') {
-      const match = m.content.match(/\b([0-9]{4})\b/);
-      if (match) return match[1];
-    }
-  }
-  return null;
-}
-
-function extractSalaryFromTranscript(messages: any[]): number | null {
-  for (const m of messages) {
-    if (m.role === 'user') {
-      const c = m.content.toLowerCase();
-      const kMatch = c.match(/\$?\s*(\d+(?:\.\d+)?)\s*k/);
-      if (kMatch) return Math.round(parseFloat(kMatch[1]) * 1000);
-      const fullMatch = c.match(/\$?\s*(\d{2,3}),?(\d{3})/);
-      if (fullMatch) return parseInt(fullMatch[1] + fullMatch[2]);
-    }
-  }
-  return null;
-}
-
-function extractCommuteWillingness(messages: any[]): boolean {
-  for (const m of messages) {
-    if (m.role === 'user') {
-      const c = m.content.toLowerCase();
-      if (c.includes('not willing') || c.includes('unable') || c.includes('too far') || c.includes("can't") || c.includes('cant')) return false;
-    }
-  }
-  return true;
-}
-
-// ─── CONTROLLER ──────────────────────────────────────────────────────────────
-
 export class ScreeningController {
   static async startScreening(req: Request, res: Response) {
     try {
@@ -178,52 +96,9 @@ export class ScreeningController {
         locationWeight: 20, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 20,
       };
 
-      // ── SALARY PRE-COMPUTE ───────────────────────────────────────────────
-      const salaryMin = job.salaryMin || 0;
-      const salaryMax = job.salaryMax || 0;
-      const salaryRange = salaryMin > 0 ? '$' + Math.round(salaryMin / 1000) + 'k-$' + Math.round(salaryMax / 1000) + 'k AUD' : 'not specified';
-      let salaryDirective = '';
-      const detectedSalary = extractSalaryFromTranscript(messages);
-      if (detectedSalary && salaryMax > 0) {
-        if (detectedSalary >= salaryMin && detectedSalary <= salaryMax) {
-          salaryDirective = `SALARY RESOLVED: Candidate stated $${Math.round(detectedSalary/1000)}k which is within the budget of ${salaryRange}. Do NOT question or ask them to revise. Accept and move to next question.`;
-        } else if (detectedSalary < salaryMin) {
-          salaryDirective = `SALARY ACTION: Candidate stated $${Math.round(detectedSalary/1000)}k which is below the minimum of $${Math.round(salaryMin/1000)}k. If not already done, inform them the range is ${salaryRange} and ask if they'd like to revise.`;
-        } else {
-          salaryDirective = `SALARY ACTION: Candidate stated $${Math.round(detectedSalary/1000)}k which is above the maximum of $${Math.round(salaryMax/1000)}k. If not already done, inform them the budget is ${salaryRange} and ask if there is flexibility.`;
-        }
-      }
-      // ─────────────────────────────────────────────────────────────────────
-
-      // ── DISTANCE CALCULATION ──────────────────────────────────────────────
-      let locationQuestion = mandQ.locationCommute
-        ? '2. Location: Are you based in ' + (job.location || 'the required location') + ' or willing to commute/relocate?'
-        : '';
-
-      const candidatePostcode = extractPostcodeFromTranscript(messages);
-      if (candidatePostcode && job.location) {
-        const [cLL, jLL] = await Promise.all([
-          getPostcodeLatLng(candidatePostcode),
-          getCityLatLng(job.location),
-        ]);
-        if (cLL && jLL) {
-          const distKm = Math.round(haversineKm(cLL.lat, cLL.lng, jLL.lat, jLL.lng));
-          if (distKm <= 20) {
-            locationQuestion = mandQ.locationCommute
-              ? '2. Location: Candidate postcode ' + candidatePostcode + ' is ' + distKm + 'km from ' + job.location + ' — within acceptable range. Skip this question and move to question 3.'
-              : '';
-          } else {
-            locationQuestion = mandQ.locationCommute
-              ? '2. Location/Commute: Ask EXACTLY — "The role is based in ' + job.location + '. Based on your postcode, you appear to be approximately ' + distKm + 'km away. Are you willing to commute that distance on a daily basis?"'
-              : '';
-          }
-        }
-      }
-      // ─────────────────────────────────────────────────────────────────────
-
       const mandatoryList = [
         mandQ.postcode ? '1. Suburb & Postcode: What is your current suburb and postcode?' : '',
-        locationQuestion,
+        mandQ.locationCommute ? '2. Location: Are you based in ' + (job.location || 'the required location') + ' or willing to commute/relocate?' : '',
         mandQ.workRights ? '3. Work Rights: Do you have full working rights in Australia (citizen, PR, or valid work visa)?' : '',
         mandQ.salaryExpectation ? '4. Salary: What is your expected annual salary in AUD?' : '',
         mandQ.yearsExperience ? '5. Experience: How many years of relevant experience do you have?' : '',
@@ -231,24 +106,21 @@ export class ScreeningController {
       ].filter(Boolean).join('\r\n');
 
       const customQ = (job.screeningQuestions || []).map((q: string, i: number) => (i + 1) + '. ' + q).join('\r\n');
-      const customCount = (job.screeningQuestions || []).length;
+      const salaryRange = job.salaryMin ? '$' + Math.round(job.salaryMin / 1000) + 'k-$' + Math.round(job.salaryMax / 1000) + 'k AUD' : 'not specified';
 
       const systemPrompt = [
         'You are QANI, an expert AI recruitment interviewer for Australian companies.',
         'Interviewing: ' + (job.candidateName || 'candidate') + ' | Role: ' + (job.title || 'this position') + ' | Location: ' + (job.location || 'not specified') + ' | Salary budget: ' + salaryRange,
-        '',
-        salaryDirective ? 'SALARY STATUS: ' + salaryDirective : '',
         '',
         'STRICT RULES:',
         '- Ask ONE question at a time. Never ask two questions together.',
         '- Ask ALL mandatory questions first IN ORDER before any job-specific questions.',
         '- The greeting ends with "Ready to get started?". Wait for the candidate to confirm they are ready (yes/sure/ok etc). ONLY AFTER confirmation, ask the first mandatory question: their current suburb and postcode. Use their response to assess commute distance to job location (' + (job.location || 'not specified') + '). If beyond 20km, ask if they are willing to commute that distance daily.',
         '- FOLLOW-UP RULE: If a candidate gives a vague, one-word, or evasive answer (under 10 words or no specifics), ask ONE clarifying follow-up before moving to the next question. Example: if asked salary and they say "negotiable" — ask "Could you give me a specific figure or range in AUD?"',
-        '- SALARY RULE: When candidate gives a salary figure, compare to job budget ' + salaryRange + '. If within range — accept it and move on, do NOT ask them to revise. If below minimum — say "Just so you know, the budgeted range for this role is ' + salaryRange + '. Is that still your expectation, or would you like to revise?" If above maximum — say "The budget for this role is ' + salaryRange + '. Your expectation is above that — is there flexibility on your end?" Do NOT ask to be more specific if they already gave a clear number.',
+        '- For salary questions: note the job budget is ' + salaryRange + '. If candidate expects more than 20% above max, note this will negatively impact their score.',
         '- Never skip a mandatory question.',
         '- Be warm, professional, and conversational — like a real HR person, not a robot.',
         '- Do not give scoring or feedback during the interview.',
-        '- CRITICAL: There are ' + customCount + ' job-specific questions that MUST all be asked after mandatory questions. Do NOT say thank you for completing until every job-specific question has been asked and answered.',
         '- When all questions are done, say exactly: "Thank you for completing the screening. Please click End Screening to receive your results."',
         '',
         'SCORING WEIGHTS (for your awareness — used at end):',
@@ -325,11 +197,7 @@ export class ScreeningController {
         aiResponse.toLowerCase().includes('please provide') ||
         aiResponse.toLowerCase().includes('please elaborate') ||
         aiResponse.toLowerCase().includes('what do you mean') ||
-        aiResponse.toLowerCase().includes('can you be more specific') ||
-        aiResponse.toLowerCase().includes('km away') ||
-        aiResponse.toLowerCase().includes('willing to commute') ||
-        aiResponse.toLowerCase().includes('is that still your expectation') ||
-        aiResponse.toLowerCase().includes('is there flexibility');
+        aiResponse.toLowerCase().includes('can you be more specific');
 
       const newQuestionIdx = isFollowUp
         ? session.currentQuestionIdx
@@ -383,49 +251,6 @@ export class ScreeningController {
         const requirements = (job.requirementsMust || []).join(', ') || 'not specified';
         const jobLocation = job.location || 'not specified';
 
-        // ── PRE-COMPUTE LOCATION SCORE ────────────────────────────────────
-        let preLocationScore: number | null = null;
-        let locationNote = '';
-        const cp = extractPostcodeFromTranscript(messages);
-        if (cp && jobLocation !== 'not specified') {
-          const [cLL, jLL] = await Promise.all([getPostcodeLatLng(cp), getCityLatLng(jobLocation)]);
-          if (cLL && jLL) {
-            const distKm = Math.round(haversineKm(cLL.lat, cLL.lng, jLL.lat, jLL.lng));
-            const willing = extractCommuteWillingness(messages);
-            preLocationScore = calcLocationScore(distKm, willing);
-            if (distKm <= 20) {
-              locationNote = `Candidate is ${distKm}km from ${jobLocation} — within acceptable radius. Good location fit.`;
-            } else if (willing) {
-              locationNote = `Candidate is ${distKm}km from ${jobLocation} (${distKm * 2}km daily round trip). Willing to commute but this distance is significant and may impact reliability.`;
-            } else {
-              locationNote = `Candidate is ${distKm}km from ${jobLocation} and unwilling to commute. Critical location mismatch.`;
-            }
-          }
-        }
-
-        // ── PRE-COMPUTE SALARY SCORE ──────────────────────────────────────
-        let preSalaryScore: number | null = null;
-        let salaryNote = '';
-        const cSal = extractSalaryFromTranscript(messages);
-        if (cSal && salaryMax > 0) {
-          preSalaryScore = calcSalaryScore(cSal, salaryMax);
-          if (cSal <= salaryMax) {
-            salaryNote = `Candidate expects $${Math.round(cSal / 1000)}k which is within the $${Math.round(salaryMin / 1000)}k-$${Math.round(salaryMax / 1000)}k budget.`;
-          } else {
-            const over = Math.round(((cSal - salaryMax) / salaryMax) * 100);
-            salaryNote = `Candidate expects $${Math.round(cSal / 1000)}k which is ${over}% above the maximum budget of $${Math.round(salaryMax / 1000)}k.`;
-          }
-        }
-        // ─────────────────────────────────────────────────────────────────
-
-        const locationScoreRule = preLocationScore !== null
-          ? `- locationScore: USE EXACTLY ${preLocationScore} — pre-calculated from real distance data. DO NOT change this.`
-          : '- locationScore: confirmed correct location/willing to relocate = 75-90. Wrong location, unwilling = 15-35.';
-
-        const salaryScoreRule = preSalaryScore !== null
-          ? `- salaryScore: USE EXACTLY ${preSalaryScore} — pre-calculated from candidate salary vs budget. DO NOT change this.`
-          : '- salaryScore: within budget = 75-90. Up to 20% above budget = 50-70. More than 20% above = 15-35.';
-
         const scoringPrompt = [
           'You are an expert recruitment AI. Score this interview strictly and realistically.',
           'Role: ' + (job.title || 'not specified') + ' | Location: ' + jobLocation + ' | Salary budget: ' + salaryRange,
@@ -442,21 +267,19 @@ export class ScreeningController {
           '- skillsScore weight: ' + weights.skillsWeight + '%',
           '',
           'SCORING RULES — be strict:',
-          locationScoreRule,
+          '- locationScore: confirmed correct location/willing to relocate = 75-90. Wrong location, unwilling = 15-35.',
           '- workRightsScore: confirmed valid rights = 85-95. Unclear/evasive = 30-50. No rights = 5-15.',
-          salaryScoreRule,
-          '- qualificationsScore: STRICT — generic phrases like "I follow standards", "I have experience", "I can do it" with no specifics = 10-20. Some relevant detail but no examples = 30-45. Specific examples with context = 55-70. Detailed examples with metrics/outcomes = 75-88.',
-          '- skillsScore: STRICT — answers like "yes I can", "HTML CSS", "check on major browsers", "follow standards" with zero technical depth = 5-15. Partial technical knowledge shown = 25-45. Clear technical knowledge with some specifics = 50-65. Strong evidence with tools, techniques, real examples = 70-85.',
+          '- salaryScore: within budget = 75-90. Up to 20% above budget = 50-70. More than 20% above = 15-35.',
+          '- qualificationsScore: vague one-word answers = 15-30. Some detail = 40-60. Specific with examples/metrics = 70-88.',
+          '- skillsScore: no evidence of required skills = 10-25. Partial evidence = 40-60. Strong specific evidence = 70-85.',
           '- overallScore: MUST be weighted average: (locationScore x ' + weights.locationWeight + ' + workRightsScore x ' + weights.workRightsWeight + ' + salaryScore x ' + weights.salaryWeight + ' + qualificationsScore x ' + weights.qualificationsWeight + ' + skillsScore x ' + weights.skillsWeight + ') / 100',
           '- If candidate gave fewer than 3 substantive answers, cap overallScore at 40.',
           '- recommendation: qualified if overall>=70, review if 45-69, rejected if <45.',
-          '- feedback: Write 3-4 sentences. Write like a senior recruiter summarising for a hiring manager. Start with the candidate first name only. Cover: (1) location/commute if notable, (2) salary only if outside budget, (3) technical quality with specifics from their actual answers — do not flatter or use words like solid/enthusiastic, (4) one clear bottom line: recommend for interview, recommend with conditions, or do not recommend and why. Be direct and factual.',
-          '- feedback: Write 3-4 sentences. Write like a senior recruiter summarising for a hiring manager. Start with the candidate first name only. Cover: (1) location/commute if notable, (2) salary only if outside budget, (3) technical quality with specifics from their actual answers — do not flatter or use words like solid/enthusiastic, (4) one clear bottom line: recommend for interview, recommend with conditions, or do not recommend and why. Be direct and factual.',
-          locationNote ? '- Location context: ' + locationNote : '',
-          salaryNote ? '- Salary context: ' + salaryNote : '',
+          '- feedback: 2 sentences. Honest. Mention strongest and weakest dimension.',
+          '',
           'Return ONLY this JSON, no markdown, no extra text:',
-          '{"locationScore":0,"salaryScore":0,"qualificationsScore":0,"workRightsScore":0,"skillsScore":0,"overallScore":0,"recommendation":"review","feedback":"recruiter summary"}',
-        ].filter(Boolean).join('\r\n');
+          '{"locationScore":0,"salaryScore":0,"qualificationsScore":0,"workRightsScore":0,"skillsScore":0,"overallScore":0,"recommendation":"review","feedback":"2 sentence assessment"}',
+        ].join('\r\n');
 
         const comp = await openaiScorer.chat.completions.create({
           model: 'gpt-4o-mini',
@@ -469,30 +292,14 @@ export class ScreeningController {
         const p = JSON.parse(raw);
 
         scorecard = {
-          locationScore: preLocationScore !== null ? preLocationScore : Math.min(100, Math.max(0, Number(p.locationScore) || 0)),
-          salaryScore: preSalaryScore !== null ? preSalaryScore : Math.min(100, Math.max(0, Number(p.salaryScore) || 0)),
+          locationScore: Math.min(100, Math.max(0, Number(p.locationScore) || 0)),
+          salaryScore: Math.min(100, Math.max(0, Number(p.salaryScore) || 0)),
           qualificationsScore: Math.min(100, Math.max(0, Number(p.qualificationsScore) || 0)),
           workRightsScore: Math.min(100, Math.max(0, Number(p.workRightsScore) || 0)),
           skillsScore: Math.min(100, Math.max(0, Number(p.skillsScore) || 0)),
         };
-
-        // Recalculate overallScore deterministically
-        overallScore = Math.round(
-          (scorecard.locationScore * weights.locationWeight +
-            scorecard.workRightsScore * weights.workRightsWeight +
-            scorecard.salaryScore * weights.salaryWeight +
-            scorecard.qualificationsScore * weights.qualificationsWeight +
-            scorecard.skillsScore * weights.skillsWeight) / 100
-        );
-        overallScore = Math.min(100, Math.max(0, overallScore));
-
-        // Cap recommendation if location is critically low
-        if (overallScore >= 70 && scorecard.locationScore < 50) {
-          recommendation = 'review';
-        } else {
-          recommendation = overallScore >= 70 ? 'qualified' : overallScore >= 45 ? 'review' : 'rejected';
-        }
-
+        overallScore = Math.min(100, Math.max(0, Number(p.overallScore) || 0));
+        recommendation = ['qualified', 'review', 'rejected'].includes(p.recommendation) ? p.recommendation : 'review';
         feedback = p.feedback || 'Screening evaluated.';
 
       } catch (aiErr) {
