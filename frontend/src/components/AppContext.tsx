@@ -28,6 +28,11 @@ export type AppView =
   | 'recruiter-team'
   | 'recruiter-settings'
   | 'admin-dashboard'
+  | 'how-it-works'
+  | 'about'
+  | 'contact'
+  | 'public-jobs'
+  | 'public-candidates'
   | 'admin-users'
   | 'help'
   | 'error-404'
@@ -156,6 +161,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             '/admin/settings': 'admin-settings',
             '/help': 'help',
             '/accept-invite': 'accept-invite',
+            '/how-it-works': 'how-it-works',
+            '/about': 'about',
+            '/contact': 'contact',
+            '/jobs': 'public-jobs',
+            '/candidates': 'public-candidates',
           };
           const urlView = ROUTES[currentPath];
           if (urlView) {
@@ -183,6 +193,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             '/register/candidate': 'auth-register-candidate-1',
             '/register/recruiter': 'auth-register-recruiter',
             '/help': 'help',
+            '/how-it-works': 'how-it-works',
+            '/about': 'about',
+            '/contact': 'contact',
+            '/jobs': 'public-jobs',
+            '/candidates': 'public-candidates',
           };
           const guestView = guestRoutes[currentPath];
           if (guestView) {
@@ -216,6 +231,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setViewHistory(prev => [...prev, activeView]);
     setActiveView(view);
     setActiveParams(params);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const goBack = () => {

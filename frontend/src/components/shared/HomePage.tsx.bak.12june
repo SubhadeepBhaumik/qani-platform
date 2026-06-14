@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
-  const { navigate, showToast, user } = useApp();
+  const { navigate, showToast } = useApp();
   const cms = useCMS();
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -194,43 +194,22 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-          <button onClick={() => navigate('how-it-works')} className="cursor-pointer hover:text-blue-600 transition">How It Works</button>
-          <button onClick={() => navigate('public-jobs')} className="cursor-pointer hover:text-blue-600 transition">Jobs</button>
-          <button onClick={() => navigate('public-candidates')} className="cursor-pointer hover:text-blue-600 transition">Candidates</button>
-          <button onClick={() => navigate('about')} className="cursor-pointer hover:text-blue-600 transition">About</button>
-          <button onClick={() => navigate('contact')} className="cursor-pointer hover:text-blue-600 transition">Contact</button>
+          <a href="#jobs" className="cursor-pointer hover:text-blue-600 transition">Browse Jobs</a>
+          <a href="#candidates" className="cursor-pointer hover:text-blue-600 transition">Top Candidates</a>
+          <a href="#how" className="cursor-pointer hover:text-blue-600 transition">How It Works</a>
           <a href="#pricing" className="cursor-pointer hover:text-blue-600 transition">Pricing</a>
         </div>
 
         <div className="flex items-center gap-3">
-          {user ? (
-            <>
-              <button onClick={() => navigate(user.role === 'candidate' ? 'candidate-dashboard' : user.role === 'recruiter' ? 'recruiter-dashboard' : 'admin-dashboard')} className="cursor-pointer flex items-center gap-2 text-sm bg-gray-900 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                Dashboard
-              </button>
-              <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
-                  {user.firstName?.[0]}{user.lastName?.[0]}
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-xs font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-                  <p className="text-[10px] text-gray-400 capitalize">{user.role}</p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <button onClick={() => navigate('auth-login')} className="cursor-pointer text-sm text-gray-700 hover:text-blue-600 font-semibold px-4 py-2 transition">
-                Sign In
-              </button>
-              <button onClick={() => navigate('auth-register-candidate-1')} className="cursor-pointer text-sm border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg transition hidden sm:block">
-                Find Jobs
-              </button>
-              <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-md shadow-blue-500/20">
-                Start Recruiting
-              </button>
-            </>
-          )}
+          <button onClick={() => navigate('auth-login')} className="cursor-pointer text-sm text-gray-700 hover:text-blue-600 font-semibold px-4 py-2 transition">
+            Sign In
+          </button>
+          <button onClick={() => navigate('auth-register-candidate-1')} className="cursor-pointer text-sm border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg transition hidden sm:block">
+            Find Jobs
+          </button>
+          <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-md shadow-blue-500/20">
+            Start Recruiting
+          </button>
         </div>
       </nav>
 
@@ -453,73 +432,43 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Pricing — Credits Based */}
+      {/* Pricing */}
       <section id="pricing" className="py-20 bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-6 sm:px-12 space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-              <Zap className="w-3.5 h-3.5" /> Pay only for what you use
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.pricing?.title || "Simple Credit-Based Pricing"}</h2>
-            <p className="text-gray-500">{cms.homepage?.pricing?.subtitle || "1 credit = 1 AI screening session. Buy credits, use them anytime. No subscriptions, no lock-in."}</p>
+          <div className="text-center space-y-3 max-w-xl mx-auto">
+            <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.pricing?.title || "Simple, Transparent Pricing"}</h2>
+            <p className="text-gray-500">{cms.homepage?.pricing?.subtitle || "No per-candidate fees. No hidden costs. Scale as you grow."}</p>
           </div>
-
-          {/* Credit explainer */}
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 max-w-3xl mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-              {[
-                { icon: '🎯', title: '1 Credit', desc: '1 complete AI screening session per candidate' },
-                { icon: '⚡', title: 'Instant', desc: 'Credits applied immediately after purchase' },
-                { icon: '♾️', title: 'Never Expire', desc: 'Use your credits whenever you need them' },
-              ].map(item => (
-                <div key={item.title} className="space-y-1">
-                  <div className="text-2xl">{item.icon}</div>
-                  <div className="text-sm font-bold text-gray-900">{item.title}</div>
-                  <div className="text-xs text-gray-500">{item.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Credit packs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { credits: 10, price: '$49', perCredit: '$4.90', label: 'Starter', desc: 'Try it out', features: ['10 AI screenings', 'Full scorecards', 'Email support'], highlight: false, cta: 'Buy 10 Credits' },
-              { credits: 50, price: '$199', perCredit: '$3.98', label: 'Growth', desc: 'Most popular for agencies', features: ['50 AI screenings', 'Full scorecards', 'Priority support', 'CSV export'], highlight: true, cta: 'Buy 50 Credits' },
-              { credits: 200, price: '$599', perCredit: '$2.99', label: 'Scale', desc: 'High-volume hiring', features: ['200 AI screenings', 'Full scorecards', 'Dedicated support', 'CSV export', 'Team access'], highlight: false, cta: 'Buy 200 Credits' },
-              { credits: 0, price: 'Custom', perCredit: 'Best rates', label: 'Enterprise', desc: 'Tailored for large teams', features: ['Unlimited screenings', 'Custom AI rubrics', 'SLA guarantee', 'Dedicated manager', 'White-label option'], highlight: false, cta: 'Contact Sales' },
-            ].map(pack => (
-              <div key={pack.label} className={`p-6 rounded-2xl space-y-5 relative flex flex-col ${pack.highlight ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/20 scale-105' : 'bg-white border border-gray-200'}`}>
-                {pack.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 font-bold text-[10px] uppercase py-0.5 px-2.5 rounded-full">Most Popular</div>}
+              { name: 'Starter', price: '$0', period: 'forever', desc: 'For individual recruiters testing QANI', features: ['2 active job postings', '30 AI screenings/month', 'Basic scorecard reports', 'Email support'], cta: 'Get Started Free', action: () => navigate('auth-register-recruiter'), highlight: false },
+              { name: 'Professional', price: '$299', period: '/month', desc: 'For growing recruitment agencies', features: ['Unlimited job postings', '500 AI screenings/month', 'Full scorecard analytics', 'Work rights verification', 'CSV export & ATS sync', 'Priority support'], cta: 'Start Free Trial', action: () => navigate('auth-register-recruiter'), highlight: true },
+              { name: 'Enterprise', price: '$999', period: '/month', desc: 'For large agencies & in-house teams', features: ['Everything in Professional', 'Unlimited AI screenings', 'Custom scoring rubrics', 'Slack & HRIS integration', 'Dedicated account manager', 'SLA guarantee'], cta: 'Contact Sales', action: () => navigate('help'), highlight: false },
+            ].map(plan => (
+              <div key={plan.name} className={`p-8 rounded-2xl space-y-6 relative ${plan.highlight ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/20 scale-105' : 'bg-white border border-gray-200'}`}>
+                {plan.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 font-bold text-[10px] uppercase py-0.5 px-2.5 rounded-full">Most Popular</div>}
                 <div>
-                  <div className={`text-xs font-bold uppercase tracking-wider ${pack.highlight ? 'text-blue-200' : 'text-blue-600'}`}>{pack.label}</div>
-                  <h4 className={`text-lg font-bold mt-1 ${pack.highlight ? 'text-white' : 'text-gray-900'}`}>
-                    {pack.credits > 0 ? `${pack.credits} Credits` : 'Custom Volume'}
-                  </h4>
-                  <p className={`text-xs mt-1 ${pack.highlight ? 'text-blue-100' : 'text-gray-500'}`}>{pack.desc}</p>
+                  <h4 className={`text-lg font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.name}</h4>
+                  <p className={`text-xs mt-1 ${plan.highlight ? 'text-blue-100' : 'text-gray-500'}`}>{plan.desc}</p>
                 </div>
-                <div>
-                  <div className="flex items-baseline gap-1">
-                    <span className={`text-3xl font-extrabold ${pack.highlight ? 'text-white' : 'text-gray-900'}`}>{pack.price}</span>
-                    {pack.credits > 0 && <span className={`text-xs ${pack.highlight ? 'text-blue-200' : 'text-gray-400'}`}>AUD</span>}
-                  </div>
-                  <div className={`text-xs mt-1 font-semibold ${pack.highlight ? 'text-blue-200' : 'text-green-600'}`}>{pack.perCredit} per screening</div>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-3xl font-extrabold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.price}</span>
+                  <span className={`text-xs ${plan.highlight ? 'text-blue-200' : 'text-gray-400'}`}>{plan.period}</span>
                 </div>
-                <ul className="space-y-2 flex-1">
-                  {pack.features.map(f => (
-                    <li key={f} className={`flex items-center gap-2 text-xs ${pack.highlight ? 'text-blue-50' : 'text-gray-600'}`}>
-                      <CheckCircle className={`w-3.5 h-3.5 shrink-0 ${pack.highlight ? 'text-blue-200' : 'text-green-500'}`} />
+                <ul className="space-y-2">
+                  {plan.features.map(f => (
+                    <li key={f} className={`flex items-center gap-2 text-xs ${plan.highlight ? 'text-blue-50' : 'text-gray-600'}`}>
+                      <CheckCircle className={`w-4 h-4 shrink-0 ${plan.highlight ? 'text-blue-200' : 'text-green-500'}`} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => pack.credits === 0 ? navigate('help') : navigate('auth-register-recruiter')} className={`cursor-pointer w-full text-sm font-semibold py-2.5 px-4 rounded-xl transition ${pack.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'border border-gray-300 hover:bg-gray-50 text-gray-800'}`}>
-                  {pack.cta}
+                <button onClick={plan.action} className={`cursor-pointer w-full text-sm font-semibold py-2.5 px-4 rounded-xl transition ${plan.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'border border-gray-300 hover:bg-gray-50 text-gray-800'}`}>
+                  {plan.cta}
                 </button>
               </div>
             ))}
           </div>
-          <p className="text-center text-xs text-gray-400">All prices in AUD. Credits never expire. GST may apply. <button onClick={() => navigate('help')} className="cursor-pointer text-blue-600 hover:underline">See full terms →</button></p>
         </div>
       </section>
 

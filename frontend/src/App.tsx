@@ -6,6 +6,7 @@ import { Header } from './components/layout/Header';
 import { HomePage } from './components/shared/HomePage';
 import { AuthPages } from './components/auth/AuthPages';
 import { HelpPage } from './components/shared/HelpPage';
+import { HowItWorksPage, AboutPage, ContactPage, PublicJobsPage, PublicCandidatesPage } from './components/shared/PublicPages';
 import { AcceptInvitePage } from './components/shared/AcceptInvitePage';
 import { CandidatePages } from './components/candidate/CandidatePages';
 import { RecruiterPages } from './components/recruiter/RecruiterPages';
@@ -44,6 +45,11 @@ export const ROUTES: Record<string, string> = {
   'recruiter-team': '/recruiter/team',
   'recruiter-settings': '/recruiter/settings',
   'recruiter-candidates': '/recruiter/candidates',
+  'how-it-works': '/how-it-works',
+  'about': '/about',
+  'contact': '/contact',
+  'public-jobs': '/jobs',
+  'public-candidates': '/candidates',
   'admin-dashboard': '/admin',
   'admin-users': '/admin/users',
   'admin-jobs': '/admin/jobs',
@@ -57,7 +63,7 @@ const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
   Object.entries(ROUTES).map(([view, path]) => [path, view])
 );
 
-const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'help', 'accept-invite'];
+const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'help', 'accept-invite', 'how-it-works', 'about', 'contact', 'public-jobs', 'public-candidates'];
 
 const RouterSync: React.FC = () => {
   const { activeView, navigate: appNavigate, activeParams } = useApp();
@@ -131,6 +137,11 @@ const AppContent: React.FC = () => {
       case 'verify-email': return <AuthPages subView="verify-email" />;
       case 'help': return <HelpPage />;
       case 'accept-invite': return <AcceptInvitePage />;
+      case 'how-it-works': return <HowItWorksPage />;
+      case 'about': return <AboutPage />;
+      case 'contact': return <ContactPage />;
+      case 'public-jobs': return <PublicJobsPage />;
+      case 'public-candidates': return <PublicCandidatesPage />;
       case 'candidate-dashboard': return <CandidatePages subView="dashboard" />;
       case 'candidate-jobs': return <CandidatePages subView="jobs" />;
       case 'candidate-job-detail': return <CandidatePages subView="job-detail" />;
@@ -164,6 +175,7 @@ const AppContent: React.FC = () => {
   };
 
   const isGuest = guestViews.includes(activeView);
+  const isPublicPage = ['how-it-works', 'about', 'contact', 'public-jobs', 'public-candidates'].includes(activeView);
 
   if (isAppLoading) {
     return (
@@ -196,7 +208,7 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
-      {user && !isGuest ? (
+      {user && !isGuest && !isPublicPage ? (
         <div className="flex h-screen w-screen overflow-hidden">
           <Sidebar />
           <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
@@ -208,7 +220,7 @@ const AppContent: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
-          {activeView !== 'landing' && <Header />}
+          {activeView !== 'landing' && !isPublicPage && <Header />}
           <main className="flex-grow flex flex-col">
             {renderPage()}
           </main>

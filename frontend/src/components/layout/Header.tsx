@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../AppContext';
 import { api } from '../../lib/api';
-import { Bell, ChevronDown, CheckCircle2, MapPin } from 'lucide-react';
+import { Bell, ChevronDown, CheckCircle2, MapPin, LayoutDashboard } from 'lucide-react';
 import { useCMS } from '../admin/AdminCMS';
 
 export const Header: React.FC = () => {
@@ -19,29 +19,29 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-
-      {/* Left: page context */}
-      <div className="flex items-center gap-3">
-        <div>
-          <p className="text-sm font-bold text-gray-900">{pageTitle()}</p>
-          <p className="text-[10px] text-gray-400 flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            Australia · AI Recruitment Platform
-          </p>
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+      {/* AI status bar */}
+      {user && (
+        <div className="bg-blue-50 border-b border-blue-100 px-6 py-1.5 flex items-center gap-2 text-[11px] text-blue-700 font-medium">
+          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shrink-0" />
+          AI Recruiter is active — screening candidates automatically
         </div>
+      )}
+      <div className="h-16 px-6 flex items-center justify-between">
+
+      {/* Left: public nav links only — no logo (sidebar has it) */}
+      <div className="flex items-center gap-5 text-xs font-medium text-gray-500">
+        <button onClick={() => navigate('how-it-works')} className="cursor-pointer hover:text-blue-600 transition">How It Works</button>
+        <button onClick={() => navigate('public-jobs')} className="cursor-pointer hover:text-blue-600 transition">Jobs</button>
+        <button onClick={() => navigate('public-candidates')} className="cursor-pointer hover:text-blue-600 transition">Candidates</button>
+        <button onClick={() => navigate('about')} className="cursor-pointer hover:text-blue-600 transition">About</button>
+        <button onClick={() => navigate('contact')} className="cursor-pointer hover:text-blue-600 transition">Contact</button>
       </div>
 
       {/* Right: utilities */}
       <div className="flex items-center gap-3">
 
-        {/* What is QANI — quick explainer for new users */}
-        {user && (
-          <div className="hidden md:flex items-center gap-1.5 text-[11px] bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-lg font-medium">
-            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-            AI Recruiter is active — screening candidates automatically
-          </div>
-        )}
+
         {/* Preview Site button for admin */}
         {user?.role === 'admin' && (
           <button onClick={() => window.open('/?preview=true', '_blank')} className="cursor-pointer hidden md:flex items-center gap-1.5 text-[11px] bg-gray-900 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
@@ -155,28 +155,47 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        {/* Sign in button for guests */}
+        {/* Sign in/register buttons — only show when NOT logged in */}
         {!user && (
-          <button
-            onClick={() => navigate('auth-login')}
-            className="cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-md"
-          >
-            Sign In / Register
-          </button>
+          <>
+            <button onClick={() => navigate('auth-login')} className="cursor-pointer text-sm text-gray-700 hover:text-blue-600 font-semibold px-4 py-2 transition">
+              Sign In
+            </button>
+            <button onClick={() => navigate('auth-register-candidate-1')} className="cursor-pointer text-sm border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg transition hidden sm:block">
+              Find Jobs
+            </button>
+            <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-md shadow-blue-500/20">
+              Start Recruiting
+            </button>
+          </>
         )}
 
-        {/* Logged in indicator */}
+        {/* Logged in indicator + dashboard link */}
         {user && (
           <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
-              {user.firstName?.[0]}{user.lastName?.[0]}
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-xs font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
-              <p className="text-[10px] text-gray-400 capitalize">{user.role}</p>
+            <button
+              onClick={() => {
+                if (user.role === 'candidate') navigate('candidate-dashboard');
+                else if (user.role === 'recruiter') navigate('recruiter-dashboard');
+                else navigate('admin-dashboard');
+              }}
+              className="cursor-pointer hidden sm:flex items-center gap-1.5 text-xs bg-gray-900 hover:bg-gray-700 text-white font-semibold py-1.5 px-3 rounded-lg transition"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              Dashboard
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
+                {user.firstName?.[0]}{user.lastName?.[0]}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-xs font-semibold text-gray-900">{user.firstName} {user.lastName}</p>
+                <p className="text-[10px] text-gray-400 capitalize">{user.role}</p>
+              </div>
             </div>
           </div>
         )}
+      </div>
       </div>
     </header>
   );
