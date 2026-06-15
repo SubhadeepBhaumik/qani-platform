@@ -395,7 +395,9 @@ function HomepageEditor({ cms, update }: any) {
           <Field label="Secondary Button" value={hp.hero.secondaryButtonText} onChange={(v: string) => update(['homepage', 'hero', 'secondaryButtonText'], v)} />
         </div>
         <Field label="Background Image URL" value={hp.hero.backgroundImage} onChange={(v: string) => update(['homepage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <ImageUploader value={hp.hero.backgroundImage || ''} onChange={(v: string) => update(['homepage', 'hero', 'backgroundImage'], v)} />
         <Field label="Background Video URL" value={hp.hero.backgroundVideo} onChange={(v: string) => update(['homepage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+        <VideoUploader value={hp.hero.backgroundVideo || ''} onChange={(v: string) => update(['homepage', 'hero', 'backgroundVideo'], v)} />
       </Accordion>
       <Accordion title="Features Section">
         <SectionToggle title="Features" enabled={hp.features.enabled} onToggle={(v: boolean) => update(['homepage', 'features', 'enabled'], v)} />
@@ -622,6 +624,63 @@ function LogoUploader({ value, onChange }: { value: string; onChange: (v: string
     </div>
   );
 }
+function ImageUploader({ value, onChange, label = 'Background Image' }: { value: string; onChange: (v: string) => void; label?: string }) {
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 1920; const maxH = 600;
+        let w = img.width; let h = img.height;
+        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+        if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        onChange(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <button onClick={() => fileRef.current?.click()} className="cursor-pointer h-7 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-lg flex items-center gap-1.5 shrink-0">
+        <Plus size={10} /> Upload {label}
+      </button>
+      {value && <button onClick={() => onChange('')} className="cursor-pointer h-7 px-2 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg">Remove</button>}
+      {value && <span className="text-[10px] text-green-400 truncate max-w-[120px]">✓ Image set</span>}
+      <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFile} className="hidden" />
+    </div>
+  );
+}
+
+function VideoUploader({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const fileRef = React.useRef<HTMLInputElement>(null);
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('Video must be under 10MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = () => onChange(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <button onClick={() => fileRef.current?.click()} className="cursor-pointer h-7 px-3 bg-purple-600 hover:bg-purple-500 text-white text-xs rounded-lg flex items-center gap-1.5 shrink-0">
+        <Plus size={10} /> Upload Video
+      </button>
+      {value && <button onClick={() => onChange('')} className="cursor-pointer h-7 px-2 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs rounded-lg">Remove</button>}
+      {value && <span className="text-[10px] text-green-400">✓ Video set</span>}
+      <input ref={fileRef} type="file" accept="video/mp4,video/webm" onChange={handleFile} className="hidden" />
+    </div>
+  );
+}
+
 function HeaderEditor({ cms, update }: any) {
   const h = cms.header;
   return (
@@ -756,7 +815,9 @@ function HowItWorksEditor({ cms, update }: any) {
         <Field label="Main Title" value={p.hero?.title || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'title'], v)} multiline rows={2} />
         <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'subtitle'], v)} multiline rows={3} />
         <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <ImageUploader value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'backgroundImage'], v)} />
         <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+        <VideoUploader value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'backgroundVideo'], v)} />
       </Accordion>
       <Accordion title="Process Steps">
         {(p.steps || []).map((step: any, i: number) => (
@@ -785,7 +846,9 @@ function AboutEditor({ cms, update }: any) {
         <Field label="Title" value={p.hero?.title || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'title'], v)} />
         <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'subtitle'], v)} multiline rows={3} />
         <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <ImageUploader value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'backgroundImage'], v)} />
         <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+        <VideoUploader value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'backgroundVideo'], v)} />
       </Accordion>
       <Accordion title="Mission">
         <Field label="Title" value={p.mission?.title || ''} onChange={(v: string) => update(['aboutPage', 'mission', 'title'], v)} />
@@ -842,7 +905,9 @@ function PublicJobsEditor({ cms, update }: any) {
         <Field label="Title" value={p.hero?.title || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'title'], v)} />
         <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'subtitle'], v)} multiline rows={2} />
         <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <ImageUploader value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'backgroundImage'], v)} />
         <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+        <VideoUploader value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'backgroundVideo'], v)} />
       </Accordion>
       <Accordion title="Auth Gate Banner">
         <Field label="Title" value={p.authGate?.title || ''} onChange={(v: string) => update(['publicJobsPage', 'authGate', 'title'], v)} />
@@ -862,7 +927,9 @@ function PublicCandidatesEditor({ cms, update }: any) {
         <Field label="Title" value={p.hero?.title || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'title'], v)} />
         <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'subtitle'], v)} multiline rows={2} />
         <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <ImageUploader value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'backgroundImage'], v)} />
         <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+        <VideoUploader value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'backgroundVideo'], v)} />
       </Accordion>
       <Accordion title="Auth Gate Banner">
         <Field label="Title" value={p.authGate?.title || ''} onChange={(v: string) => update(['publicCandidatesPage', 'authGate', 'title'], v)} />

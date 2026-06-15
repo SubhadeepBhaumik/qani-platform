@@ -191,15 +191,15 @@ export const HowItWorksPage: React.FC = () => {
 
       {/* Hero */}
       <section className="py-16 md:py-24 px-6 sm:px-12 relative overflow-hidden" style={hiwHero.backgroundImage ? { backgroundImage: 'url(' + hiwHero.backgroundImage + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(to bottom right, #eff6ff, white, #eef2ff)' }}>
-        {hiwHero.backgroundImage && <div className="absolute inset-0 bg-white/80" />}
+        {hiwHero.backgroundImage && <div className="absolute inset-0 bg-white/30" />}
         <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+          <div className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full ${hiwHero.backgroundImage ? 'bg-black/40 text-white border border-white/20' : 'bg-blue-50 border border-blue-200 text-blue-700'}`}>
             <Zap className="w-3.5 h-3.5" /> {hiwHero.badge || hiw?.title || 'How QANI Works'}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${hiwHero.backgroundImage ? 'text-white' : 'text-gray-900'}`} style={hiwHero.backgroundImage ? {textShadow:'0 2px 8px rgba(0,0,0,0.7)'} : {}}>
             {hiwHero.title || 'From Job Post to Qualified Shortlist'}
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{hiwHero.subtitle || hiw?.subtitle || "QANI automates the most time-consuming part of recruitment — here's exactly how it works."}</p>
+          <p className={`text-lg max-w-2xl mx-auto ${hiwHero.backgroundImage ? 'text-white' : 'text-gray-600'}`} style={hiwHero.backgroundImage ? {textShadow:'0 1px 4px rgba(0,0,0,0.7)'} : {}}>{hiwHero.subtitle || hiw?.subtitle || "QANI automates the most time-consuming part of recruitment — here's exactly how it works."}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
             <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-xl transition shadow-xl shadow-blue-500/20 text-sm">
               Start Recruiting Free <ArrowRight className="w-4 h-4" />
@@ -290,15 +290,15 @@ export const AboutPage: React.FC = () => {
 
       {/* Hero */}
       <section className="py-16 md:py-24 px-6 sm:px-12 relative overflow-hidden" style={aboutHero.backgroundImage ? { backgroundImage: `url(${aboutHero.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(to bottom right, #111827, #1e3a8a)' }}>
-        {aboutHero.backgroundImage && <div className="absolute inset-0 bg-gray-900/70" />}
+        {aboutHero.backgroundImage && <div className="absolute inset-0 bg-gray-900/40" />}
         <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10 text-white">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
             {aboutHero.badge || '🇦🇺 Sydney, Australia'}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white" style={{textShadow:'0 2px 8px rgba(0,0,0,0.7)'}}>
             {aboutHero.title || 'About'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{aboutHero.title ? '' : 'QANI'}</span>
           </h1>
-          <p className="text-lg text-blue-100 max-w-2xl mx-auto">{aboutHero.subtitle || "We're building Australia's smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones."}</p>
+          <p className="text-lg text-white max-w-2xl mx-auto" style={{textShadow:'0 1px 4px rgba(0,0,0,0.7)'}}>{aboutHero.subtitle || "We're building Australia's smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones."}</p>
         </div>
       </section>
 
@@ -581,8 +581,8 @@ export const PublicJobsPage: React.FC = () => {
       <section className="py-12 px-6 sm:px-12 bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-b border-gray-200">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="text-center space-y-3">
-            <h1 className="text-3xl font-extrabold text-gray-900">{cms.publicJobsPage?.hero?.title || cms.homepage?.jobs?.title || 'Open Positions'}</h1>
-            <p className="text-gray-500 text-sm">{cms.publicJobsPage?.hero?.subtitle || cms.homepage?.jobs?.subtitle || 'AI-screened jobs from top Australian companies. Login to apply.'}</p>
+            <h1 className="text-3xl font-extrabold" style={cms.publicJobsPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 2px 8px rgba(0,0,0,0.7)'} : {color:'#111827'}}>{cms.publicJobsPage?.hero?.title || cms.homepage?.jobs?.title || 'Open Positions'}</h1>
+            <p className="text-sm" style={cms.publicJobsPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 1px 4px rgba(0,0,0,0.7)'} : {color:'#6b7280'}}>{cms.publicJobsPage?.hero?.subtitle || cms.homepage?.jobs?.subtitle || 'AI-screened jobs from top Australian companies. Login to apply.'}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search jobs, companies, skills..." className="flex-1 h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />
@@ -723,8 +723,8 @@ export const PublicCandidatesPage: React.FC = () => {
       {/* Hero */}
       <section className="py-12 px-6 sm:px-12 bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-b border-gray-200">
         <div className="max-w-5xl mx-auto space-y-6 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">{cms.publicCandidatesPage?.hero?.title || cms.homepage?.candidates?.title || 'AI-Screened Candidates'}</h1>
-          <p className="text-gray-500 text-sm">{cms.publicCandidatesPage?.hero?.subtitle || cms.homepage?.candidates?.subtitle || 'Pre-qualified talent ready for your shortlist. Login to view full profiles and screening transcripts.'}</p>
+          <h1 className="text-3xl font-extrabold" style={cms.publicCandidatesPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 2px 8px rgba(0,0,0,0.7)'} : {color:'#111827'}}>{cms.publicCandidatesPage?.hero?.title || cms.homepage?.candidates?.title || 'AI-Screened Candidates'}</h1>
+          <p className="text-sm" style={cms.publicCandidatesPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 1px 4px rgba(0,0,0,0.7)'} : {color:'#6b7280'}}>{cms.publicCandidatesPage?.hero?.subtitle || cms.homepage?.candidates?.subtitle || 'Pre-qualified talent ready for your shortlist. Login to view full profiles and screening transcripts.'}</p>
           <div className="max-w-md mx-auto">
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by name, skill, or location..." className="w-full h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />
           </div>
