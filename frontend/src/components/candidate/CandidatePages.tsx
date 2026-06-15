@@ -510,7 +510,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Action Hub</span>
                 
                 {(() => {
-                  const isExpired = job.expiresAt && new Date(job.expiresAt) < new Date();
+                  const isExpired = job.expiresAt && new Date(new Date(job.expiresAt).setHours(23,59,59,999)) < new Date();
                   const isFilled = job.status === 'filled' || job.status === 'closed';
                   const isUnavailable = isExpired || isFilled;
                   if (isUnavailable) return (
@@ -617,7 +617,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       );
                     }
                     const screeningJob = jobs.find((j: any) => j.id === (app.jobId ?? (app as any).roleId));
-                    const jobExpired = screeningJob?.expiresAt && new Date(screeningJob.expiresAt) < new Date();
+                    const jobExpired = screeningJob?.expiresAt && new Date(new Date(screeningJob.expiresAt).setHours(23,59,59,999)) < new Date();
                     const jobFilled = screeningJob?.status === 'filled' || screeningJob?.status === 'closed';
                     if (jobExpired || jobFilled) return (
                       <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs font-semibold">

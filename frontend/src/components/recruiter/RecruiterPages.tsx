@@ -298,6 +298,9 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   const [jobDept, setJobDept] = useState('Engineering');
   const [jobCategory, setJobCategory] = useState('Software Engineering');
   const [jobLoc, setJobLoc] = useState('Singapore (Hybrid)');
+  const [jobSuburb, setJobSuburb] = useState('');
+  const [jobPostcode, setJobPostcode] = useState('');
+  const [jobCity, setJobCity] = useState('');
   const [jobType, setJobType] = useState('Full-time');
   const [jobSalMin, setJobSalMin] = useState<string>('0');
   const [jobSalMax, setJobSalMax] = useState<string>('0');
@@ -355,6 +358,12 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setJobDept(existingJob.department || 'Engineering');
           setJobCategory(existingJob.category || 'Software Engineering');
           setJobLoc(existingJob.location || '');
+          // Parse existing location into parts if possible
+          const locParts = (existingJob.location || '').split(' ');
+          const pc = locParts.find((p: string) => /^\d{4}$/.test(p)) || '';
+          setJobPostcode(pc);
+          setJobSuburb(locParts[0] || '');
+          setJobCity(locParts.slice(1).filter((p: string) => p !== pc).join(' ') || '');
           setJobType((existingJob.employmentType && existingJob.employmentType[0]) || 'Full-time');
           setJobSalMin(String(existingJob.salaryMin || 0));
           setJobSalMax(String(existingJob.salaryMax || 0));
@@ -391,6 +400,9 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       setJobDept('Engineering');
       setJobCategory('Software Engineering');
       setJobLoc('');
+      setJobSuburb('');
+      setJobPostcode('');
+      setJobCity('');
       setJobType('Full-time');
       setJobSalMin('80000');
       setJobSalMax('120000');
@@ -496,13 +508,17 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       showToast('Minimum salary cannot be greater than maximum salary.', 'error');
       return;
     }
+    if (!jobSuburb || !jobCity || !jobPostcode || jobPostcode.length !== 4) {
+      showToast('Please enter suburb, city/state and a valid 4-digit postcode for the job location.', 'error');
+      return;
+    }
 
     const newJob: Job = {
       id: activeParams.editJobId || `job-${Date.now()}`,
       title: jobTitle,
       department: jobDept,
       category: jobCategory,
-      location: jobLoc,
+      location: [jobSuburb, jobCity, jobPostcode].filter(Boolean).join(' ') || jobLoc,
       employmentType: [jobType],
       salaryMin: Number(String(jobSalMin).replace(/,/g, '')) || 0,
       salaryMax: Number(String(jobSalMax).replace(/,/g, '')) || 0,
@@ -1474,15 +1490,18 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     <option>Sales & Marketing</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-700 block">Work arrangement location</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={jobLoc}
-                    onChange={(e) => setJobLoc(e.target.value)}
-                    className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none"
-                  />
+                <div className="space-y-1 col-span-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Suburb *</label>
+                  <input type="text" required value={jobSuburb} onChange={(e) => setJobSuburb(e.target.value)} placeholder="e.g. Parramatta" className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none focus:border-blue-500" />
+                </div>
+                <div className="space-y-1 col-span-1">
+                  <label className="text-xs font-semibold text-gray-700 block">City / State *</label>
+                  <input type="text" required value={jobCity} onChange={(e) => setJobCity(e.target.value)} placeholder="e.g. Sydney NSW" className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none focus:border-blue-500" />
+                </div>
+                <div className="space-y-1 col-span-1">
+                  <label className="text-xs font-semibold text-gray-700 block">Postcode *</label>
+                  <input type="text" required value={jobPostcode} onChange={(e) => { const v = e.target.value.replace(/\D/g, '').slice(0, 4); setJobPostcode(v); }} placeholder="e.g. 2150" maxLength={4} className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none focus:border-blue-500" />
+                  <p className="text-[10px] text-gray-400 mt-1">Used for distance calculation in AI screening.</p>
                 </div>
               </div>
 

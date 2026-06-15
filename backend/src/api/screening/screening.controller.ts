@@ -21,8 +21,16 @@ async function getPostcodeLatLng(postcode: string): Promise<{ lat: number; lng: 
 
 async function getCityLatLng(city: string): Promise<{ lat: number; lng: number } | null> {
   try {
+    // If location contains a postcode (4 digits), use postcode lookup first for accuracy
+    const postcodeMatch = city.match(/(\d{4})/);
+    if (postcodeMatch) {
+      const result = await getPostcodeLatLng(postcodeMatch[1]);
+      if (result) return result;
+    }
+    // Otherwise use Nominatim with full address
+    const query = city.toLowerCase().includes('australia') ? city : city + ', Australia';
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city + ', Australia')}&format=json&limit=1`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
       { headers: { 'User-Agent': 'QANI-Platform/1.0 (hello@qani.io)' } }
     );
     if (!res.ok) return null;
