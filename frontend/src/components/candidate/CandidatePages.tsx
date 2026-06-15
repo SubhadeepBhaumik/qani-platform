@@ -265,7 +265,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <div className="space-y-4 text-xs relative before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100 pl-6">
                   {applications.filter(a => a.candidateId === user.id).slice(0, 4).map((app, idx) => {
                     const job = jobs.find(j => j.id === (app.jobId ?? (app as any).roleId));
-                    const date = app.appliedDate || (app as any).appliedAt?.split('T')[0] || 'Recent';
+                    const rawDate = app.appliedDate || (app as any).appliedAt?.split('T')[0] || '';
+                    const date = rawDate ? new Date(rawDate).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : 'Recent';
                     const colors = ['bg-blue-500','bg-green-500','bg-yellow-500','bg-purple-500'];
                     return (
                       <div key={app.id} className="space-y-1 relative">
@@ -718,7 +719,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <div className="p-6 bg-white border border-gray-200 rounded-xl space-y-4 shadow-sm">
                   <h4 className="text-xs font-bold text-gray-900 uppercase">Application Coordinates</h4>
                   <div className="space-y-2 text-xs text-gray-600">
-                    <p><strong>Date Applied:</strong> {app.appliedDate || (app as any).appliedAt?.split('T')[0] || 'N/A'}</p>
+                    <p><strong>Date Applied:</strong> {app.appliedDate || (app as any).appliedAt ? new Date(app.appliedDate || (app as any).appliedAt).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : 'N/A'}</p>
                     <p><strong>Position:</strong> {job?.title || (app as any).jobTitle || 'N/A'}</p>
                     <p><strong>Status:</strong> <span className="capitalize font-semibold">{app.status}</span></p>
                   </div>
@@ -1459,7 +1460,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       <span className={`text-xs font-bold ${n.status === 'unread' ? 'text-gray-950' : 'text-gray-500'}`}>{n.title}</span>
                       <div className="flex items-center gap-3 shrink-0">
                         {n.status === 'unread' && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
-                        <span className="text-[10px] text-gray-400">{(n.date || n.createdAt) ? new Date(n.date || n.createdAt || '').toLocaleString() : 'Just now'}</span>
+                        <span className="text-[10px] text-gray-400">{(n.date || n.createdAt) ? new Date(n.date || n.createdAt || '').toLocaleString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Just now'}</span>
                       </div>
                     </div>
                     <p className="text-xs text-gray-500">{n.content || (n as any).message}</p>

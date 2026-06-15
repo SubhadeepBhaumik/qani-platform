@@ -1202,7 +1202,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                       <div key={n.id} className="text-xs pt-2.5">
                         <div className="flex justify-between items-center text-[10px] text-gray-400 font-semibold mb-1">
                           <span>{n.recruiterName}</span>
-                          <span>{new Date(n.timestamp).toLocaleDateString()}</span>
+                          <span>{new Date(n.timestamp).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' })}</span>
                         </div>
                         <p className="text-gray-700 leading-normal italic">"{n.content}"</p>
                       </div>
@@ -1434,11 +1434,18 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <button onClick={() => navigate('recruiter-applications', { filterJobId: job.id })} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition"><Users className="w-3.5 h-3.5" />View Applicants ({jobApps.length})</button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-2">
                 <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Salary</p><p className="text-sm font-bold text-gray-900">${Math.round(((job.salaryMin||0)/1000))}k–${Math.round(((job.salaryMax||0)/1000))}k</p></div>
                 <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Applicants</p><p className="text-sm font-bold text-gray-900">{jobApps.length}</p></div>
                 <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Qualified</p><p className="text-sm font-bold text-green-600">{qualCount}</p></div>
                 <div className="bg-gray-50 rounded-lg p-3 text-center"><p className="text-xs text-gray-500">Status</p><p className="text-sm font-bold text-gray-900 capitalize">{job.status}</p></div>
+                <div className={`rounded-lg p-3 text-center ${(job as any).expiresAt && new Date(new Date((job as any).expiresAt).setHours(23,59,59,999)) < new Date() ? 'bg-red-50' : 'bg-gray-50'}`}>
+                  <p className="text-xs text-gray-500">Closes</p>
+                  <p className={`text-sm font-bold ${(job as any).expiresAt && new Date(new Date((job as any).expiresAt).setHours(23,59,59,999)) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
+                    {(job as any).expiresAt ? new Date((job as any).expiresAt).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—'}
+                  </p>
+                  {(job as any).expiresAt && new Date(new Date((job as any).expiresAt).setHours(23,59,59,999)) < new Date() && <p className="text-[10px] text-red-500 font-semibold">Expired</p>}
+                </div>
               </div>
               {job.description && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Description</p><p className="text-sm text-gray-600 leading-relaxed">{job.description}</p></div>}
               {(job.requirementsMust||[]).length > 0 && <div><p className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Must Have</p><ul className="space-y-1">{(job.requirementsMust||[]).map((r:string,i:number) => <li key={i} className="text-sm text-gray-600 flex items-start gap-2"><span className="text-green-500 mt-0.5">✓</span>{r}</li>)}</ul></div>}
@@ -2061,7 +2068,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <tr>
                     <td className="p-3 font-semibold text-gray-700">Applied Date</td>
                     {compareModalApps.map((app: any) => (
-                      <td key={app.id} className="p-3 text-center text-gray-600">{app.appliedDate || app.appliedAt?.split('T')[0] || '—'}</td>
+                      <td key={app.id} className="p-3 text-center text-gray-600">{app.appliedDate || app.appliedAt ? new Date(app.appliedDate || app.appliedAt).toLocaleDateString('en-AU', { day:'2-digit', month:'2-digit', year:'numeric' }) : '—'}</td>
                     ))}
                   </tr>
                 </tbody>
