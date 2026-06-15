@@ -174,6 +174,129 @@ export class ScreeningController {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const job: any = session.jobData || {};
       const mandQ = job.mandatoryQuestions || {};
+
+      // ── RED FLAG EARLY EXIT ───────────────────────────────────────────────
+      // Only check during mandatory questions phase
+      if (session.currentQuestionIdx <= (session.mandatoryCount || 6)) {
+        const userMsg = message.toLowerCase();
+        const salaryMax = job.salaryMax || 0;
+        const salaryMin = job.salaryMin || 0;
+        const requiresLicence = mandQ.driversLicence;
+
+        let redFlagReason = '';
+
+        // Work rights: check last 3 AI messages for work rights context
+        const recentUserMsgs = messages.filter((m: any) => m.role === 'user').slice(-2).map((m: any) => m.content.toLowerCase()).join(' ');
+        const recentAiContext = messages.filter((m: any) => m.role === 'assistant').slice(-3).map((m: any) => m.content.toLowerCase()).join(' ');
+        if (mandQ.workRights) {
+          const workRightsTopicActive = recentAiContext.includes('work right') || recentAiContext.includes('working right') || recentAiContext.includes('citizen') || recentAiContext.includes('visa') || recentAiContext.includes('eligible to work') || recentAiContext.includes('work in australia') || recentAiContext.includes('allow') || recentAiContext.includes('work status');
+          if (workRightsTopicActive) {
+            const noWorkRights =
+              recentUserMsgs.includes('no i do not') ||
+              recentUserMsgs.includes('i do not have') ||
+              recentUserMsgs.includes("i don't have") ||
+              recentUserMsgs.includes('i dont') ||
+              recentUserMsgs.includes('not eligible') ||
+              recentUserMsgs.includes('no visa') ||
+              recentUserMsgs.includes('no work right') ||
+              recentUserMsgs.includes('no right') ||
+              recentUserMsgs.includes('not allowed to work') ||
+              recentUserMsgs.includes('cannot work') ||
+              recentUserMsgs.includes('no permission') ||
+              recentUserMsgs.includes('no any') ||
+              (recentUserMsgs.trim() === 'no' || recentUserMsgs.trim() === 'nope' || recentUserMsgs.trim() === 'nah');
+            if (noWorkRights) redFlagReason = "work rights";
+          }
+        }
+
+        // Driver's licence: no licence when required — only check if licence question was just asked
+        if (!redFlagReason && requiresLicence) {
+          const lastAiMsg = messages.filter((m: any) => m.role === 'assistant').slice(-1)[0]?.content?.toLowerCase() || '';
+          const licenceQuestionAsked = lastAiMsg.includes('driver') || lastAiMsg.includes('licence') || lastAiMsg.includes('license');
+          if (licenceQuestionAsked) {
+            const noLicence =
+              recentUserMsgs.includes('no licence') ||
+              recentUserMsgs.includes('no license') ||
+              recentUserMsgs.includes('do not have a lic') ||
+              recentUserMsgs.includes("don't have a lic") ||
+              recentUserMsgs.includes('do not hold a') ||
+              (recentUserMsgs.trim() === 'no' || recentUserMsgs.trim() === 'nope' || recentUserMsgs.trim() === 'nah');
+            if (noLicence) redFlagReason = "driver's licence requirement";
+          }
+        }
+
+        // Salary: more than 40% above max
+        if (!redFlagReason && salaryMax > 0) {
+          const detectedSal = extractSalaryFromTranscript(messages);
+          if (detectedSal && detectedSal > salaryMax * 1.4) {
+            redFlagReason = "salary expectation";
+          }
+          // Salary: more than 20% below min (undervaluing)
+          if (!redFlagReason && detectedSal && salaryMin > 0 && detectedSal < salaryMin * 0.8) {
+            redFlagReason = "salary expectation";
+          }
+        }
+
+        // Location: beyond 80km and not willing to commute
+        if (!redFlagReason) {
+          const cp = extractPostcodeFromTranscript(messages);
+          if (cp && job.location) {
+            const [cLL, jLL] = await Promise.all([getPostcodeLatLng(cp), getCityLatLng(job.location)]);
+            if (cLL && jLL) {
+              const distKm = Math.round(haversineKm(cLL.lat, cLL.lng, jLL.lat, jLL.lng));
+              if (distKm > 80 && !extractCommuteWillingness(messages)) {
+                redFlagReason = "location distance";
+              }
+            }
+          }
+        }
+
+        if (redFlagReason) {
+          const candidateName = job.candidateName || 'there';
+          const closingMessage = `Thank you for your honesty, ${candidateName}. Based on your response regarding ${redFlagReason}, I'm afraid this particular role isn't the right fit at this stage. This isn't a reflection of your overall capabilities — it simply comes down to the specific requirements for this position.
+
+I genuinely appreciate you taking the time to speak with me today, and I wish you all the best in your job search. Please keep an eye out for other opportunities that may be a better match for your situation.
+
+Take care, and thank you again.`;
+
+          messages.push({
+            id: 'msg-' + Date.now() + '-ai',
+            role: 'assistant',
+            content: closingMessage,
+            timestamp: new Date().toISOString(),
+            questionIdx: session.currentQuestionIdx,
+            redFlag: true,
+          });
+
+          await prisma.screeningSession.update({
+            where: { id: sessionId },
+            data: {
+              messages: messages as any,
+              status: 'completed',
+              completedAt: new Date(),
+              decision: 'rejected',
+              score: 10,
+            },
+          });
+
+          // Update application
+          try {
+            ApplicationsController.updateApplicationAfterScreening(session.applicationId, {
+              score: 10,
+              scorecard: { locationScore: 10, salaryScore: 10, qualificationsScore: 10, workRightsScore: 10, skillsScore: 10 },
+              aiFeedback: `Screening ended early due to ${redFlagReason} mismatch. Candidate did not meet mandatory requirements.`,
+              status: 'rejected',
+              screeningSessionId: session.id,
+              screeningCompletedAt: new Date().toISOString(),
+              transcript: messages.map((m: any) => ({ role: m.role, message: m.content, timestamp: m.timestamp })),
+            });
+          } catch (e) { console.error('Red flag app update error:', e); }
+
+          const updatedSession = await prisma.screeningSession.findUnique({ where: { id: sessionId } });
+          return res.json({ ...updatedSession, messages, redFlag: true });
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
       const weights = job.qualificationWeights || {
         locationWeight: 20, salaryWeight: 20, qualificationsWeight: 20, workRightsWeight: 20, skillsWeight: 20,
       };
