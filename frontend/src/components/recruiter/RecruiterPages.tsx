@@ -369,7 +369,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setJobSalMax(String(existingJob.salaryMax || 0));
           if (existingJob.expiresAt) setJobExpiresAt(existingJob.expiresAt.split('T')[0]);
           setJobDesc(existingJob.description || '');
-          setMustReqString((existingJob.requirementsMust || []).join('\n'));
+          setMustReqString((existingJob.requirementsMust || []).join(', '));
           setNiceReqString((existingJob.requirementsNice || []).join('\n'));
           setScreeningQueries(existingJob.screeningQuestions || []);
           if (existingJob.mandatoryQuestions) {
@@ -525,7 +525,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       hideSalary: false,
       description: jobDesc,
       benefits: ['Medical coverage', 'Learning allowance'],
-      requirementsMust: mustReqString ? mustReqString.split('\n').filter(Boolean) : ['Experience in relevant software engineering roles.'],
+      requirementsMust: mustReqString ? mustReqString.split(',').map((s: string) => s.trim()).filter(Boolean) : ['Experience in relevant software engineering roles.'],
       requirementsNice: niceReqString ? niceReqString.split('\n').filter(Boolean) : [],
       experienceLevel: 'Senior',
       experienceYearsMin: 5,
@@ -1543,12 +1543,13 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-700 block">Mandatory Skills / Requirements (Must be met, 1 per line)</label>
+                <label className="text-xs font-semibold text-gray-700 block">Mandatory Skills / Requirements (Must be met)</label>
                 <textarea 
-                  placeholder="e.g. 5+ years writing typescript code"
+                  placeholder="e.g. 5+ years TypeScript, React expertise, AWS experience (use commas to separate — do not press Enter)"
                   rows={3}
                   value={mustReqString}
                   onChange={(e) => setMustReqString(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); alert('Please use commas to separate skills, not Enter. Example: React, TypeScript, 5+ years experience'); } }}
                   className="w-full p-3 bg-gray-50 border rounded-lg text-xs outline-none resize-none"
                 />
               </div>
