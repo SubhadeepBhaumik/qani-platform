@@ -42,6 +42,30 @@ app.get('/api/v1/health', (_req: Request, res: Response) => {
 app.post('/api/v1/auth/register', AuthController.register);
 app.post('/api/v1/auth/login', AuthController.login);
 app.get('/api/v1/auth/me', AuthController.me);
+app.patch('/api/v1/auth/me', async (req: any, res: any) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    const jwt = await import('jsonwebtoken');
+    const decoded: any = jwt.default.verify(token, process.env.JWT_SECRET || 'qani-secret-2026');
+    const userId = decoded.userId || decoded.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const { companyName, firstName, lastName, phone, location } = req.body;
+    const updateData: any = {};
+    if (companyName !== undefined) updateData.companyName = companyName;
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (phone !== undefined) updateData.phone = phone;
+    if (location !== undefined) updateData.location = location;
+    const { PrismaClient: PC2 } = require('@prisma/client');
+    const patchPrisma = new PC2();
+    const updated = await patchPrisma.user.update({ where: { id: userId }, data: updateData, select: { id: true, email: true, firstName: true, lastName: true, role: true, companyName: true, phone: true, location: true } });
+    return res.json({ success: true, user: updated });
+  } catch (e) {
+    console.error('PATCH /auth/me error:', e);
+    return res.status(500).json({ error: 'Failed to update profile' });
+  }
+});
 app.post('/api/v1/auth/refresh', AuthController.refreshToken);
 app.post('/api/v1/auth/change-password', AuthController.changePassword);
 app.post('/api/v1/team/invite', TeamController.createInvite);

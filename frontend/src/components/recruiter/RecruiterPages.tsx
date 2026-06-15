@@ -127,6 +127,22 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
 
 const RecruiterSettings: React.FC<{ user: any; showToast: any }> = ({ user, showToast }) => {
   const [settingsTab, setSettingsTab] = React.useState<'profile'|'email'|'phone'>('profile');
+  const [companyName, setCompanyName] = React.useState(user.companyName || '');
+  const [savingCompany, setSavingCompany] = React.useState(false);
+  const saveCompanyName = async () => {
+    setSavingCompany(true);
+    try {
+      const token = localStorage.getItem('qani_auth_token');
+      const res = await fetch('https://qani.io/api/v1/auth/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ companyName }),
+      });
+      if (res.ok) showToast('Company name updated successfully.', 'success');
+      else showToast('Failed to update company name.', 'error');
+    } catch { showToast('Failed to update company name.', 'error'); }
+    setSavingCompany(false);
+  };
   const [newEmail, setNewEmail] = React.useState('');
   const [newPhone, setNewPhone] = React.useState('');
   const [otpSent, setOtpSent] = React.useState(false);
@@ -191,12 +207,21 @@ const RecruiterSettings: React.FC<{ user: any; showToast: any }> = ({ user, show
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 shadow-sm">
           <h3 className="text-sm font-bold text-gray-900">Profile Information</h3>
           <div className="grid grid-cols-2 gap-4">
-            {[["First Name", user.firstName],["Last Name", user.lastName],["Email", user.email],["Company", user.companyName||"—"],["Role", user.role]].map(([label, val]) => (
+            {[["First Name", user.firstName],["Last Name", user.lastName],["Email", user.email],["Role", user.role]].map(([label, val]) => (
               <div key={String(label)}>
                 <label className="text-xs text-gray-500 font-medium block mb-1">{label}</label>
                 <div className="h-9 bg-gray-50 border border-gray-200 rounded-lg px-3 flex items-center text-xs text-gray-800 capitalize">{val}</div>
               </div>
             ))}
+            <div className="col-span-2">
+              <label className="text-xs text-gray-500 font-medium block mb-1">Company Name</label>
+              <div className="flex gap-2">
+                <input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Enter company name" className="flex-1 h-9 bg-white border border-gray-200 rounded-lg px-3 text-xs text-gray-800 outline-none focus:border-blue-500 transition" />
+                <button onClick={saveCompanyName} disabled={savingCompany} className="cursor-pointer h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50">
+                  {savingCompany ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={() => setSettingsTab("email")} className="cursor-pointer text-xs bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold">Change Email</button>
