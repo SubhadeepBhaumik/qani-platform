@@ -113,6 +113,7 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
                   <button onClick={() => navigate("recruiter-applications", { filterJobId: job.id })} className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline">View Applicants</button>
                   <span className="text-gray-300">|</span>
                   <button onClick={() => { saveJob({...job, status:"closed"}); showToast("Job closed.","success"); refreshStates(); }} className="cursor-pointer text-xs font-semibold text-gray-400 hover:text-red-500 hover:underline">Close</button>
+                  <button onClick={() => { saveJob({...job, status:"filled"}); showToast("Job marked as filled.","success"); refreshStates(); }} className="cursor-pointer text-xs font-semibold text-gray-400 hover:text-green-600 hover:underline">Mark Filled</button>
                 </div>
               </div>
             </div>
@@ -1431,6 +1432,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => navigate('recruiter-edit-job', { editJobId: job.id, mode: 'edit' })} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition"><Edit3 className="w-3.5 h-3.5" />Edit</button>
+                  {job.status !== 'filled' && <button onClick={() => { saveJob({...job, status:'filled'}); showToast('Job marked as filled.','success'); refreshStates(); }} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition">✓ Mark as Filled</button>}
+                  {job.status === 'filled' && <span className="inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-green-600 text-white rounded-lg">✓ Position Filled</span>}
                   <button onClick={() => navigate('recruiter-applications', { filterJobId: job.id })} className="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition"><Users className="w-3.5 h-3.5" />View Applicants ({jobApps.length})</button>
                 </div>
               </div>
