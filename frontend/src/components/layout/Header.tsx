@@ -3,6 +3,7 @@ import { useApp } from '../AppContext';
 import { api } from '../../lib/api';
 import { Bell, ChevronDown, CheckCircle2, MapPin, LayoutDashboard } from 'lucide-react';
 import { useCMS } from '../admin/AdminCMS';
+import { QANILogo } from '../shared/QANILogo';
 
 export const Header: React.FC = () => {
   const { user, notifications, navigate, refreshStates } = useApp();
@@ -29,13 +30,16 @@ export const Header: React.FC = () => {
       )}
       <div className="h-16 px-6 flex items-center justify-between">
 
-      {/* Left: public nav links only — no logo (sidebar has it) */}
+      {/* Left: QANI Logo + public nav links */}
+      <div className="flex items-center gap-6">
+        <QANILogo size="sm" dark={false} onClick={() => navigate('landing')} showText={false} />
       <div className="flex items-center gap-5 text-xs font-medium text-gray-500">
         <button onClick={() => navigate('how-it-works')} className="cursor-pointer hover:text-blue-600 transition">How It Works</button>
         <button onClick={() => navigate('public-jobs')} className="cursor-pointer hover:text-blue-600 transition">Jobs</button>
         <button onClick={() => navigate('public-candidates')} className="cursor-pointer hover:text-blue-600 transition">Candidates</button>
         <button onClick={() => navigate('about')} className="cursor-pointer hover:text-blue-600 transition">About</button>
         <button onClick={() => navigate('contact')} className="cursor-pointer hover:text-blue-600 transition">Contact</button>
+      </div>
       </div>
 
       {/* Right: utilities */}

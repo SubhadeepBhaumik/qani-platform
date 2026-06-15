@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
+import { QANILogo } from './QANILogo';
 import { useCMS } from '../admin/AdminCMS';
 import {
   ArrowRight, Cpu, TrendingUp, Bolt, CheckCircle, ChevronRight,
@@ -182,16 +183,7 @@ export const HomePage: React.FC = () => {
 
       {/* Nav */}
       <nav className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 h-16 px-6 sm:px-12 flex items-center justify-between z-30 shadow-sm">
-        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('landing')}>
-          <div className="relative flex items-center justify-center w-9 h-9">
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl transform rotate-3 shadow-md group-hover:rotate-6 transition-all duration-300" />
-            <div className="relative w-7 h-7 bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-extrabold text-white text-[13px]">Q</div>
-          </div>
-          <div>
-            <span className="font-extrabold tracking-tight text-lg text-gray-900 group-hover:text-blue-600 transition">QANI</span>
-            <span className="text-[10px] text-gray-400 block -mt-1">{cms.global?.logoSubtext || "AI Recruitment · Australia"}</span>
-          </div>
-        </div>
+        <QANILogo size="md" dark={false} onClick={() => navigate('landing')} />
 
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
           <button onClick={() => navigate('how-it-works')} className="cursor-pointer hover:text-blue-600 transition">How It Works</button>
@@ -564,16 +556,7 @@ export const HomePage: React.FC = () => {
       <footer className="bg-gray-950 text-gray-400 pt-16 pb-12 px-6 sm:px-12 border-t border-gray-800">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 pb-12 border-b border-gray-800">
           <div className="lg:col-span-4 space-y-4">
-            <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('landing')}>
-              <div className="relative w-8 h-8">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg transform rotate-3" />
-                <div className="relative w-full h-full bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-black text-white text-xs">Q</div>
-              </div>
-              <div>
-                <span className="font-black text-white text-base">QANI Platform</span>
-                <span className="text-[10px] text-gray-500 block">{cms.global?.logoSubtext || "AI Recruitment · Australia"}</span>
-              </div>
-            </div>
+            <QANILogo size="md" dark={true} onClick={() => navigate('landing')} />
             <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "Australia's leading AI recruitment platform. Screen more candidates, faster, with zero extra headcount."}</p>
           </div>
           <div className="lg:col-span-2 space-y-4">

@@ -175,13 +175,49 @@ const DEFAULT_CMS = {
     email: 'hello@qani.io', phone: '+61 2 9000 0000', address: 'Sydney, NSW, Australia',
     linkedin: 'https://linkedin.com/company/qani', twitter: 'https://twitter.com/qani_io',
   },
+  howItWorksPage: {
+    hero: { title: 'From Job Post to Qualified Shortlist', subtitle: "QANI automates the most time-consuming part of recruitment — here's exactly how it works.", badge: 'How QANI Works', backgroundImage: '', backgroundVideo: '' },
+    steps: [
+      { step: '1', title: 'Post Your Job', description: 'Create a job with salary range, location, work rights requirements, and custom AI screening questions. Takes less than 5 minutes.' },
+      { step: '2', title: 'Candidates Apply', description: 'Candidates discover your role and apply. QANI immediately invites them to complete an AI screening session.' },
+      { step: '3', title: 'AI Screens 24/7', description: 'QANI conducts intelligent conversational interviews — asking your questions, probing vague answers, and scoring every response in real time.' },
+      { step: '4', title: 'Scorecard Generated', description: 'Each candidate receives a detailed scorecard across 5 dimensions: salary fit, work rights, location, qualifications, and technical skills.' },
+      { step: '5', title: 'You Review & Hire', description: 'Log in to see your ranked shortlist. Progress candidates to interview, put them on review, or reject — all in one click.' },
+    ],
+    cta: { title: 'Ready to see it in action?', subtitle: 'Post your first job free — no credit card required.', buttonText: 'Start Recruiting Free' },
+  },
+  aboutPage: {
+    hero: { title: 'About QANI', subtitle: "We're building Australia's smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones.", badge: '🇦🇺 Sydney, Australia', backgroundImage: '', backgroundVideo: '' },
+    mission: { title: 'Our Mission', body: "QANI was born from a simple frustration: recruitment teams were spending 80% of their time on first-round phone screens — repetitive, manual, and exhausting. We built an AI that conducts those interviews 24/7, scores every candidate fairly, and delivers a ranked shortlist so recruiters can focus on what they do best — building relationships and placing great people." },
+    stats: [
+      { value: '340+', label: 'Companies Using QANI' },
+      { value: '18,000+', label: 'Candidates Screened' },
+      { value: '94%', label: 'Recruiter Satisfaction' },
+      { value: '4 days', label: 'Avg. Time Saved/Week' },
+    ],
+    values: [
+      { icon: '🤖', title: 'AI-First', desc: 'We believe AI should handle the repetitive parts of recruitment so humans can focus on building relationships.' },
+      { icon: '🇦🇺', title: 'Built for Australia', desc: 'From work rights to salary expectations — QANI understands the Australian hiring market inside out.' },
+      { icon: '⚡', title: 'Speed Without Compromise', desc: "Faster screening doesn't mean lower quality. Our AI is thorough, fair, and consistent every time." },
+      { icon: '🔒', title: 'Privacy by Design', desc: 'Compliant with Australian Privacy Principles. Your data and candidate data is always protected.' },
+    ],
+    cta: { title: 'Join the future of Australian recruitment', primaryButton: 'Start Recruiting Free', secondaryButton: 'Get in Touch' },
+  },
+  publicJobsPage: {
+    hero: { title: 'Open Positions', subtitle: 'AI-screened jobs from top Australian companies. Login to apply.', backgroundImage: '', backgroundVideo: '' },
+    authGate: { title: 'Ready to apply?', subtitle: 'Create a free candidate profile to apply and get AI-screened for any role.', primaryButton: 'Create Free Profile →', secondaryButton: 'Sign In' },
+  },
+  publicCandidatesPage: {
+    hero: { title: 'AI-Screened Candidates', subtitle: 'Pre-qualified talent ready for your shortlist. Login to view full profiles and screening transcripts.', backgroundImage: '', backgroundVideo: '' },
+    authGate: { title: 'Want to access full profiles?', subtitle: 'Register as a recruiter to view complete screening transcripts, scorecards, and contact details.', primaryButton: 'Start Recruiting Free →', secondaryButton: 'Sign In' },
+  },
 };
 
 function useCMSStore() {
   const [cms, setCms] = useState(() => {
     try {
       const saved = localStorage.getItem(CMS_KEY);
-      if (saved) return { ...DEFAULT_CMS, ...JSON.parse(saved) };
+      if (saved) return deepMerge(DEFAULT_CMS, JSON.parse(saved));
     } catch {}
     return DEFAULT_CMS;
   });
@@ -699,6 +735,11 @@ const PAGES = [
   { id: 'footer' as CMSPage, label: 'Footer', icon: <AlignLeft size={15} />, description: 'Footer links, columns, copyright' },
   { id: 'global' as CMSPage, label: 'Global', icon: <Globe size={15} />, description: 'Logo, nav, footer, announcement' },
   { id: 'homepage' as CMSPage, label: 'Homepage', icon: <Layout size={15} />, description: 'Hero, features, pricing, CTA' },
+  { id: 'how-it-works' as CMSPage, label: 'How It Works', icon: <ChevronRight size={15} />, description: 'Steps, scoring dimensions, CTA' },
+  { id: 'about' as CMSPage, label: 'About Page', icon: <Users size={15} />, description: 'Mission, values, stats' },
+  { id: 'contact' as CMSPage, label: 'Contact Page', icon: <Link size={15} />, description: 'Contact details, form settings' },
+  { id: 'public-jobs' as CMSPage, label: 'Jobs Page', icon: <Briefcase size={15} />, description: 'Public jobs listing page' },
+  { id: 'public-candidates' as CMSPage, label: 'Candidates Page', icon: <Users size={15} />, description: 'Public candidates listing page' },
   { id: 'auth' as CMSPage, label: 'Auth Pages', icon: <LogIn size={15} />, description: 'Login & register branding' },
   { id: 'candidate' as CMSPage, label: 'Candidate Portal', icon: <Users size={15} />, description: 'Dashboard, jobs, screening' },
   { id: 'recruiter' as CMSPage, label: 'Recruiter Portal', icon: <Briefcase size={15} />, description: 'Dashboard, jobs, applications' },
@@ -706,12 +747,139 @@ const PAGES = [
   { id: 'seo' as CMSPage, label: 'SEO & Contact', icon: <FileText size={15} />, description: 'Meta tags, social, contact' },
 ];
 
+function HowItWorksEditor({ cms, update }: any) {
+  const p = cms.howItWorksPage || {};
+  return (
+    <div>
+      <Accordion title="Hero Section" defaultOpen>
+        <Field label="Badge Text" value={p.hero?.badge || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'badge'], v)} />
+        <Field label="Main Title" value={p.hero?.title || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'title'], v)} multiline rows={2} />
+        <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'subtitle'], v)} multiline rows={3} />
+        <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['howItWorksPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+      </Accordion>
+      <Accordion title="Process Steps">
+        {(p.steps || []).map((step: any, i: number) => (
+          <div key={i} className="border border-gray-700 rounded-lg p-3 mb-2">
+            <p className="text-xs text-gray-500 mb-2">Step {i + 1}</p>
+            <Field label="Title" value={step.title} onChange={(v: string) => { const steps = [...(p.steps || [])]; steps[i] = { ...steps[i], title: v }; update(['howItWorksPage', 'steps'], steps); }} />
+            <Field label="Description" value={step.description} onChange={(v: string) => { const steps = [...(p.steps || [])]; steps[i] = { ...steps[i], description: v }; update(['howItWorksPage', 'steps'], steps); }} multiline rows={2} />
+          </div>
+        ))}
+      </Accordion>
+      <Accordion title="CTA Section">
+        <Field label="Title" value={p.cta?.title || ''} onChange={(v: string) => update(['howItWorksPage', 'cta', 'title'], v)} />
+        <Field label="Subtitle" value={p.cta?.subtitle || ''} onChange={(v: string) => update(['howItWorksPage', 'cta', 'subtitle'], v)} />
+        <Field label="Button Text" value={p.cta?.buttonText || ''} onChange={(v: string) => update(['howItWorksPage', 'cta', 'buttonText'], v)} />
+      </Accordion>
+    </div>
+  );
+}
+
+function AboutEditor({ cms, update }: any) {
+  const p = cms.aboutPage || {};
+  return (
+    <div>
+      <Accordion title="Hero Section" defaultOpen>
+        <Field label="Badge" value={p.hero?.badge || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'badge'], v)} />
+        <Field label="Title" value={p.hero?.title || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'title'], v)} />
+        <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'subtitle'], v)} multiline rows={3} />
+        <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['aboutPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+      </Accordion>
+      <Accordion title="Mission">
+        <Field label="Title" value={p.mission?.title || ''} onChange={(v: string) => update(['aboutPage', 'mission', 'title'], v)} />
+        <Field label="Body Text" value={p.mission?.body || ''} onChange={(v: string) => update(['aboutPage', 'mission', 'body'], v)} multiline rows={5} />
+      </Accordion>
+      <Accordion title="Stats">
+        {(p.stats || []).map((stat: any, i: number) => (
+          <div key={i} className="grid grid-cols-2 gap-2 mb-2">
+            <Field label="Value" value={stat.value} onChange={(v: string) => { const s = [...(p.stats || [])]; s[i] = { ...s[i], value: v }; update(['aboutPage', 'stats'], s); }} />
+            <Field label="Label" value={stat.label} onChange={(v: string) => { const s = [...(p.stats || [])]; s[i] = { ...s[i], label: v }; update(['aboutPage', 'stats'], s); }} />
+          </div>
+        ))}
+      </Accordion>
+      <Accordion title="Values">
+        {(p.values || []).map((val: any, i: number) => (
+          <div key={i} className="border border-gray-700 rounded-lg p-3 mb-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <Field label="Icon (emoji)" value={val.icon} onChange={(v: string) => { const vals = [...(p.values || [])]; vals[i] = { ...vals[i], icon: v }; update(['aboutPage', 'values'], vals); }} />
+              <Field label="Title" value={val.title} onChange={(v: string) => { const vals = [...(p.values || [])]; vals[i] = { ...vals[i], title: v }; update(['aboutPage', 'values'], vals); }} />
+            </div>
+            <Field label="Description" value={val.desc} onChange={(v: string) => { const vals = [...(p.values || [])]; vals[i] = { ...vals[i], desc: v }; update(['aboutPage', 'values'], vals); }} multiline rows={2} />
+          </div>
+        ))}
+      </Accordion>
+      <Accordion title="CTA">
+        <Field label="Title" value={p.cta?.title || ''} onChange={(v: string) => update(['aboutPage', 'cta', 'title'], v)} />
+        <Field label="Primary Button" value={p.cta?.primaryButton || ''} onChange={(v: string) => update(['aboutPage', 'cta', 'primaryButton'], v)} />
+        <Field label="Secondary Button" value={p.cta?.secondaryButton || ''} onChange={(v: string) => update(['aboutPage', 'cta', 'secondaryButton'], v)} />
+      </Accordion>
+    </div>
+  );
+}
+
+function ContactEditor({ cms, update }: any) {
+  const c = cms.contact || {};
+  return (
+    <div>
+      <Accordion title="Contact Details" defaultOpen>
+        <Field label="Email" value={c.email || ''} onChange={(v: string) => update(['contact', 'email'], v)} />
+        <Field label="Phone" value={c.phone || ''} onChange={(v: string) => update(['contact', 'phone'], v)} />
+        <Field label="Address" value={c.address || ''} onChange={(v: string) => update(['contact', 'address'], v)} />
+        <Field label="LinkedIn URL" value={c.linkedin || ''} onChange={(v: string) => update(['contact', 'linkedin'], v)} placeholder="https://linkedin.com/company/qani" />
+        <Field label="Twitter/X URL" value={c.twitter || ''} onChange={(v: string) => update(['contact', 'twitter'], v)} placeholder="https://twitter.com/qani_io" />
+      </Accordion>
+    </div>
+  );
+}
+
+function PublicJobsEditor({ cms, update }: any) {
+  const p = cms.publicJobsPage || {};
+  return (
+    <div>
+      <Accordion title="Hero Section" defaultOpen>
+        <Field label="Title" value={p.hero?.title || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'title'], v)} />
+        <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'subtitle'], v)} multiline rows={2} />
+        <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['publicJobsPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+      </Accordion>
+      <Accordion title="Auth Gate Banner">
+        <Field label="Title" value={p.authGate?.title || ''} onChange={(v: string) => update(['publicJobsPage', 'authGate', 'title'], v)} />
+        <Field label="Subtitle" value={p.authGate?.subtitle || ''} onChange={(v: string) => update(['publicJobsPage', 'authGate', 'subtitle'], v)} multiline rows={2} />
+        <Field label="Primary Button" value={p.authGate?.primaryButton || ''} onChange={(v: string) => update(['publicJobsPage', 'authGate', 'primaryButton'], v)} />
+        <Field label="Secondary Button" value={p.authGate?.secondaryButton || ''} onChange={(v: string) => update(['publicJobsPage', 'authGate', 'secondaryButton'], v)} />
+      </Accordion>
+    </div>
+  );
+}
+
+function PublicCandidatesEditor({ cms, update }: any) {
+  const p = cms.publicCandidatesPage || {};
+  return (
+    <div>
+      <Accordion title="Hero Section" defaultOpen>
+        <Field label="Title" value={p.hero?.title || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'title'], v)} />
+        <Field label="Subtitle" value={p.hero?.subtitle || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'subtitle'], v)} multiline rows={2} />
+        <Field label="Background Image URL" value={p.hero?.backgroundImage || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'backgroundImage'], v)} placeholder="https://..." />
+        <Field label="Background Video URL" value={p.hero?.backgroundVideo || ''} onChange={(v: string) => update(['publicCandidatesPage', 'hero', 'backgroundVideo'], v)} placeholder="YouTube/Vimeo embed URL" />
+      </Accordion>
+      <Accordion title="Auth Gate Banner">
+        <Field label="Title" value={p.authGate?.title || ''} onChange={(v: string) => update(['publicCandidatesPage', 'authGate', 'title'], v)} />
+        <Field label="Subtitle" value={p.authGate?.subtitle || ''} onChange={(v: string) => update(['publicCandidatesPage', 'authGate', 'subtitle'], v)} multiline rows={2} />
+        <Field label="Primary Button" value={p.authGate?.primaryButton || ''} onChange={(v: string) => update(['publicCandidatesPage', 'authGate', 'primaryButton'], v)} />
+        <Field label="Secondary Button" value={p.authGate?.secondaryButton || ''} onChange={(v: string) => update(['publicCandidatesPage', 'authGate', 'secondaryButton'], v)} />
+      </Accordion>
+    </div>
+  );
+}
+
 export function AdminCMS() {
   const { cms, update, save, reset, savedAt, dirty } = useCMSStore();
   const [activePage, setActivePage] = useState<CMSPage>(() => {
     const params = new URLSearchParams(window.location.search);
     const section = params.get('section') as CMSPage;
-    const valid = ['global','header','footer','homepage','auth','candidate','recruiter','help','seo'];
+    const valid = ['global','header','footer','homepage','how-it-works','about','contact','public-jobs','public-candidates','auth','candidate','recruiter','help','seo'];
     return (section && valid.includes(section)) ? section : 'global';
   });
   const [showReset, setShowReset] = useState(false);
@@ -734,6 +902,11 @@ export function AdminCMS() {
       case 'recruiter': return <RecruiterEditor cms={cms} update={update} />;
       case 'help': return <HelpEditor cms={cms} update={update} />;
       case 'seo': return <SeoEditor cms={cms} update={update} />;
+      case 'how-it-works': return <HowItWorksEditor cms={cms} update={update} />;
+      case 'about': return <AboutEditor cms={cms} update={update} />;
+      case 'contact': return <ContactEditor cms={cms} update={update} />;
+      case 'public-jobs': return <PublicJobsEditor cms={cms} update={update} />;
+      case 'public-candidates': return <PublicCandidatesEditor cms={cms} update={update} />;
     }
   };
 
@@ -806,11 +979,29 @@ export function AdminCMS() {
   );
 }
 
+function deepMerge(defaults: any, saved: any): any {
+  if (!saved || typeof saved !== 'object' || Array.isArray(defaults)) return saved ?? defaults;
+  const result: any = { ...defaults };
+  for (const key of Object.keys(defaults)) {
+    if (key in saved) {
+      if (typeof defaults[key] === 'object' && !Array.isArray(defaults[key]) && defaults[key] !== null) {
+        result[key] = deepMerge(defaults[key], saved[key]);
+      } else {
+        result[key] = saved[key];
+      }
+    }
+  }
+  for (const key of Object.keys(saved)) {
+    if (!(key in defaults)) result[key] = saved[key];
+  }
+  return result;
+}
+
 export function useCMS() {
   const [cms, setCms] = useState(() => {
     try {
       const saved = localStorage.getItem(CMS_KEY);
-      if (saved) return { ...DEFAULT_CMS, ...JSON.parse(saved) };
+      if (saved) return deepMerge(DEFAULT_CMS, JSON.parse(saved));
     } catch {}
     return DEFAULT_CMS;
   });
@@ -821,7 +1012,7 @@ export function useCMS() {
       .then(r => r.json())
       .then(res => {
         if (res.success && res.data) {
-          const merged = { ...DEFAULT_CMS, ...res.data };
+          const merged = deepMerge(DEFAULT_CMS, res.data);
           setCms(merged);
           localStorage.setItem(CMS_KEY, JSON.stringify(merged));
         }

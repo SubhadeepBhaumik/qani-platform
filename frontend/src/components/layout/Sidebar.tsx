@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp, AppView } from '../AppContext';
 import { useCMS } from '../admin/AdminCMS';
+import { QANILogo } from '../shared/QANILogo';
 import {
   Home, Briefcase, FileText, User, Settings, Bell, LogOut,
   HelpCircle, BarChart2, Users, UserCheck, Activity, PlusCircle,
@@ -60,16 +61,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Brand */}
       <div className="p-5 border-b border-gray-800 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => { /* logo click does nothing when logged in */ }}>
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg transform rotate-3 group-hover:rotate-6 transition-all duration-300" />
-            <div className="relative w-full h-full bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-extrabold text-white text-xs">Q</div>
-          </div>
-          <div>
-            <span className="font-extrabold text-sm text-white group-hover:text-blue-400 transition">{cms.global?.logoText || "QANI"}</span>
-            <span className="text-[9px] text-gray-500 block">{cms.global?.logoSubtext || "AI Recruitment · AU"}</span>
-          </div>
-        </div>
+        <QANILogo size="md" dark={true} onClick={() => {}} />
         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${roleBg}`}>
           {user.role.toUpperCase()}
         </span>

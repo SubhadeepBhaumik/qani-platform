@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
+import { QANILogo } from './QANILogo';
 import { useCMS } from '../admin/AdminCMS';
 import {
   ArrowRight, MapPin, DollarSign, Building2, Zap, Clock,
@@ -34,16 +35,7 @@ const PublicNav: React.FC<{ activePage?: string }> = ({ activePage }) => {
   return (
     <nav className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm">
       <div className="h-16 px-6 sm:px-12 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('landing')}>
-          <div className="relative flex items-center justify-center w-9 h-9">
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl transform rotate-3 shadow-md group-hover:rotate-6 transition-all duration-300" />
-            <div className="relative w-7 h-7 bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-extrabold text-white text-[13px]">Q</div>
-          </div>
-          <div>
-            <span className="font-extrabold tracking-tight text-lg text-gray-900 group-hover:text-blue-600 transition">QANI</span>
-            <span className="text-[10px] text-gray-400 block -mt-1">{cms.global?.logoSubtext || 'AI Recruitment · Australia'}</span>
-          </div>
-        </div>
+        <QANILogo size="md" dark={false} onClick={() => navigate('landing')} />
 
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
           {navLinks.map(link => (
@@ -122,13 +114,7 @@ const PublicFooter: React.FC = () => {
     <footer className="bg-gray-950 text-gray-400 pt-16 pb-12 px-6 sm:px-12 border-t border-gray-800">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 pb-12 border-b border-gray-800">
         <div className="lg:col-span-4 space-y-4">
-          <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => navigate('landing')}>
-            <div className="relative w-8 h-8">
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-lg transform rotate-3" />
-              <div className="relative w-full h-full bg-gray-900 rounded border border-gray-800 flex items-center justify-center font-mono font-black text-white text-xs">Q</div>
-            </div>
-            <span className="font-black text-white text-base">QANI Platform</span>
-          </div>
+          <QANILogo size="md" dark={true} onClick={() => navigate('landing')} />
           <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "Australia's AI-powered recruitment platform. Screening candidates 24/7 so you don't have to."}</p>
         </div>
         <div className="lg:col-span-2 space-y-4">
@@ -180,7 +166,8 @@ const PublicFooter: React.FC = () => {
 export const HowItWorksPage: React.FC = () => {
   const { navigate } = useApp();
   const cms = useCMS();
-  const hiw = cms.homepage?.howItWorks;
+  const hiw = cms.howItWorksPage || cms.homepage?.howItWorks || {};
+  const hiwHero = cms.howItWorksPage?.hero || {};
 
   const steps = hiw?.steps?.length > 0 ? hiw.steps : [
     { step: '1', title: 'Post Your Job', description: 'Create a job with salary range, location, work rights requirements, and custom AI screening questions. Takes less than 5 minutes.' },
@@ -203,15 +190,16 @@ export const HowItWorksPage: React.FC = () => {
       <PublicNav activePage="how-it-works" />
 
       {/* Hero */}
-      <section className="py-16 md:py-24 px-6 sm:px-12 bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
+      <section className="py-16 md:py-24 px-6 sm:px-12 relative overflow-hidden" style={hiwHero.backgroundImage ? { backgroundImage: 'url(' + hiwHero.backgroundImage + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(to bottom right, #eff6ff, white, #eef2ff)' }}>
+        {hiwHero.backgroundImage && <div className="absolute inset-0 bg-white/80" />}
+        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
           <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Zap className="w-3.5 h-3.5" /> {hiw?.title || 'How QANI Works'}
+            <Zap className="w-3.5 h-3.5" /> {hiwHero.badge || hiw?.title || 'How QANI Works'}
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">
-            From Job Post to <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Qualified Shortlist</span>
+            {hiwHero.title || 'From Job Post to Qualified Shortlist'}
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{hiw?.subtitle || 'QANI automates the most time-consuming part of recruitment — first-round screening. Here\'s exactly how it works.'}</p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">{hiwHero.subtitle || hiw?.subtitle || "QANI automates the most time-consuming part of recruitment — here's exactly how it works."}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
             <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-8 rounded-xl transition shadow-xl shadow-blue-500/20 text-sm">
               Start Recruiting Free <ArrowRight className="w-4 h-4" />
@@ -286,8 +274,10 @@ export const HowItWorksPage: React.FC = () => {
 export const AboutPage: React.FC = () => {
   const { navigate } = useApp();
   const cms = useCMS();
+  const aboutCms = cms.aboutPage || {};
+  const aboutHero = aboutCms.hero || {};
 
-  const values = [
+  const values = aboutCms.values?.length > 0 ? aboutCms.values : [
     { icon: '🤖', title: 'AI-First', desc: 'We believe AI should handle the repetitive parts of recruitment so humans can focus on building relationships.' },
     { icon: '🇦🇺', title: 'Built for Australia', desc: 'From work rights to salary expectations — QANI understands the Australian hiring market inside out.' },
     { icon: '⚡', title: 'Speed Without Compromise', desc: 'Faster screening doesn\'t mean lower quality. Our AI is thorough, fair, and consistent every time.' },
@@ -299,15 +289,16 @@ export const AboutPage: React.FC = () => {
       <PublicNav activePage="about" />
 
       {/* Hero */}
-      <section className="py-16 md:py-24 px-6 sm:px-12 bg-gradient-to-br from-gray-900 to-blue-900 text-white">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
+      <section className="py-16 md:py-24 px-6 sm:px-12 relative overflow-hidden" style={aboutHero.backgroundImage ? { backgroundImage: `url(${aboutHero.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { background: 'linear-gradient(to bottom right, #111827, #1e3a8a)' }}>
+        {aboutHero.backgroundImage && <div className="absolute inset-0 bg-gray-900/70" />}
+        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10 text-white">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
-            🇦🇺 Sydney, Australia
+            {aboutHero.badge || '🇦🇺 Sydney, Australia'}
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-            About <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">QANI</span>
+            {aboutHero.title || 'About'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{aboutHero.title ? '' : 'QANI'}</span>
           </h1>
-          <p className="text-lg text-blue-100 max-w-2xl mx-auto">We're building Australia's smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones.</p>
+          <p className="text-lg text-blue-100 max-w-2xl mx-auto">{aboutHero.subtitle || "We're building Australia's smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones."}</p>
         </div>
       </section>
 
@@ -590,8 +581,8 @@ export const PublicJobsPage: React.FC = () => {
       <section className="py-12 px-6 sm:px-12 bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-b border-gray-200">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="text-center space-y-3">
-            <h1 className="text-3xl font-extrabold text-gray-900">{cms.homepage?.jobs?.title || 'Open Positions'}</h1>
-            <p className="text-gray-500 text-sm">{cms.homepage?.jobs?.subtitle || 'AI-screened jobs from top Australian companies. Login to apply.'}</p>
+            <h1 className="text-3xl font-extrabold text-gray-900">{cms.publicJobsPage?.hero?.title || cms.homepage?.jobs?.title || 'Open Positions'}</h1>
+            <p className="text-gray-500 text-sm">{cms.publicJobsPage?.hero?.subtitle || cms.homepage?.jobs?.subtitle || 'AI-screened jobs from top Australian companies. Login to apply.'}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search jobs, companies, skills..." className="flex-1 h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />
@@ -732,8 +723,8 @@ export const PublicCandidatesPage: React.FC = () => {
       {/* Hero */}
       <section className="py-12 px-6 sm:px-12 bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-b border-gray-200">
         <div className="max-w-5xl mx-auto space-y-6 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-900">{cms.homepage?.candidates?.title || 'AI-Screened Candidates'}</h1>
-          <p className="text-gray-500 text-sm">{cms.homepage?.candidates?.subtitle || 'Pre-qualified talent ready for your shortlist. Login to view full profiles and screening transcripts.'}</p>
+          <h1 className="text-3xl font-extrabold text-gray-900">{cms.publicCandidatesPage?.hero?.title || cms.homepage?.candidates?.title || 'AI-Screened Candidates'}</h1>
+          <p className="text-gray-500 text-sm">{cms.publicCandidatesPage?.hero?.subtitle || cms.homepage?.candidates?.subtitle || 'Pre-qualified talent ready for your shortlist. Login to view full profiles and screening transcripts.'}</p>
           <div className="max-w-md mx-auto">
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by name, skill, or location..." className="w-full h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />
           </div>

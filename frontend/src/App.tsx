@@ -181,9 +181,14 @@ const AppContent: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl transform rotate-3 shadow-lg" />
-            <div className="relative w-full h-full bg-gray-950 rounded-lg border border-gray-800 flex items-center justify-center font-mono font-black text-white text-base">Q</div>
+          <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+              <rect width="36" height="36" fill="#0D0D0F" rx="6"/>
+              <text x="3" y="25" fontFamily="'Sora', sans-serif" fontWeight="800" fontSize="16" fill="white" letterSpacing="-0.5">QAN</text>
+              <text x="28.5" y="25" fontFamily="'Sora', sans-serif" fontWeight="800" fontSize="16" fill="white">I</text>
+              <polygon points="30,4 32,9 28,9" fill="#C9A24A"/>
+              <rect x="29.5" y="9" width="1.2" height="10" fill="#C9A24A"/>
+            </svg>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading QANI...
