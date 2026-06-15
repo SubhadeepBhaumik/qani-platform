@@ -509,31 +509,45 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <div className="lg:col-span-4 bg-white border border-gray-200 rounded-xl p-6 h-fit space-y-6 shadow-sm">
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Action Hub</span>
                 
-                {alreadyApplied ? (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2.5 text-green-700 text-xs font-semibold">
-                      <FileCheck className="w-5 h-5 text-green-600" />
-                      <span>Applied Already</span>
+                {(() => {
+                  const isExpired = job.expiresAt && new Date(job.expiresAt) < new Date();
+                  const isFilled = job.status === 'filled' || job.status === 'closed';
+                  const isUnavailable = isExpired || isFilled;
+                  if (isUnavailable) return (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-amber-700 text-xs font-semibold">
+                        <span>⚠️</span>
+                        <span>{isFilled ? 'This position has been filled.' : 'This job posting has closed.'} Applications are no longer being accepted.</span>
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => {
-                        const app = applications.find(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id);
-                        if (app) navigate('candidate-app-detail', { applicationId: app.id });
-                      }}
-                      className="w-full py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-lg text-xs"
+                  );
+                  if (alreadyApplied) return (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2.5 text-green-700 text-xs font-semibold">
+                        <FileCheck className="w-5 h-5 text-green-600" />
+                        <span>Applied Already</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const app = applications.find(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id);
+                          if (app) navigate('candidate-app-detail', { applicationId: app.id });
+                        }}
+                        className="w-full py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-lg text-xs"
+                      >
+                        Track Screening Results
+                      </button>
+                    </div>
+                  );
+                  return (
+                    <button
+                      id="apply-job-btn-trigger"
+                      onClick={() => applyForJob(job.id)}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-blue-500/15 cursor-pointer"
                     >
-                      Track Screening Results
+                      Apply Now via QANI
                     </button>
-                  </div>
-                ) : (
-                  <button 
-                    id="apply-job-btn-trigger"
-                    onClick={() => applyForJob(job.id)}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-blue-500/15 cursor-pointer"
-                  >
-                    Apply Now via QANI
-                  </button>
-                )}
+                  );
+                })()}
 
                 <div className="text-[10px] text-gray-400 flex items-center gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
                   <Cpu className="w-4 h-4 text-blue-500 shrink-0" />
@@ -602,6 +616,14 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                         </div>
                       );
                     }
+                    const screeningJob = jobs.find((j: any) => j.id === (app.jobId ?? (app as any).roleId));
+                    const jobExpired = screeningJob?.expiresAt && new Date(screeningJob.expiresAt) < new Date();
+                    const jobFilled = screeningJob?.status === 'filled' || screeningJob?.status === 'closed';
+                    if (jobExpired || jobFilled) return (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs font-semibold">
+                        ⚠️ {jobFilled ? 'This position has been filled.' : 'This job posting has closed.'} AI Screening is no longer available for this role.
+                      </div>
+                    );
                     return (
                       <button
                         id="app-start-screen-btn"

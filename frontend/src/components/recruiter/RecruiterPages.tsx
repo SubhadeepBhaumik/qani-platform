@@ -274,8 +274,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   const [jobCategory, setJobCategory] = useState('Software Engineering');
   const [jobLoc, setJobLoc] = useState('Singapore (Hybrid)');
   const [jobType, setJobType] = useState('Full-time');
-  const [jobSalMin, setJobSalMin] = useState(8000);
-  const [jobSalMax, setJobSalMax] = useState(12000);
+  const [jobSalMin, setJobSalMin] = useState<string>('0');
+  const [jobSalMax, setJobSalMax] = useState<string>('0');
   const defaultExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [jobExpiresAt, setJobExpiresAt] = useState(defaultExpiry);
   const [jobDesc, setJobDesc] = useState('');
@@ -331,8 +331,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
           setJobCategory(existingJob.category || 'Software Engineering');
           setJobLoc(existingJob.location || '');
           setJobType((existingJob.employmentType && existingJob.employmentType[0]) || 'Full-time');
-          setJobSalMin(existingJob.salaryMin || 8000);
-          setJobSalMax(existingJob.salaryMax || 12000);
+          setJobSalMin(String(existingJob.salaryMin || 0));
+          setJobSalMax(String(existingJob.salaryMax || 0));
           if (existingJob.expiresAt) setJobExpiresAt(existingJob.expiresAt.split('T')[0]);
           setJobDesc(existingJob.description || '');
           setMustReqString((existingJob.requirementsMust || []).join('\n'));
@@ -367,8 +367,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       setJobCategory('Software Engineering');
       setJobLoc('');
       setJobType('Full-time');
-      setJobSalMin(80000);
-      setJobSalMax(120000);
+      setJobSalMin('80000');
+      setJobSalMax('120000');
       setJobDesc('');
       setMustReqString('');
       setNiceReqString('');
@@ -465,6 +465,13 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       return;
     }
 
+    const parsedSalMin = Number(String(jobSalMin).replace(/,/g, '')) || 0;
+    const parsedSalMax = Number(String(jobSalMax).replace(/,/g, '')) || 0;
+    if (parsedSalMin > 0 && parsedSalMax > 0 && parsedSalMin > parsedSalMax) {
+      showToast('Minimum salary cannot be greater than maximum salary.', 'error');
+      return;
+    }
+
     const newJob: Job = {
       id: activeParams.editJobId || `job-${Date.now()}`,
       title: jobTitle,
@@ -472,8 +479,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
       category: jobCategory,
       location: jobLoc,
       employmentType: [jobType],
-      salaryMin: Number(jobSalMin),
-      salaryMax: Number(jobSalMax),
+      salaryMin: Number(String(jobSalMin).replace(/,/g, '')) || 0,
+      salaryMax: Number(String(jobSalMax).replace(/,/g, '')) || 0,
       hideSalary: false,
       description: jobDesc,
       benefits: ['Medical coverage', 'Learning allowance'],
@@ -1465,11 +1472,11 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700 block">Salary Min</label>
-                  <input type="number" value={jobSalMin} onChange={(e) => setJobSalMin(Number(e.target.value))} className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none" />
+                  <input type="text" value={jobSalMin} onChange={(e) => { const v = e.target.value.replace(/[^0-9,]/g, ''); setJobSalMin(v); }} className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none" placeholder="e.g. 80,000" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700 block">Salary Max</label>
-                  <input type="number" value={jobSalMax} onChange={(e) => setJobSalMax(Number(e.target.value))} className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none" />
+                  <input type="text" value={jobSalMax} onChange={(e) => { const v = e.target.value.replace(/[^0-9,]/g, ''); setJobSalMax(v); }} className="w-full h-10 px-3 bg-gray-50 border rounded-lg text-xs outline-none" placeholder="e.g. 120,000" />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-700 block">Application Closing Date</label>
