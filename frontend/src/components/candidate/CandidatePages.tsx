@@ -55,6 +55,30 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [bio, setBio] = useState(user?.bio || '');
   const [phone, setPhone] = useState(user?.phone || '');
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState('');
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneVerifiedNumber, setPhoneVerifiedNumber] = useState('');
+  const [phoneOtpSending, setPhoneOtpSending] = useState(false);
+  const sendPhoneOtp = async () => {
+    if (!phone || phone.replace(/[^\d]/g, '').length < 8) { showToast('Please enter a valid phone number first.', 'error'); return; }
+    setPhoneOtpSending(true);
+    try {
+      const token = localStorage.getItem('qani_auth_token');
+      const res = await fetch('https://qani.io/api/v1/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ target: phone, type: 'sms', userId: user?.id }) });
+      if (res.ok) { setPhoneOtpSent(true); showToast('OTP sent to ' + phone, 'success'); }
+      else showToast('Failed to send OTP. Check phone number.', 'error');
+    } catch { showToast('Failed to send OTP.', 'error'); }
+    setPhoneOtpSending(false);
+  };
+  const verifyPhoneOtp = async () => {
+    try {
+      const token = localStorage.getItem('qani_auth_token');
+      const res = await fetch('https://qani.io/api/v1/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ target: phone, type: 'sms', otp: phoneOtp, userId: user?.id }) });
+      if (res.ok) { setPhoneVerified(true); setPhoneVerifiedNumber(phone); setPhoneOtpSent(false); setPhoneOtp(''); showToast('Phone verified!', 'success'); }
+      else showToast('Invalid OTP. Try again.', 'error');
+    } catch { showToast('Failed to verify OTP.', 'error'); }
+  };
   const [location, setLocation] = useState(user?.location || '');
   const [skills, setSkills] = useState<string[]>(user?.skills || []);
   const [newSkill, setNewSkill] = useState('');
@@ -951,7 +975,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   if (isEditingProfile) {
                     if (linkedIn && !linkedIn.includes('linkedin.com')) { showToast('LinkedIn URL must be from linkedin.com', 'error'); return; }
                     if (github && !github.includes('github.com')) { showToast('GitHub URL must be from github.com', 'error'); return; }
-                    if (phone && !/^[+\d\s\-()]{8,15}$/.test(phone)) { showToast('Please enter a valid phone number', 'error'); return; }
+                    if (phone && !/^[+]?[\d\s\-()]{8,20}$/.test(phone)) { showToast('Please enter a valid phone number (max 15 digits).', 'error'); return; }
+                    if (phone && phone.replace(/[^\d]/g, '').length > 15) { showToast('Phone number cannot exceed 15 digits.', 'error'); return; }
                     // Save to backend
                     const token = localStorage.getItem('qani_auth_token');
                     fetch(`https://qani.io/api/v1/candidates/${user?.id}`, {
@@ -976,7 +1001,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     <p><strong>Last Name:</strong> {lastName || '—'}</p>
                   </div>
                   <p><strong>Email:</strong> {user.email}</p>
-                  <p><strong>Phone:</strong> {phone || '—'}</p>
+                  <p><strong>Phone:</strong> {phone || '—'} {phone && phone === phoneVerifiedNumber && <span className="text-[10px] text-green-600 font-semibold bg-green-50 border border-green-200 px-1.5 py-0.5 rounded-full ml-1">✓ Verified</span>}</p>
                   <p><strong>Location:</strong> {location || '—'}</p>
                   <p><strong>LinkedIn:</strong> {linkedIn ? <a href={linkedIn} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{linkedIn}</a> : '—'}</p>
                   <p><strong>GitHub:</strong> {github ? <a href={github} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{github}</a> : '—'}</p>
@@ -1044,9 +1069,26 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs text-gray-500">Phone</label>
-                      <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. +61 4XX XXX XXX"
-                        className={`w-full text-xs p-2.5 bg-gray-50 border rounded ${phone && !/^[+\d\s\-()]{8,15}$/.test(phone) ? 'border-red-400' : 'border-gray-300'}`} />
-                      {phone && !/^[+\d\s\-()]{8,15}$/.test(phone) && <p className="text-[10px] text-red-500">Enter a valid phone number</p>}
+                      <input type="tel" value={phone} onChange={(e) => { const v = e.target.value; if (v.replace(/[^\d]/g, '').length <= 15) setPhone(v); }} placeholder="e.g. +61 412 345 678"
+                        className={`w-full text-xs p-2.5 bg-gray-50 border rounded ${phone && phone.replace(/[^\d]/g, '').length > 15 ? 'border-red-400' : 'border-gray-300'}`} />
+                      <p className="text-[10px] text-gray-400">International format. Max 15 digits. e.g. +61 412 345 678</p>
+                      {phone && phone.replace(/[^\d]/g, '').length > 15 && <p className="text-[10px] text-red-500">Phone number cannot exceed 15 digits</p>}
+                      {isEditingProfile && phone && phone.replace(/[^\d]/g, '').length >= 8 && phone !== phoneVerifiedNumber && (
+                        <div className="mt-2 space-y-2">
+                          {!phoneOtpSent ? (
+                            <button onClick={sendPhoneOtp} disabled={phoneOtpSending} className="cursor-pointer h-7 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg disabled:opacity-50">
+                              {phoneOtpSending ? 'Sending...' : 'Verify Phone via OTP'}
+                            </button>
+                          ) : (
+                            <div className="flex gap-2 items-center">
+                              <input type="text" value={phoneOtp} onChange={e => setPhoneOtp(e.target.value)} placeholder="Enter OTP" maxLength={6} className="w-24 h-7 border border-gray-300 rounded-lg px-2 text-xs outline-none focus:border-blue-500" />
+                              <button onClick={verifyPhoneOtp} className="cursor-pointer h-7 px-3 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg">Verify</button>
+                              <button onClick={() => { setPhoneOtpSent(false); setPhoneOtp(''); }} className="cursor-pointer h-7 px-2 bg-gray-100 text-gray-600 text-xs rounded-lg">Cancel</button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {phone === phoneVerifiedNumber && phoneVerifiedNumber && <p className="text-[10px] text-green-600 font-semibold">✓ Phone verified</p>}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs text-gray-500">Location (City, State)</label>
