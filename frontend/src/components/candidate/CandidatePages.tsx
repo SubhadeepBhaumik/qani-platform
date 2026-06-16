@@ -58,7 +58,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false);
-  const [phoneVerifiedNumber, setPhoneVerifiedNumber] = useState('');
+  const [phoneVerifiedNumber, setPhoneVerifiedNumber] = useState(user?.phone || '');
   const [phoneOtpSending, setPhoneOtpSending] = useState(false);
   const sendPhoneOtp = async () => {
     if (!phone || phone.replace(/[^\d]/g, '').length < 8) { showToast('Please enter a valid phone number first.', 'error'); return; }
@@ -86,6 +86,12 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [linkedIn, setLinkedIn] = useState((user as any)?.linkedIn || '');
   const [workRights, setWorkRights] = useState((user as any)?.workRights || '');
   const [salaryExpectation, setSalaryExpectation] = useState((user as any)?.salaryExpectation || '');
+  const [salaryRateType, setSalaryRateType] = useState('annual');
+  const [salaryAnnual, setSalaryAnnual] = useState('');
+  const [salaryHourly, setSalaryHourly] = useState('');
+  const [salaryDaily, setSalaryDaily] = useState('');
+  const [salaryWeekly, setSalaryWeekly] = useState('');
+  const [salaryMonthly, setSalaryMonthly] = useState('');
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
   const [cvUploading, setCvUploading] = useState(false);
@@ -105,13 +111,19 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
     }).then(r => r.json()).then(p => {
       if (!p || !p.userId) return;
       if (p.bio) setBio(p.bio);
-      if (p.phone) setPhone(p.phone);
+      if (p.phone) { setPhone(p.phone); setPhoneVerifiedNumber(p.phone); }
       if (p.location) setLocation(p.location);
       if (p.skills?.length) setSkills(p.skills);
       if (p.linkedinUrl) setLinkedIn(p.linkedinUrl);
       if (p.githubUrl) setGithub(p.githubUrl);
       if (p.workRights) setWorkRights(p.workRights);
       if (p.salaryExpectation) setSalaryExpectation(p.salaryExpectation.toString());
+      if ((p as any).salaryRateType) setSalaryRateType((p as any).salaryRateType);
+      if ((p as any).salaryAnnual) setSalaryAnnual((p as any).salaryAnnual);
+      if ((p as any).salaryHourly) setSalaryHourly((p as any).salaryHourly);
+      if ((p as any).salaryDaily) setSalaryDaily((p as any).salaryDaily);
+      if ((p as any).salaryWeekly) setSalaryWeekly((p as any).salaryWeekly);
+      if ((p as any).salaryMonthly) setSalaryMonthly((p as any).salaryMonthly);
       if (p.availableFrom) setAvailableFrom(p.availableFrom.split('T')[0]);
       if (p.cvFilename) setCvFileName(p.cvFilename);
       if (p.profilePhotoUrl) setAvatarUrl(p.profilePhotoUrl);
@@ -982,7 +994,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     fetch(`https://qani.io/api/v1/candidates/${user?.id}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-                      body: JSON.stringify({ firstName, lastName, bio, phone, location, skills, linkedinUrl: linkedIn, githubUrl: github, workRights, salaryExpectation, availableFrom }),
+                      body: JSON.stringify({ firstName, lastName, bio, phone, location, skills, linkedinUrl: linkedIn, githubUrl: github, workRights, salaryExpectation: salaryAnnual || salaryExpectation, salaryAnnual, salaryHourly, salaryDaily, salaryWeekly, salaryMonthly, availableFrom }),
                     }).then(() => refreshStates()).catch(console.error);
                     // Update AppContext user state immediately
                     updateUser({ firstName, lastName });
@@ -1006,7 +1018,9 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <p><strong>LinkedIn:</strong> {linkedIn ? <a href={linkedIn} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{linkedIn}</a> : '—'}</p>
                   <p><strong>GitHub:</strong> {github ? <a href={github} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{github}</a> : '—'}</p>
                   <p><strong>Work Rights:</strong> {workRights || '—'}</p>
-                  <p><strong>Salary Expectation:</strong> {salaryExpectation ? `$${salaryExpectation}` : '—'}</p>
+                  <p><strong>Salary Expectation:</strong> {
+                    [salaryAnnual && `$${salaryAnnual}/yr`, salaryMonthly && `$${salaryMonthly}/mo`, salaryWeekly && `$${salaryWeekly}/wk`, salaryDaily && `$${salaryDaily}/day`, salaryHourly && `$${salaryHourly}/hr`].filter(Boolean).join(' · ') || salaryExpectation || '—'
+                  }</p>
                   <p><strong>Available From:</strong> {availableFrom || '—'}</p>
                   <div className="space-y-1 pt-1">
                     <strong>Bio:</strong>
@@ -1123,13 +1137,26 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-gray-500">Salary Expectation (AUD/year)</label>
-                      <input type="number" value={salaryExpectation} onChange={(e) => setSalaryExpectation(e.target.value)} placeholder="e.g. 120000" className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded" />
+                      <label className="text-xs text-gray-500">Available From</label>
+                      <input type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded cursor-pointer" />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500">Available From</label>
-                    <input type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className="w-full text-xs p-2.5 bg-gray-50 border border-gray-300 rounded cursor-pointer" />
+                  <div className="border border-gray-200 rounded-xl p-5 bg-gray-50 space-y-4">
+                    <div>
+                      <label className="text-sm font-bold text-gray-900 block">Salary Expectation (AUD)</label>
+                      <p className="text-xs text-gray-400 mt-0.5">Fill any rates that apply to your preference.</p>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                      {[['Annual', salaryAnnual, setSalaryAnnual, 'e.g. 120,000'],['Monthly', salaryMonthly, setSalaryMonthly, 'e.g. 10,000'],['Weekly', salaryWeekly, setSalaryWeekly, 'e.g. 2,500'],['Daily', salaryDaily, setSalaryDaily, 'e.g. 500'],['Hourly', salaryHourly, setSalaryHourly, 'e.g. 65']].map(([label, val, setter, ph]: any) => (
+                        <div key={label} className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+                          <label className="text-xs font-bold text-gray-700 block">{label}</label>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-gray-400">$</span>
+                            <input type="text" value={val} onChange={(e) => setter(e.target.value.replace(/[^0-9,]/g, ''))} placeholder={ph} className="flex-1 w-full text-xs p-1.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs text-gray-500">Bio / Professional Summary</label>
