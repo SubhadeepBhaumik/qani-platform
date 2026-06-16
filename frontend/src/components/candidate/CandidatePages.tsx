@@ -254,7 +254,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <div className="space-y-3 pt-4">
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Recommended Positions</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {jobs.filter(j => j.status === 'open').slice(0, 2).map(job => (
+                  {jobs.filter(j => j.status === 'open' || j.status === 'active').slice(0, 2).map(job => (
                     <div key={job.id} className="p-5 bg-white border border-gray-200 rounded-xl space-y-4 shadow-sm hover:border-blue-400 transition cursor-pointer" onClick={() => navigate('candidate-job-detail', { jobId: job.id })}>
                       <div>
                         <span className="text-[10px] uppercase text-blue-600 font-bold tracking-wider">{job.department}</span>
@@ -334,7 +334,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
 
       {/* 2. BROWSE JOBS */}
       {subView === 'jobs' && (() => {
-        const openJobs = jobs.filter((j: any) => j.status === 'open');
+        const openJobs = jobs.filter((j: any) => j.status === 'open' || j.status === 'active');
         const departments = ['All', ...Array.from(new Set(openJobs.map((j: any) => j.department).filter(Boolean))).sort() as string[]];
         const locations = ['All', ...Array.from(new Set(openJobs.map((j: any) => {
           const loc = (j.location || '') as string;

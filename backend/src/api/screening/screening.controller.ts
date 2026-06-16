@@ -55,30 +55,64 @@ function calcLocationScore(distanceKm: number, willingToCommute: boolean): numbe
   return Math.max(30, 100 - (roundTrip - 20) * 1.0);
 }
 
-function calcSalaryScore(candidateSalary: number, salaryMax: number): number {
-  if (salaryMax <= 0 || candidateSalary <= salaryMax) return 100;
-  const overagePct = ((candidateSalary - salaryMax) / salaryMax) * 100;
-  return Math.max(0, 100 - overagePct * 2.5);
+function calcSalaryScore(candidateSalary: number, salaryMax: number, salaryMin: number = 0, yearsExp: number | null = null): number {
+  if (salaryMax <= 0) return 100;
+  // Above max — penalise
+  if (candidateSalary > salaryMax) {
+    const overagePct = ((candidateSalary - salaryMax) / salaryMax) * 100;
+    let score = Math.max(0, 100 - overagePct * 2.5);
+    // Low experience + high salary = extra penalty
+    if (yearsExp !== null && yearsExp < 3 && candidateSalary > salaryMax * 1.1) {
+      score = Math.max(0, score - 20);
+    }
+    return score;
+  }
+  // Below min — penalise proportionally
+  if (salaryMin > 0 && candidateSalary < salaryMin) {
+    const shortfallPct = ((salaryMin - candidateSalary) / salaryMin) * 100;
+    let score = Math.max(20, 100 - shortfallPct * 2);
+    // High experience + low salary = extra penalty (suspicious — will likely leave)
+    if (yearsExp !== null && yearsExp >= 8 && candidateSalary < salaryMin * 0.85) {
+      score = Math.max(10, score - 20);
+    }
+    return score;
+  }
+  return 100;
 }
 
 function extractPostcodeFromTranscript(messages: any[]): string | null {
+  let lastPostcode: string | null = null;
   for (const m of messages) {
     if (m.role === 'user') {
       const match = m.content.match(/\b([0-9]{4})\b/);
-      if (match) return match[1];
+      if (match) lastPostcode = match[1];
     }
   }
-  return null;
+  return lastPostcode;
 }
 
 function extractSalaryFromTranscript(messages: any[]): number | null {
   for (const m of messages) {
     if (m.role === 'user') {
       const c = m.content.toLowerCase();
+      // Only match if salary context words present in the message
+      const hasSalaryContext = c.includes('salary') || c.includes('aud') || c.includes('annual') || c.includes('year') || c.includes('earn') || c.includes('expect') || c.includes('paid') || c.includes('per year') || c.includes('/yr') || c.includes('k aud') || c.includes('000');
+      if (!hasSalaryContext) continue;
       const kMatch = c.match(/\$?\s*(\d+(?:\.\d+)?)\s*k/);
       if (kMatch) return Math.round(parseFloat(kMatch[1]) * 1000);
       const fullMatch = c.match(/\$?\s*(\d{2,3}),?(\d{3})/);
       if (fullMatch) return parseInt(fullMatch[1] + fullMatch[2]);
+    }
+  }
+  return null;
+}
+
+function extractYearsExperience(messages: any[]): number | null {
+  for (const m of messages) {
+    if (m.role === 'user') {
+      const c = m.content.toLowerCase();
+      const match = c.match(/(\d+)\s*(?:years?|yrs?)/);
+      if (match) return parseInt(match[1]);
     }
   }
   return null;
@@ -233,17 +267,6 @@ export class ScreeningController {
           }
         }
 
-        // Salary: more than 40% above max
-        if (!redFlagReason && salaryMax > 0) {
-          const detectedSal = extractSalaryFromTranscript(messages);
-          if (detectedSal && detectedSal > salaryMax * 1.4) {
-            redFlagReason = "salary expectation";
-          }
-          // Salary: more than 20% below min (undervaluing)
-          if (!redFlagReason && detectedSal && salaryMin > 0 && detectedSal < salaryMin * 0.8) {
-            redFlagReason = "salary expectation";
-          }
-        }
 
         // Location: beyond 80km and not willing to commute
         if (!redFlagReason) {
@@ -341,7 +364,7 @@ Take care, and thank you again.`;
           const distKm = Math.round(haversineKm(cLL.lat, cLL.lng, jLL.lat, jLL.lng));
           if (distKm <= 20) {
             locationQuestion = mandQ.locationCommute
-              ? '2. Location: Candidate postcode ' + candidatePostcode + ' is ' + distKm + 'km from ' + job.location + ' — within acceptable range. Skip this question and move to question 3.'
+              ? '2. Location/Commute: Candidate is only ' + distKm + 'km from ' + job.location + ' — perfectly within range. DO NOT ask about commute. Acknowledge their location with a positive comment like "Great, you are nice and close to our office!" and move directly to the next question.'
               : '';
           } else {
             locationQuestion = mandQ.locationCommute
@@ -539,7 +562,8 @@ Take care, and thank you again.`;
         let salaryNote = '';
         const cSal = extractSalaryFromTranscript(messages);
         if (cSal && salaryMax > 0) {
-          preSalaryScore = calcSalaryScore(cSal, salaryMax);
+          const yearsExp = extractYearsExperience(messages);
+          preSalaryScore = Math.round(calcSalaryScore(cSal, salaryMax, salaryMin, yearsExp));
           if (cSal <= salaryMax) {
             salaryNote = `Candidate expects $${Math.round(cSal / 1000)}k which is within the $${Math.round(salaryMin / 1000)}k-$${Math.round(salaryMax / 1000)}k budget.`;
           } else {
@@ -576,13 +600,14 @@ Take care, and thank you again.`;
           locationScoreRule,
           '- workRightsScore: confirmed valid rights = 85-95. Unclear/evasive = 30-50. No rights = 5-15.',
           salaryScoreRule,
-          '- qualificationsScore: STRICT — generic phrases like "I follow standards", "I have experience", "I can do it" with no specifics = 10-20. Some relevant detail but no examples = 30-45. Specific examples with context = 55-70. Detailed examples with metrics/outcomes = 75-88.',
-          '- skillsScore: STRICT — answers like "yes I can", "HTML CSS", "check on major browsers", "follow standards" with zero technical depth = 5-15. Partial technical knowledge shown = 25-45. Clear technical knowledge with some specifics = 50-65. Strong evidence with tools, techniques, real examples = 70-85.',
+          '- qualificationsScore: VERY STRICT — one strong answer among weak ones = 25-35. Mix of good and vague = 30-45. Consistently specific with examples = 55-70. Exceptional with metrics/outcomes = 75-85. NEVER give above 50 unless majority of answers had real specifics. If ANY answer was one-liner or generic, cap at 45.',
+          '- skillsScore: VERY STRICT — even ONE strong answer does not compensate for weak ones. Average ALL answers. Generic one-liners like "I design in figma using AI" or "I follow standards" = 5-15 each. Weight the average down. Cap at 40 unless ALL answers showed technical depth.',
+          '- overallScore penalty: If qualificationsScore < 50 AND skillsScore < 50, apply additional 5-point reduction to overallScore.',
           '- overallScore: MUST be weighted average: (locationScore x ' + weights.locationWeight + ' + workRightsScore x ' + weights.workRightsWeight + ' + salaryScore x ' + weights.salaryWeight + ' + qualificationsScore x ' + weights.qualificationsWeight + ' + skillsScore x ' + weights.skillsWeight + ') / 100',
           '- If candidate gave fewer than 3 substantive answers, cap overallScore at 40.',
           '- recommendation: qualified if overall>=70, review if 45-69, rejected if <45.',
-          '- feedback: Write 3-4 sentences. Write like a senior recruiter summarising for a hiring manager. Start with the candidate first name only. Cover: (1) location/commute if notable, (2) salary only if outside budget, (3) technical quality with specifics from their actual answers — do not flatter or use words like solid/enthusiastic, (4) one clear bottom line: recommend for interview, recommend with conditions, or do not recommend and why. Be direct and factual.',
-          '- feedback: Write 3-4 sentences. Write like a senior recruiter summarising for a hiring manager. Start with the candidate first name only. Cover: (1) location/commute if notable, (2) salary only if outside budget, (3) technical quality with specifics from their actual answers — do not flatter or use words like solid/enthusiastic, (4) one clear bottom line: recommend for interview, recommend with conditions, or do not recommend and why. Be direct and factual.',
+          '- feedback: Write 3-4 sentences. Write like a SENIOR RECRUITER with 20+ years experience summarising for a hiring manager who has no time to read the transcript. Start with candidate first name. Be brutally honest. Cover: (1) location only if notable, (2) salary — if below budget AND candidate has many years experience, explicitly flag this as suspicious e.g. "X years experience quoting $Yk raises questions about the accuracy of stated experience or their awareness of market rates", (3) technical quality — reference SPECIFIC answers, quote vague ones directly, (4) bottom line — do not recommend unless genuinely strong. Use words like "not recommended", "requires further technical assessment", "proceed with caution". NEVER say "solid", "strong background", "positive factor" for vague answers.',
+          '- feedback: Write 3-4 sentences. Write like a SENIOR RECRUITER with 20+ years experience summarising for a hiring manager who has no time to read the transcript. Start with candidate first name. Be brutally honest. Cover: (1) location only if notable, (2) salary — if below budget AND candidate has many years experience, explicitly flag this as suspicious e.g. "X years experience quoting $Yk raises questions about the accuracy of stated experience or their awareness of market rates", (3) technical quality — reference SPECIFIC answers, quote vague ones directly, (4) bottom line — do not recommend unless genuinely strong. Use words like "not recommended", "requires further technical assessment", "proceed with caution". NEVER say "solid", "strong background", "positive factor" for vague answers.',
           locationNote ? '- Location context: ' + locationNote : '',
           salaryNote ? '- Salary context: ' + salaryNote : '',
           'Return ONLY this JSON, no markdown, no extra text:',
