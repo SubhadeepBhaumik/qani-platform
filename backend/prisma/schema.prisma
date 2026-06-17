@@ -180,3 +180,51 @@ model PlatformSetting {
 
   @@map("platform_settings")
 }
+
+model RecruiterTrial {
+  id            String   @id @default(cuid())
+  recruiterId   String   @unique
+  freeTrialDays Int      @default(10)
+  registeredAt  DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@map("recruiter_trials")
+}
+
+model RecruiterCredits {
+  id          String   @id @default(cuid())
+  recruiterId String   @unique
+  balance     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("recruiter_credits")
+}
+
+model CreditTransaction {
+  id              String   @id @default(cuid())
+  recruiterId     String
+  type            String
+  amount          Int
+  reason          String
+  sessionId       String?
+  stripePaymentId String?
+  balanceAfter    Int
+  createdAt       DateTime @default(now())
+  @@map("credit_transactions")
+}
+
+model PricingPlan {
+  id          String   @id @default(cuid())
+  sortOrder   Int      @default(0)
+  name        String
+  price       Int
+  credits     Int
+  description String   @default("")
+  features    String   @default("[]")
+  buttonText  String   @default("Buy Now")
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("pricing_plans")
+}

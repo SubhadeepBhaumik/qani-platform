@@ -16,6 +16,8 @@ import { ScreeningController } from './api/screening/screening.controller';
 import { ScoringController } from './api/scoring/scoring.controller';
 import { DashboardController } from './api/dashboard/dashboard.controller';
 import { TeamController } from './api/team/team.controller';
+import { getStatus, getTransactions, adminListRecruiters, adminUpdateTrialDays, adminAdjustCredits, getPricingPlans, adminGetPricingPlans, adminUpdatePricingPlan } from './api/credits/credits.controller';
+import { createCheckoutSession, stripeWebhook } from './api/credits/stripe.controller';
 
 dotenv.config();
 
@@ -25,6 +27,7 @@ const port = process.env.API_PORT || 5001;
 app.use(helmet());
 app.use(cors({ origin: ['http://localhost:3000', 'http://qani.io', 'http://www.qani.io', 'http://139.180.181.11'], credentials: true }));
 app.use(morgan('combined'));
+app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -108,6 +111,15 @@ app.post('/api/v1/screening/start', ScreeningController.startScreening);
 app.post('/api/v1/screening/message', ScreeningController.sendMessage);
 app.post('/api/v1/screening/end', ScreeningController.endScreening);
 app.get('/api/v1/screening/:id', ScreeningController.getSession);
+app.get('/api/v1/credits/status', getStatus);
+app.get('/api/v1/credits/transactions', getTransactions);
+app.post('/api/v1/credits/checkout', createCheckoutSession);
+app.get('/api/v1/pricing-plans', getPricingPlans);
+app.get('/api/v1/admin/credits', adminListRecruiters);
+app.patch('/api/v1/admin/credits/:recruiterId/trial', adminUpdateTrialDays);
+app.patch('/api/v1/admin/credits/:recruiterId/adjust', adminAdjustCredits);
+app.get('/api/v1/admin/pricing-plans', adminGetPricingPlans);
+app.patch('/api/v1/admin/pricing-plans/:id', adminUpdatePricingPlan);
 
 // Scoring routes
 app.post('/api/v1/scoring/rules', ScoringController.createScoringRule);

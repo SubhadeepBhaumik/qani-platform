@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { checkScreeningAllowed, deductCredits } from '../credits/credits.controller';
 import { OpenAI } from 'openai';
 import { PrismaClient } from '@prisma/client';
 import { ApplicationsController } from '../applications/applications.controller';
@@ -149,6 +150,17 @@ export class ScreeningController {
           jobData = { ...app.job, candidateName };
         }
       } catch (_) {}
+      const recruiterId = jobData.recruiterId;
+      if (recruiterId) {
+        const gate = await checkScreeningAllowed(recruiterId);
+        if (gate.allowed === false) {
+          return res.status(402).json({
+            error: "insufficient_credits",
+            message: "Your free trial has ended and you have no screening credits remaining. Please purchase a plan to continue.",
+            balance: gate.balance,
+          });
+        }
+      }
 
       const mandQ = jobData.mandatoryQuestions || {};
       const mandatoryCount = [
@@ -324,6 +336,10 @@ Take care, and thank you again.`;
           } catch (e) { console.error('Red flag app update error:', e); }
 
           const updatedSession = await prisma.screeningSession.findUnique({ where: { id: sessionId } });
+          const recruiterId = job.recruiterId;
+          if (recruiterId) {
+            deductCredits(recruiterId, 5, "screening_mandatory", session.id).catch((e) => console.error("deductCredits error:", e));
+          }
           return res.json({ ...updatedSession, messages, redFlag: true });
         }
       }
@@ -717,6 +733,13 @@ Take care, and thank you again.`;
             candidateName + ' completed AI screening for ' + jobTitle + '. Score: ' + Math.round(overallScore) + '%. Recommendation: ' + recommendation + '.',
             app.job?.id, session.applicationId
           );
+          const recruiterId = app.job?.recruiterId;
+          if (recruiterId) {
+            const hasCustomQuestions = (app.job?.screeningQuestions || []).length > 0;
+            const creditAmount = hasCustomQuestions ? 15 : 5;
+            const creditReason = hasCustomQuestions ? "screening_full" : "screening_mandatory";
+            deductCredits(recruiterId, creditAmount, creditReason, session.id).catch((e) => console.error("deductCredits error:", e));
+          }
         }
       } catch (e) {
         console.error('App update error:', e);
