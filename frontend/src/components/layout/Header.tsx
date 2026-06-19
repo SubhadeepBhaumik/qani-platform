@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { TrialBanner } from '../shared/TrialBanner';
 import { useApp } from '../AppContext';
 import { api } from '../../lib/api';
 import { Bell, ChevronDown, CheckCircle2, MapPin, LayoutDashboard } from 'lucide-react';
@@ -28,6 +29,7 @@ export const Header: React.FC = () => {
           AI Recruiter is active — screening candidates automatically
         </div>
       )}
+      {user && user.role === 'recruiter' && <TrialBanner onBuyCredits={() => navigate('landing')} />}
       <div className="h-16 px-6 flex items-center justify-between">
 
       {/* Left: QANI Logo + public nav links */}

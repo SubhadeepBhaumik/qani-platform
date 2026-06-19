@@ -5,7 +5,7 @@ import { QANILogo } from '../shared/QANILogo';
 import {
   Home, Briefcase, FileText, User, Settings, Bell, LogOut,
   HelpCircle, BarChart2, Users, UserCheck, Activity, PlusCircle,
-  DollarSign, PenTool, Users2
+  DollarSign, PenTool, Users2, CreditCard
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -46,6 +46,7 @@ export const Sidebar: React.FC = () => {
         { id: 'admin-applications', label: 'Applications', icon: FileText, view: 'admin-applications' as AppView },
         { id: 'admin-finance', label: 'Finance', icon: DollarSign, view: 'admin-finance' as AppView },
         { id: 'admin-cms', label: 'Content (CMS)', icon: PenTool, view: 'admin-cms' as AppView },
+        { id: 'admin-credits', label: 'Assign AI Credits', icon: CreditCard, view: 'admin-credits' as AppView },
         { id: 'admin-settings', label: 'Settings', icon: Settings, view: 'admin-settings' as AppView },
       ];
     }

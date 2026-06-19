@@ -154,9 +154,20 @@ export class ScreeningController {
       if (recruiterId) {
         const gate = await checkScreeningAllowed(recruiterId);
         if (gate.allowed === false) {
+          const recruiterUser = await prisma.user.findUnique({ where: { id: recruiterId } });
+          if (recruiterUser) {
+            const jt = jobData.title || "a role";
+            pushNotification(
+              recruiterId, recruiterUser.email,
+              "system",
+              "Candidate waiting to start AI screening",
+              "A candidate is ready to begin AI screening for " + jt + ", but your trial or credits have run out. Purchase credits to let screening continue.",
+              jobData.id, applicationId
+            ).catch(() => {});
+          }
           return res.status(402).json({
             error: "insufficient_credits",
-            message: "Your free trial has ended and you have no screening credits remaining. Please purchase a plan to continue.",
+            message: "This role's AI screening is temporarily paused while the hiring team finalizes some account settings. Please check back again in a little while.",
             balance: gate.balance,
           });
         }
@@ -214,6 +225,18 @@ export class ScreeningController {
       const session = await prisma.screeningSession.findUnique({ where: { id: sessionId } });
       if (!session) return res.status(404).json({ error: 'Session not found' });
       if (session.status !== 'active') return res.status(400).json({ error: 'Session is not active' });
+      const jobForGate: any = session.jobData || {};
+      const recruiterIdForGate = jobForGate.recruiterId;
+      if (recruiterIdForGate) {
+        const gateMid = await checkScreeningAllowed(recruiterIdForGate);
+        if (gateMid.allowed === false) {
+          return res.status(402).json({
+            error: "insufficient_credits",
+            message: "This role's AI screening is temporarily paused while the hiring team finalizes some account settings. Please check back again in a little while.",
+            balance: gateMid.balance,
+          });
+        }
+      }
 
       const messages: any[] = Array.isArray(session.messages) ? session.messages : [];
 

@@ -67,7 +67,7 @@ interface AppContextType {
   deleteJob: (id: string) => Promise<void>;
   applyForJob: (jobId: string) => Promise<void>;
   startScreening: (appId: string) => Promise<ScreeningSession>;
-  sendCandidateMessage: (sessionId: string, text: string) => Promise<void>;
+  sendCandidateMessage: (sessionId: string, text: string) => Promise<string | null>;
   updateApplicationStatus: (appId: string, status: Application['status'], notes?: { recruiterName: string; content: string }) => Promise<void>;
   refreshStates: (currentUser?: User | null) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
@@ -324,20 +324,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const startScreening = async (appId: string): Promise<ScreeningSession> => {
     const candidateName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Candidate';
-    const session = await api.startScreening(appId, candidateName);
+    let session: ScreeningSession;
+    try {
+      session = await api.startScreening(appId, candidateName);
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('temporarily paused')) {
+        showToast(msg, 'info');
+      } else {
+        showToast('Something went wrong starting the screening. Please try again.', 'error');
+      }
+      throw err;
+    }
     setSessions(prev => [...prev.filter(s => s.applicationId !== appId), session]);
     showToast('AI screening session started. Good luck!', 'info');
     navigate('candidate-screening', { sessionId: session.id, applicationId: appId });
     return session;
   };
 
-  const sendCandidateMessage = async (sessionId: string, text: string) => {
+  const sendCandidateMessage = async (sessionId: string, text: string): Promise<string | null> => {
     setIsGeneratingAI(true);
     try {
       const updated = await api.submitResponseToAI(sessionId, text);
-      setSessions(prev => prev.map(s => s.id === sessionId ? updated : s));
+      setSessions(prev => prev.map(s => s.id === sessionId ? updated : s)); return null;
     } catch (err: any) {
-      showToast(err.message || 'AI response failed. Try again.', 'error');
+      const m = err.message || 'AI response failed. Try again.'; if (m.includes('temporarily paused')) { return m; } showToast(m, 'error'); return null;
     } finally {
       setIsGeneratingAI(false);
     }

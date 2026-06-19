@@ -44,6 +44,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
 
   // Search/Filters State for Browse Jobs
   const [searchQuery, setSearchQuery] = useState('');
+  const [screeningBlockedMsg, setScreeningBlockedMsg] = useState<Record<string, string>>({});
+  const [chatBlockedMsg, setChatBlockedMsg] = useState<string | null>(null);
   const [filterType, setFilterType] = useState('All');
   const [filterLocation, setFilterLocation] = useState('All');
   const [filterSalary, setFilterSalary] = useState('All');
@@ -656,6 +658,15 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     const screeningJob = jobs.find((j: any) => j.id === (app.jobId ?? (app as any).roleId));
                     const jobExpired = screeningJob?.expiresAt && new Date(new Date(screeningJob.expiresAt).setHours(23,59,59,999)) < new Date();
                     const jobFilled = screeningJob?.status === 'filled' || screeningJob?.status === 'closed';
+                    if (screeningBlockedMsg[app.id]) return (
+                      <div className="p-4 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-start gap-3">
+                        <span className="text-blue-500 text-lg shrink-0">ℹ️</span>
+                        <div>
+                          <p className="text-sm font-semibold text-blue-800 mb-1">Screening Temporarily Unavailable</p>
+                          <p className="text-xs text-blue-700">{screeningBlockedMsg[app.id]}</p>
+                        </div>
+                      </div>
+                    );
                     if (jobExpired || jobFilled) return (
                       <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-xs font-semibold">
                         ⚠️ {jobFilled ? 'This position has been filled.' : 'This job posting has closed.'} AI Screening is no longer available for this role.
@@ -664,7 +675,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     return (
                       <button
                         id="app-start-screen-btn"
-                        onClick={() => startScreening(app.id)}
+                        onClick={() => { startScreening(app.id).catch((err) => { const m = (err && err.message) || ""; if (m.indexOf("temporarily paused") !== -1) { setScreeningBlockedMsg(function(p) { var n = Object.assign({}, p); n[app.id] = m; return n; }); } }); }}
                         className="py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer"
                       >
                         Start AI Screening Conversation
@@ -805,7 +816,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
 
           const rawText = userAnswer;
           setUserAnswer('');
-          sendCandidateMessage(session.id, rawText);
+          sendCandidateMessage(session.id, rawText).then((blockedMsg) => { if (blockedMsg) setChatBlockedMsg(blockedMsg); });
         };
 
         return (
@@ -930,6 +941,15 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     End Screening
                   </button>
                 </div>
+              {chatBlockedMsg ? (
+                <div className="mb-3 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-start gap-3">
+                  <span className="text-blue-500 text-lg shrink-0">i</span>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800 mb-1">Screening Temporarily Unavailable</p>
+                    <p className="text-xs text-blue-700">{chatBlockedMsg}</p>
+                  </div>
+                </div>
+              ) : null}
               <form onSubmit={handleChatSubmit} className="flex gap-2 items-center bg-white p-2.5 rounded-xl border border-gray-200 shadow-sm">
                 <input 
                   type="text"

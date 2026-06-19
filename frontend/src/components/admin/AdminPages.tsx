@@ -1,4 +1,5 @@
 import { AdminCMS } from './AdminCMS';
+import { AdminCredits } from './AdminCredits';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import {
@@ -533,6 +534,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
       'finance': 'admin-finance',
       'cms': 'admin-cms',
       'settings': 'admin-settings',
+      'credits': 'admin-credits',
     };
     appNavigate(viewMap[tab] as any || 'admin-dashboard');
   };
@@ -687,6 +689,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     { id: 'applications', label: 'Applications', icon: FileText },
     { id: 'finance', label: 'Finance', icon: DollarSign },
     { id: 'cms', label: 'Content (CMS)', icon: PenTool },
+    { id: 'credits', label: 'Assign AI Credits', icon: CreditCard },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -952,19 +955,7 @@ Question 1: Describe your most relevant experience for this role.` },
         </div>
       )}
 
-      {/* Admin top nav */}
-      <div className={`bg-gray-950 border-b border-gray-800 px-6 py-3 flex items-center gap-2 overflow-x-auto shrink-0 ${activeTab === 'cms' ? 'hidden' : ''}`}>
-        <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest mr-3 shrink-0">SUPER ADMIN</span>
-        {navTabs.map(t => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.id;
-          return (
-            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`cursor-pointer flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition shrink-0 ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-              <Icon className="w-3.5 h-3.5" />{t.label}
-            </button>
-          );
-        })}
-      </div>
+      
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
 
@@ -1348,6 +1339,7 @@ Question 1: Describe your most relevant experience for this role.` },
           <AdminCMS />
         )}
         {/* ── SETTINGS ── */}
+        {activeTab === 'credits' && <AdminCredits showToast={showToast} />}
         {activeTab === 'settings' && <AdminSettings showToast={showToast} />}
 
       </div>

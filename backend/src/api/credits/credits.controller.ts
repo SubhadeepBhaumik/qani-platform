@@ -13,6 +13,13 @@ function getAuthUserId(req: Request): string | null {
   return decoded.userId;
 }
 
+async function requireAdmin(req: Request): Promise<boolean> {
+  const userId = getAuthUserId(req);
+  if (userId === null) return false;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  return user?.role === 'admin';
+}
+
 export async function getTrialStatus(recruiterId: string): Promise<{
   isOnTrial: boolean;
   trialDaysTotal: number;
@@ -137,6 +144,8 @@ export async function getTransactions(req: Request, res: Response) {
 
 export async function adminListRecruiters(req: Request, res: Response) {
   try {
+    const isAdmin = await requireAdmin(req);
+    if (isAdmin === false) return res.status(403).json({ error: 'Forbidden' });
     const recruiters = await prisma.user.findMany({
       where: { role: 'recruiter' },
       select: {
@@ -178,6 +187,8 @@ export async function adminListRecruiters(req: Request, res: Response) {
 
 export async function adminUpdateTrialDays(req: Request, res: Response) {
   try {
+    const isAdmin = await requireAdmin(req);
+    if (isAdmin === false) return res.status(403).json({ error: 'Forbidden' });
     const { recruiterId } = req.params;
     const { freeTrialDays } = req.body;
 
@@ -207,6 +218,8 @@ export async function adminUpdateTrialDays(req: Request, res: Response) {
 
 export async function adminAdjustCredits(req: Request, res: Response) {
   try {
+    const isAdmin = await requireAdmin(req);
+    if (isAdmin === false) return res.status(403).json({ error: 'Forbidden' });
     const { recruiterId } = req.params;
     const { amount, reason } = req.body;
 
@@ -253,6 +266,8 @@ export async function getPricingPlans(req: Request, res: Response) {
 
 export async function adminGetPricingPlans(req: Request, res: Response) {
   try {
+    const isAdmin = await requireAdmin(req);
+    if (isAdmin === false) return res.status(403).json({ error: 'Forbidden' });
     const plans = await prisma.pricingPlan.findMany({ orderBy: { sortOrder: 'asc' } });
     res.json(plans);
   } catch (err) {
@@ -262,6 +277,8 @@ export async function adminGetPricingPlans(req: Request, res: Response) {
 
 export async function adminUpdatePricingPlan(req: Request, res: Response) {
   try {
+    const isAdmin = await requireAdmin(req);
+    if (isAdmin === false) return res.status(403).json({ error: 'Forbidden' });
     const { id } = req.params;
     const { name, price, credits, description, features, buttonText, isPopular, isActive, sortOrder } = req.body;
 
