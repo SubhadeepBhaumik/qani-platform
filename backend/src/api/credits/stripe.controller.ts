@@ -4,9 +4,6 @@ import { PrismaClient } from '@prisma/client';
 import { AuthService } from '../../services/auth.service';
 
 const prisma = new PrismaClient();
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2026-05-27.dahlia' as any });
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://qani.io';
 
 function getAuthUserId(req: Request): string | null {
@@ -16,6 +13,18 @@ function getAuthUserId(req: Request): string | null {
   const decoded = AuthService.verifyToken(token) as any;
   if (!decoded) return null;
   return decoded.userId;
+}
+
+async function getStripeKeys(): Promise<{ secretKey: string; webhookSecret: string }> {
+  const rows = await prisma.platformSetting.findMany({
+    where: { key: { in: ['stripeSecretKey', 'stripeWebhookSecret'] } },
+  });
+  const map: Record<string, string> = {};
+  rows.forEach(r => { map[r.key] = r.value; });
+  return {
+    secretKey: map['stripeSecretKey'] || process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: map['stripeWebhookSecret'] || process.env.STRIPE_WEBHOOK_SECRET || '',
+  };
 }
 
 export async function createCheckoutSession(req: Request, res: Response) {
@@ -29,6 +38,12 @@ export async function createCheckoutSession(req: Request, res: Response) {
     const plan = await prisma.pricingPlan.findUnique({ where: { id: planId } });
     if (!plan || !plan.isActive) return res.status(404).json({ error: 'Plan not found' });
 
+    const { secretKey } = await getStripeKeys();
+    if (!secretKey || secretKey.indexOf('placeholder') !== -1) {
+      return res.status(503).json({ error: 'Payments are not yet configured. Please contact support.' });
+    }
+
+    const stripe = new Stripe(secretKey, { apiVersion: '2026-05-27.dahlia' as any });
     const recruiter = await prisma.user.findUnique({ where: { id: recruiterId } });
 
     const session = await stripe.checkout.sessions.create({
@@ -67,10 +82,14 @@ export async function createCheckoutSession(req: Request, res: Response) {
 
 export async function stripeWebhook(req: Request, res: Response) {
   const sig = req.headers['stripe-signature'] as string;
+  const { secretKey, webhookSecret } = await getStripeKeys();
+
+  if (!secretKey) return res.status(503).json({ error: 'Stripe not configured' });
+  const stripe = new Stripe(secretKey, { apiVersion: '2026-05-27.dahlia' as any });
 
   let event: any;
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
     console.error('Stripe webhook signature failed:', err);
     return res.status(400).json({ error: 'Webhook signature verification failed' });

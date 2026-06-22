@@ -302,6 +302,23 @@ const AdminSettings: React.FC<{ showToast: (msg: string, type: string) => void }
           </div>
         </div>
 
+        {/* Stripe */}
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><DollarSign className="w-4 h-4 text-purple-600" /> Payments — Stripe</h3>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">Secret Key</label>
+              <input type="password" value={sSettings['stripeSecretKey'] || ''} placeholder={sSettings.stripeSecretKey === '***configured***' ? '***configured***' : 'sk_test_...'}
+                onChange={e => setSSettings((p: any) => ({...p, stripeSecretKey: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <div>
+              <label className="text-xs font-semibold text-gray-700">Webhook Secret</label>
+              <input type="password" value={sSettings['stripeWebhookSecret'] || ''} placeholder={sSettings.stripeWebhookSecret === '***configured***' ? '***configured***' : 'whsec_...'}
+                onChange={e => setSSettings((p: any) => ({...p, stripeWebhookSecret: e.target.value}))}
+                className={fieldClass} />
+            </div>
+          <p className="text-[10px] text-gray-400">Get these from your Stripe Dashboard → Developers → API keys. Use test mode keys (sk_test_...) for sandbox testing.</p>
+        </div>
         {/* Twilio */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
           <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2"><Bell className="w-4 h-4 text-orange-600" /> SMS — Twilio</h3>

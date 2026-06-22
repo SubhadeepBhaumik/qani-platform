@@ -218,13 +218,15 @@ app.get('/api/v1/admin/settings', async (_req, res) => {
       otpRetryLimit: map['otpRetryLimit'] || '3',
       featureAiScreening: map['featureAiScreening'] || 'true',
       featureOtpEnforcement: map['featureOtpEnforcement'] || 'true',
+      stripeSecretKey: map['stripeSecretKey'] ? '***configured***' : (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.indexOf('placeholder') === -1 ? '***configured***' : ''),
+      stripeWebhookSecret: map['stripeWebhookSecret'] ? '***configured***' : '',
     });
   } catch(e) { res.status(500).json({ error: 'Failed to load settings' }); }
 });
 
 app.post('/api/v1/admin/settings', async (req: any, res: any) => {
   try {
-    const allowed = ['sendgridFromEmail','sendgridFromName','sendgridApiKey','twilioAccountSid','twilioPhoneNumber','twilioAuthToken','openaiApiKey','openaiModel','otpExpiryMinutes','otpRetryLimit','featureAiScreening','featureOtpEnforcement'];
+    const allowed = ['sendgridFromEmail','sendgridFromName','sendgridApiKey','twilioAccountSid','twilioPhoneNumber','twilioAuthToken','openaiApiKey','openaiModel','otpExpiryMinutes','otpRetryLimit','featureAiScreening','featureOtpEnforcement','stripeSecretKey','stripeWebhookSecret'];
     const updates = req.body;
     for (const key of allowed) {
       if (updates[key] !== undefined && updates[key] !== '' && updates[key] !== '***configured***') {
