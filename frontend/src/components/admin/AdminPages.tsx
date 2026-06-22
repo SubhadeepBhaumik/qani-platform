@@ -1,5 +1,6 @@
 import { AdminCMS } from './AdminCMS';
 import { AdminCredits } from './AdminCredits';
+import { AdminPricingCMS } from './AdminPricingCMS';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import {
@@ -1340,6 +1341,7 @@ Question 1: Describe your most relevant experience for this role.` },
         )}
         {/* ── SETTINGS ── */}
         {activeTab === 'credits' && <AdminCredits showToast={showToast} />}
+        {activeTab === 'pricing' && <AdminPricingCMS showToast={showToast} />}
         {activeTab === 'settings' && <AdminSettings showToast={showToast} />}
 
       </div>

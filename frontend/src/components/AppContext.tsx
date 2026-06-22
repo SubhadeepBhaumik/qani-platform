@@ -130,6 +130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // Check if there's a specific URL to navigate to
           const currentPath = window.location.pathname;
           const ROUTES: Record<string, string> = {
+            '/': 'landing',
             '/candidate/dashboard': 'candidate-dashboard',
             '/candidate/jobs': 'candidate-jobs',
             '/candidate/job': 'candidate-job-detail',

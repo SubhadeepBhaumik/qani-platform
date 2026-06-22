@@ -47,6 +47,7 @@ export const Sidebar: React.FC = () => {
         { id: 'admin-finance', label: 'Finance', icon: DollarSign, view: 'admin-finance' as AppView },
         { id: 'admin-cms', label: 'Content (CMS)', icon: PenTool, view: 'admin-cms' as AppView },
         { id: 'admin-credits', label: 'Assign AI Credits', icon: CreditCard, view: 'admin-credits' as AppView },
+        { id: 'admin-pricing', label: 'Pricing Plans', icon: DollarSign, view: 'admin-pricing' as AppView },
         { id: 'admin-settings', label: 'Settings', icon: Settings, view: 'admin-settings' as AppView },
       ];
     }

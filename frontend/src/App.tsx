@@ -58,6 +58,7 @@ export const ROUTES: Record<string, string> = {
   'admin-cms': '/admin/cms',
   'admin-settings': '/admin/settings',
   'admin-credits': '/admin/credits',
+  'admin-pricing': '/admin/pricing',
 };
 
 const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
@@ -172,6 +173,7 @@ const AppContent: React.FC = () => {
       case 'admin-cms': return <AdminPages subView="cms" />;
       case 'admin-settings': return <AdminPages subView="settings" />;
       case 'admin-credits': return <AdminPages subView="credits" />;
+      case 'admin-pricing': return <AdminPages subView="pricing" />;
       default: return <HomePage />;
     }
   };
