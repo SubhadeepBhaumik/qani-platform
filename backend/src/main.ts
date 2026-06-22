@@ -1,5 +1,6 @@
 
 import { errorHandler } from './middleware/errorHandler';
+import { AuthService } from './services/auth.service';
 import { NotificationsController } from './api/notifications/notifications.controller';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
@@ -30,6 +31,31 @@ app.use(morgan('combined'));
 app.post('/api/v1/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+async function requireAdmin(req: Request, res: Response, next: any) {
+  try {
+    const authHeader = req.headers.authorization;
+    const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+    if (hasValidHeader === false) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded = AuthService.verifyToken(token) as any;
+    if (decoded === null || decoded === undefined || decoded.userId === undefined) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const { PrismaClient } = require('@prisma/client');
+    const checkPrisma = new PrismaClient();
+    const user = await checkPrisma.user.findUnique({ where: { id: decoded.userId } });
+    const isValidAdmin = user !== null && user.role === 'admin';
+    if (isValidAdmin === false) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
 
 // Health check
 app.get('/api/v1/health', (_req: Request, res: Response) => {
@@ -162,7 +188,7 @@ app.post('/api/v1/screening/message', (_req, res) => res.json({ id: _req.body.se
 app.post('/api/v1/screening/end', (_req, res) => res.json({ id: _req.body.sessionId, status: 'completed' }));
 app.get('/api/v1/audit-logs', (_req, res) => res.json([]));
 app.post('/api/v1/audit-logs', (_req, res) => res.status(201).json({}));
-app.get('/api/v1/users', async (_req, res) => {
+app.get('/api/v1/users', requireAdmin, async (_req, res) => {
   try {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
@@ -199,7 +225,7 @@ app.post('/api/v1/admin/cms', async (req: any, res: any) => {
 // ─── PLATFORM SETTINGS API ───────────────────────────────────────────────────
 const settingsPrisma = new (require('@prisma/client').PrismaClient)();
 
-app.get('/api/v1/admin/settings', async (_req, res) => {
+app.get('/api/v1/admin/settings', requireAdmin, async (_req, res) => {
   try {
     const settings = await settingsPrisma.platformSetting.findMany();
     const map: Record<string, string> = {};
@@ -224,7 +250,7 @@ app.get('/api/v1/admin/settings', async (_req, res) => {
   } catch(e) { res.status(500).json({ error: 'Failed to load settings' }); }
 });
 
-app.post('/api/v1/admin/settings', async (req: any, res: any) => {
+app.post('/api/v1/admin/settings', requireAdmin, async (req: any, res: any) => {
   try {
     const allowed = ['sendgridFromEmail','sendgridFromName','sendgridApiKey','twilioAccountSid','twilioPhoneNumber','twilioAuthToken','openaiApiKey','openaiModel','otpExpiryMinutes','otpRetryLimit','featureAiScreening','featureOtpEnforcement','stripeSecretKey','stripeWebhookSecret'];
     const updates = req.body;
@@ -290,7 +316,7 @@ app.get('/api/v1/admin/ssl/status', async (_req, res) => {
 });
 
 // Danger zone — clear OTPs
-app.post('/api/v1/admin/danger/clear-otps', async (_req, res) => {
+app.post('/api/v1/admin/danger/clear-otps', requireAdmin, async (_req, res) => {
   try {
     const dangerPrisma = new (require('@prisma/client').PrismaClient)();
     const result = await dangerPrisma.otpRecord.deleteMany({});
@@ -299,7 +325,7 @@ app.post('/api/v1/admin/danger/clear-otps', async (_req, res) => {
 });
 
 // Danger zone — clear screening sessions
-app.post('/api/v1/admin/danger/clear-sessions', async (_req, res) => {
+app.post('/api/v1/admin/danger/clear-sessions', requireAdmin, async (_req, res) => {
   try {
     const dangerPrisma = new (require('@prisma/client').PrismaClient)();
     const result = await dangerPrisma.screeningSession.deleteMany({ where: { status: 'completed' } });
