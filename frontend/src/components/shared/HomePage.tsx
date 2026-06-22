@@ -12,6 +12,21 @@ export const HomePage: React.FC = () => {
   const { navigate, showToast, user } = useApp();
   const cms = useCMS();
   const [activeSlide, setActiveSlide] = useState(0);
+  const [dynamicPlans, setDynamicPlans] = useState<any[]>([]);
+  const [buyingPlan, setBuyingPlan] = useState<string | null>(null);
+  useEffect(() => { fetch('/api/v1/pricing-plans').then(r => r.json()).then(setDynamicPlans).catch(() => {}); }, []);
+  const handleBuyPlan = async (plan: any) => {
+    if (plan.ctaAction === 'contact_sales') { navigate('help'); return; }
+    if (user === null) { navigate('auth-register-recruiter'); return; }
+    if (user.role !== 'recruiter') { showToast('Credits are for recruiter accounts. Please register as a recruiter.', 'info'); return; }
+    setBuyingPlan(plan.id);
+    try {
+      const res = await fetch('/api/v1/credits/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + localStorage.getItem('qani_auth_token') }, body: JSON.stringify({ planId: plan.id }) });
+      const data = await res.json();
+      if (data.url) { window.location.href = data.url; } else { showToast('Could not start checkout. Please try again.', 'error'); }
+    } catch { showToast('Could not start checkout. Please try again.', 'error'); }
+    finally { setBuyingPlan(null); }
+  };
 
   const slides = [
     {
@@ -475,38 +490,33 @@ export const HomePage: React.FC = () => {
 
           {/* Credit packs */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { credits: 10, price: '$49', perCredit: '$4.90', label: 'Starter', desc: 'Try it out', features: ['10 AI screenings', 'Full scorecards', 'Email support'], highlight: false, cta: 'Buy 10 Credits' },
-              { credits: 50, price: '$199', perCredit: '$3.98', label: 'Growth', desc: 'Most popular for agencies', features: ['50 AI screenings', 'Full scorecards', 'Priority support', 'CSV export'], highlight: true, cta: 'Buy 50 Credits' },
-              { credits: 200, price: '$599', perCredit: '$2.99', label: 'Scale', desc: 'High-volume hiring', features: ['200 AI screenings', 'Full scorecards', 'Dedicated support', 'CSV export', 'Team access'], highlight: false, cta: 'Buy 200 Credits' },
-              { credits: 0, price: 'Custom', perCredit: 'Best rates', label: 'Enterprise', desc: 'Tailored for large teams', features: ['Unlimited screenings', 'Custom AI rubrics', 'SLA guarantee', 'Dedicated manager', 'White-label option'], highlight: false, cta: 'Contact Sales' },
-            ].map(pack => (
-              <div key={pack.label} className={`p-6 rounded-2xl space-y-5 relative flex flex-col ${pack.highlight ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/20 scale-105' : 'bg-white border border-gray-200'}`}>
-                {pack.highlight && <div className="absolute top-4 right-4 bg-white text-blue-600 font-bold text-[10px] uppercase py-0.5 px-2.5 rounded-full">Most Popular</div>}
+            {dynamicPlans.map(pack => (
+              <div key={pack.id} className={`p-6 rounded-2xl space-y-5 relative flex flex-col ${pack.isPopular ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/20 scale-105' : 'bg-white border border-gray-200'}`}>
+                {pack.isPopular && <div className="absolute top-4 right-4 bg-white text-blue-600 font-bold text-[10px] uppercase py-0.5 px-2.5 rounded-full">Most Popular</div>}
                 <div>
-                  <div className={`text-xs font-bold uppercase tracking-wider ${pack.highlight ? 'text-blue-200' : 'text-blue-600'}`}>{pack.label}</div>
-                  <h4 className={`text-lg font-bold mt-1 ${pack.highlight ? 'text-white' : 'text-gray-900'}`}>
+                  <div className={`text-xs font-bold uppercase tracking-wider ${pack.isPopular ? 'text-blue-200' : 'text-blue-600'}`}>{pack.name}</div>
+                  <h4 className={`text-lg font-bold mt-1 ${pack.isPopular ? 'text-white' : 'text-gray-900'}`}>
                     {pack.credits > 0 ? `${pack.credits} Credits` : 'Custom Volume'}
                   </h4>
-                  <p className={`text-xs mt-1 ${pack.highlight ? 'text-blue-100' : 'text-gray-500'}`}>{pack.desc}</p>
+                  <p className={`text-xs mt-1 ${pack.isPopular ? 'text-blue-100' : 'text-gray-500'}`}>{pack.description}</p>
                 </div>
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className={`text-3xl font-extrabold ${pack.highlight ? 'text-white' : 'text-gray-900'}`}>{pack.price}</span>
-                    {pack.credits > 0 && <span className={`text-xs ${pack.highlight ? 'text-blue-200' : 'text-gray-400'}`}>AUD</span>}
+                    <span className={`text-3xl font-extrabold ${pack.isPopular ? 'text-white' : 'text-gray-900'}`}>{pack.isCustomPricing ? 'Custom' : '$' + (pack.price/100)}</span>
+                    {pack.credits > 0 && <span className={`text-xs ${pack.isPopular ? 'text-blue-200' : 'text-gray-400'}`}>AUD</span>}
                   </div>
-                  <div className={`text-xs mt-1 font-semibold ${pack.highlight ? 'text-blue-200' : 'text-green-600'}`}>{pack.perCredit} per screening</div>
+                  <div className={`text-xs mt-1 font-semibold ${pack.isPopular ? 'text-blue-200' : 'text-green-600'}`}>{pack.isCustomPricing ? 'Best rates' : '$' + (pack.price/100/(pack.credits || 1)).toFixed(2)} per screening</div>
                 </div>
                 <ul className="space-y-2 flex-1">
-                  {pack.features.map(f => (
-                    <li key={f} className={`flex items-center gap-2 text-xs ${pack.highlight ? 'text-blue-50' : 'text-gray-600'}`}>
-                      <CheckCircle className={`w-3.5 h-3.5 shrink-0 ${pack.highlight ? 'text-blue-200' : 'text-green-500'}`} />
+                  {JSON.parse(pack.features).map((f: string) => (
+                    <li key={f} className={`flex items-center gap-2 text-xs ${pack.isPopular ? 'text-blue-50' : 'text-gray-600'}`}>
+                      <CheckCircle className={`w-3.5 h-3.5 shrink-0 ${pack.isPopular ? 'text-blue-200' : 'text-green-500'}`} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => pack.credits === 0 ? navigate('help') : navigate('auth-register-recruiter')} className={`cursor-pointer w-full text-sm font-semibold py-2.5 px-4 rounded-xl transition ${pack.highlight ? 'bg-white text-blue-600 hover:bg-blue-50' : 'border border-gray-300 hover:bg-gray-50 text-gray-800'}`}>
-                  {pack.cta}
+                <button onClick={() => handleBuyPlan(pack)} disabled={buyingPlan === pack.id} className={`cursor-pointer w-full text-sm font-semibold py-2.5 px-4 rounded-xl transition ${pack.isPopular ? 'bg-white text-blue-600 hover:bg-blue-50' : 'border border-gray-300 hover:bg-gray-50 text-gray-800'}`}>
+                  {buyingPlan === pack.id ? 'Redirecting...' : pack.buttonText}
                 </button>
               </div>
             ))}

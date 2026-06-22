@@ -280,7 +280,7 @@ export async function adminUpdatePricingPlan(req: Request, res: Response) {
     const isAdmin = await requireAdmin(req);
     if (isAdmin === false) return res.status(403).json({ error: 'Forbidden' });
     const { id } = req.params;
-    const { name, price, credits, description, features, buttonText, isPopular, isActive, sortOrder } = req.body;
+    const { name, price, credits, description, features, buttonText, isPopular, isActive, sortOrder, isCustomPricing, ctaAction } = req.body;
 
     const updated = await prisma.pricingPlan.update({
       where: { id },
@@ -294,6 +294,8 @@ export async function adminUpdatePricingPlan(req: Request, res: Response) {
         ...(isPopular !== undefined && { isPopular }),
         ...(isActive !== undefined && { isActive }),
         ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) }),
+        ...(isCustomPricing !== undefined && { isCustomPricing }),
+        ...(ctaAction !== undefined && { ctaAction }),
         updatedAt: new Date(),
       },
     });
