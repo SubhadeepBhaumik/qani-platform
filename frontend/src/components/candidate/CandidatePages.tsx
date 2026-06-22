@@ -94,6 +94,22 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [salaryDaily, setSalaryDaily] = useState('');
   const [salaryWeekly, setSalaryWeekly] = useState('');
   const [salaryMonthly, setSalaryMonthly] = useState('');
+  const handleSalaryChange = (field: string, raw: string) => {
+    const clean = raw.replace(/[^0-9.]/g, '');
+    const num = parseFloat(clean) || 0;
+    let hourly = 0;
+    if (field === 'Hourly') hourly = num;
+    else if (field === 'Daily') hourly = num / 8;
+    else if (field === 'Weekly') hourly = num / 40;
+    else if (field === 'Monthly') hourly = num / 240;
+    else if (field === 'Annual') hourly = num / 2880;
+    const fmt = (v: number) => v > 0 ? Math.round(v).toLocaleString() : '';
+    if (field === 'Hourly') setSalaryHourly(clean); else setSalaryHourly(fmt(hourly));
+    if (field === 'Daily') setSalaryDaily(clean); else setSalaryDaily(fmt(hourly * 8));
+    if (field === 'Weekly') setSalaryWeekly(clean); else setSalaryWeekly(fmt(hourly * 40));
+    if (field === 'Monthly') setSalaryMonthly(clean); else setSalaryMonthly(fmt(hourly * 240));
+    if (field === 'Annual') setSalaryAnnual(clean); else setSalaryAnnual(fmt(hourly * 2880));
+  };
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
   const [cvUploading, setCvUploading] = useState(false);
@@ -1172,7 +1188,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           <label className="text-xs font-bold text-gray-700 block">{label}</label>
                           <div className="flex items-center gap-1">
                             <span className="text-xs font-bold text-gray-400">$</span>
-                            <input type="text" value={val} onChange={(e) => setter(e.target.value.replace(/[^0-9,]/g, ''))} placeholder={ph} className="flex-1 w-full text-xs p-1.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition" />
+                            <input type="text" value={val} onChange={(e) => handleSalaryChange(label, e.target.value)} placeholder={ph} className="flex-1 w-full text-xs p-1.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition" />
                           </div>
                         </div>
                       ))}
