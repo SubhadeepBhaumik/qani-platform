@@ -13,7 +13,7 @@ export const CandidatesDirectory: React.FC = () => {
   const [invited, setInvited] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('https://qani.io/api/v1/candidates')
+    fetch('https://qani.io/api/v1/candidates', { headers: { Authorization: `Bearer ${localStorage.getItem('qani_auth_token')}` } })
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) setCandidates(data);

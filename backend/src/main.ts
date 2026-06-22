@@ -57,6 +57,25 @@ async function requireAdmin(req: Request, res: Response, next: any) {
   }
 }
 
+async function requireAuth(req: Request, res: Response, next: any) {
+  try {
+    const authHeader = req.headers.authorization;
+    const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+    if (hasValidHeader === false) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const token = authHeader.split(' ')[1];
+    const decoded = AuthService.verifyToken(token) as any;
+    if (decoded === null || decoded === undefined || decoded.userId === undefined) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    (req as any).authUserId = decoded.userId;
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+}
+
 // Health check
 app.get('/api/v1/health', (_req: Request, res: Response) => {
   res.json({ 
@@ -119,12 +138,12 @@ app.delete('/api/v1/requirements/:id', RequirementsController.deleteRequirement)
 
 // Candidate routes
 app.post('/api/v1/candidates/register', CandidatesController.registerCandidate);
-app.get('/api/v1/candidates', CandidatesController.getCandidates);
-app.get('/api/v1/candidates/:id', CandidatesController.getCandidate);
+app.get('/api/v1/candidates', requireAuth, CandidatesController.getCandidates);
+app.get('/api/v1/candidates/:id', requireAuth, CandidatesController.getCandidate);
 app.put('/api/v1/candidates/:id', CandidatesController.updateCandidate);
 app.post('/api/v1/candidates/:id/upload-cv', CandidatesController.uploadCV);
 app.post('/api/v1/candidates/:id/upload-photo', CandidatesController.uploadPhoto);
-app.get('/api/v1/candidates/:id/profile', CandidatesController.getProfile);
+app.get('/api/v1/candidates/:id/profile', requireAuth, CandidatesController.getProfile);
 
 // Application routes
 app.post('/api/v1/applications', ApplicationsController.applyForRole);
