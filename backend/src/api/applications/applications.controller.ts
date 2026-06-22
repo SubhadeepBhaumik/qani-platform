@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { AuthService } from '../../services/auth.service';
 import { pushNotification } from '../notifications/notifications.controller';
 import { roles } from '../roles/roles.controller';
 
@@ -95,10 +96,26 @@ export class ApplicationsController {
 
   static async getApplications(req: Request, res: Response) {
     try {
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const caller = await prisma.user.findUnique({ where: { id: decoded.userId } });
+      if (caller === null) { return res.status(401).json({ error: 'Unauthorized' }); }
       const { candidateId, roleId, status } = req.query;
       const where: any = {};
+      if (caller.role === 'admin') {
       if (candidateId) where.candidateId = candidateId as string;
       if (roleId) where.jobId = roleId as string;
+      } else if (caller.role === 'recruiter') {
+        const myJobs = await prisma.job.findMany({ where: { recruiterId: caller.id }, select: { id: true } });
+        const myJobIds = myJobs.map((j: any) => j.id);
+        where.jobId = { in: myJobIds };
+      } else {
+        where.candidateId = caller.id;
+      }
       if (status) where.status = status as string;
       const apps = await prisma.application.findMany({ where, orderBy: { appliedAt: 'desc' } });
       return res.json(apps);
