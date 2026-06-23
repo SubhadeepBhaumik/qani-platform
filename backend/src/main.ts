@@ -229,7 +229,7 @@ app.get('/api/v1/admin/cms', async (_req, res) => {
   } catch(e) { res.json({ success: false, data: null }); }
 });
 
-app.post('/api/v1/admin/cms', async (req: any, res: any) => {
+app.post('/api/v1/admin/cms', requireAdmin, async (req: any, res: any) => {
   try {
     const data = req.body;
     await cmsPrisma.platformSetting.upsert({
