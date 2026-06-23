@@ -286,7 +286,7 @@ app.post('/api/v1/admin/settings', requireAdmin, async (req: any, res: any) => {
   } catch(e) { res.status(500).json({ error: 'Failed to save settings' }); }
 });
 
-app.post('/api/v1/admin/settings/test-email', async (req: any, res: any) => {
+app.post('/api/v1/admin/settings/test-email', requireAdmin, async (req: any, res: any) => {
   try {
     const { sendEmail } = require('./services/email.service');
     const recipient = req.body?.recipient || process.env.SENDGRID_FROM_EMAIL || 'bhaumiksubhadeep@gmail.com';
@@ -295,7 +295,7 @@ app.post('/api/v1/admin/settings/test-email', async (req: any, res: any) => {
   } catch(e: any) { res.status(500).json({ error: 'Failed to send test email: ' + e.message }); }
 });
 
-app.post('/api/v1/admin/settings/test-sms', async (req: any, res: any) => {
+app.post('/api/v1/admin/settings/test-sms', requireAdmin, async (req: any, res: any) => {
   try {
     const { sendSMS } = require('./services/sms.service');
     const { phone } = req.body;
@@ -306,7 +306,7 @@ app.post('/api/v1/admin/settings/test-sms', async (req: any, res: any) => {
 });
 
 // DB Backup trigger
-app.post('/api/v1/admin/backup', async (_req, res) => {
+app.post('/api/v1/admin/backup', requireAdmin, async (_req, res) => {
   try {
     const { execSync } = require('child_process');
     execSync('bash /home/qani/backups/backup.sh', { timeout: 60000 });
@@ -315,7 +315,7 @@ app.post('/api/v1/admin/backup', async (_req, res) => {
 });
 
 // Last backup info
-app.get('/api/v1/admin/backup/status', async (_req, res) => {
+app.get('/api/v1/admin/backup/status', requireAdmin, async (_req, res) => {
   try {
     const { execSync } = require('child_process');
     const files = execSync('ls -lt /home/qani/backups/*.gz 2>/dev/null | head -5').toString().trim();
