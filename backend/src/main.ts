@@ -163,8 +163,8 @@ app.get('/api/v1/pricing-plans', getPricingPlans);
 app.get('/api/v1/admin/credits', requireAdmin, adminListRecruiters);
 app.patch('/api/v1/admin/credits/:recruiterId/trial', requireAdmin, adminUpdateTrialDays);
 app.patch('/api/v1/admin/credits/:recruiterId/adjust', requireAdmin, adminAdjustCredits);
-app.get('/api/v1/admin/pricing-plans', adminGetPricingPlans);
-app.patch('/api/v1/admin/pricing-plans/:id', adminUpdatePricingPlan);
+app.get('/api/v1/admin/pricing-plans', requireAdmin, adminGetPricingPlans);
+app.patch('/api/v1/admin/pricing-plans/:id', requireAdmin, adminUpdatePricingPlan);
 
 // Scoring routes
 app.post('/api/v1/scoring/rules', ScoringController.createScoringRule);
