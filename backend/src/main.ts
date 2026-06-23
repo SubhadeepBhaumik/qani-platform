@@ -326,7 +326,7 @@ app.get('/api/v1/admin/backup/status', requireAdmin, async (_req, res) => {
 });
 
 // SSL status
-app.get('/api/v1/admin/ssl/status', async (_req, res) => {
+app.get('/api/v1/admin/ssl/status', requireAdmin, async (_req, res) => {
   try {
     const { execSync } = require('child_process');
     const result = execSync('certbot certificates 2>/dev/null | grep -E "Expiry|Domains"').toString().trim();
@@ -352,7 +352,7 @@ app.post('/api/v1/admin/danger/clear-sessions', requireAdmin, async (_req, res) 
   } catch(e: any) { res.status(500).json({ error: 'Failed: ' + e.message }); }
 });
 
-app.get('/api/v1/admin/health', async (_req, res) => {
+app.get('/api/v1/admin/health', requireAdmin, async (_req, res) => {
   try {
     await settingsPrisma.$queryRaw`SELECT 1`;
     res.json({
