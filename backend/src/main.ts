@@ -160,9 +160,9 @@ app.get('/api/v1/credits/status', getStatus);
 app.get('/api/v1/credits/transactions', getTransactions);
 app.post('/api/v1/credits/checkout', createCheckoutSession);
 app.get('/api/v1/pricing-plans', getPricingPlans);
-app.get('/api/v1/admin/credits', adminListRecruiters);
-app.patch('/api/v1/admin/credits/:recruiterId/trial', adminUpdateTrialDays);
-app.patch('/api/v1/admin/credits/:recruiterId/adjust', adminAdjustCredits);
+app.get('/api/v1/admin/credits', requireAdmin, adminListRecruiters);
+app.patch('/api/v1/admin/credits/:recruiterId/trial', requireAdmin, adminUpdateTrialDays);
+app.patch('/api/v1/admin/credits/:recruiterId/adjust', requireAdmin, adminAdjustCredits);
 app.get('/api/v1/admin/pricing-plans', adminGetPricingPlans);
 app.patch('/api/v1/admin/pricing-plans/:id', adminUpdatePricingPlan);
 
