@@ -1044,14 +1044,6 @@ Question 1: Describe your most relevant experience for this role.` },
                     </button>
                   ))}
                 </div>
-                <div className="pt-2 border-t border-gray-100">
-                  <h4 className="text-xs font-bold text-gray-700 mb-2">Demo Login Credentials</h4>
-                  <div className="space-y-1 font-mono text-[10px] bg-gray-50 rounded-lg p-3 border">
-                    <p><span className="text-red-600 font-bold">ADMIN:</span> admin@qani.io / Admin@QANI2026!</p>
-                    <p><span className="text-purple-600 font-bold">RECRUITER:</span> recruiter@qani.io / Recruit@QANI2026!</p>
-                    <p><span className="text-blue-600 font-bold">CANDIDATE:</span> candidate@qani.io / Candi@QANI2026!</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

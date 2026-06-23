@@ -175,13 +175,13 @@ app.get('/api/v1/scoring/decision', ScoringController.getRoutingDecision);
 app.get('/api/v1/scoring/scores', ScoringController.getSessionScores);
 
 // Dashboard routes
-app.get('/api/v1/dashboard/stats', DashboardController.getStats);
-app.get('/api/v1/dashboard/applications', DashboardController.getApplications);
-app.get('/api/v1/dashboard/pipeline', DashboardController.getPipeline);
-app.get('/api/v1/dashboard/role-metrics', DashboardController.getRoleMetrics);
-app.get('/api/v1/dashboard/screening-progress', DashboardController.getScreeningProgress);
-app.get('/api/v1/dashboard/qualification-breakdown', DashboardController.getQualificationBreakdown);
-app.get('/api/v1/dashboard/recommendations', DashboardController.getRecommendations);
+app.get('/api/v1/dashboard/stats', requireAdmin, DashboardController.getStats);
+app.get('/api/v1/dashboard/applications', requireAdmin, DashboardController.getApplications);
+app.get('/api/v1/dashboard/pipeline', requireAdmin, DashboardController.getPipeline);
+app.get('/api/v1/dashboard/role-metrics', requireAdmin, DashboardController.getRoleMetrics);
+app.get('/api/v1/dashboard/screening-progress', requireAdmin, DashboardController.getScreeningProgress);
+app.get('/api/v1/dashboard/qualification-breakdown', requireAdmin, DashboardController.getQualificationBreakdown);
+app.get('/api/v1/dashboard/recommendations', requireAdmin, DashboardController.getRecommendations);
 
 // Notification routes
 app.post('/api/v1/notifications/send', NotificationsController.sendNotification);
