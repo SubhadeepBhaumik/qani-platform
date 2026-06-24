@@ -33,6 +33,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
 
   // Candidate Step 2 states
   const [step, setStep] = useState(1);
+  const [registeredRole, setRegisteredRole] = useState<'candidate' | 'recruiter' | null>(null);
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
@@ -41,6 +42,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   // Recruiter specific states
   const [companyName, setCompanyName] = useState('');
   const [industry, setIndustry] = useState('Technology');
+  const [customIndustry, setCustomIndustry] = useState('');
   const [size, setSize] = useState('11-50 employees');
 
   // Verify Email simulated state
@@ -108,6 +110,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
           skills: skills.length > 0 ? skills : undefined,
           linkedinUrl: linkedin || undefined,
         });
+        setRegisteredRole('candidate');
         navigate('verify-email');
       } catch (err: any) {
         setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
@@ -132,8 +135,9 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     try {
       await registerRecruiter({
         companyName, firstName, lastName, email, password,
-        industry, companySize: size,
+        industry: (industry === 'Other' && customIndustry.trim()) ? customIndustry.trim() : industry, companySize: size,
       });
+      setRegisteredRole('recruiter');
       navigate('verify-email');
     } catch (err: any) {
       setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
@@ -162,7 +166,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     setIsVerified(true);
     showToast('Email verified! Navigating to dashboard...', 'success');
     setTimeout(() => {
-      navigate('candidate-dashboard');
+      navigate(registeredRole === 'recruiter' ? 'recruiter-dashboard' : 'candidate-dashboard');
     }, 1500);
   };
 
@@ -577,21 +581,53 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                     <option>500+ employees</option>
                   </select>
                 </div>
-
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-700 block">Primary Category / Industry</label>
-                  <select 
+                  <input
+                    type="text"
+                    list="industry-options"
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
+                    placeholder="Start typing to search..."
                     className="w-full h-10 px-2 bg-gray-50 border border-gray-300 rounded-lg text-xs outline-none"
-                  >
-                    <option>Technology & Consulting</option>
-                    <option>Finance & Banking</option>
-                    <option>Healthcare & Pharma</option>
-                    <option>E-Commerce & Retail</option>
-                    <option>Edu-Tech / Education</option>
-                  </select>
+                  />
+                  <datalist id="industry-options">
+                    <option value="Technology & Consulting" />
+                    <option value="Software & SaaS" />
+                    <option value="Construction & Real Estate" />
+                    <option value="Finance & Banking" />
+                    <option value="Insurance" />
+                    <option value="Healthcare & Pharma" />
+                    <option value="Biotechnology" />
+                    <option value="E-Commerce & Retail" />
+                    <option value="Edu-Tech / Education" />
+                    <option value="Manufacturing & Logistics" />
+                    <option value="Government & Non-Profit" />
+                    <option value="Hospitality & Tourism" />
+                    <option value="Media & Entertainment" />
+                    <option value="Telecommunications" />
+                    <option value="Energy & Utilities" />
+                    <option value="Agriculture & Farming" />
+                    <option value="Legal Services" />
+                    <option value="Marketing & Advertising" />
+                    <option value="Automotive" />
+                    <option value="Mining & Resources" />
+                    <option value="Transportation" />
+                    <option value="Food & Beverage" />
+                    <option value="Aerospace & Defense" />
+                    <option value="Other" />
+                  </datalist>
+                  {industry === 'Other' && (
+                    <input
+                      type="text"
+                      value={customIndustry}
+                      onChange={(e) => setCustomIndustry(e.target.value)}
+                      placeholder="Please specify your industry"
+                      className="w-full h-10 px-2 bg-gray-50 border border-gray-300 rounded-lg text-xs outline-none mt-1.5"
+                    />
+                  )}
                 </div>
+
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-700 block">Interviewer Password</label>

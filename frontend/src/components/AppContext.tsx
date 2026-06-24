@@ -278,12 +278,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const registerCandidate = async (payload: { firstName: string; lastName: string; email: string; password: string; bio?: string; skills?: string[]; linkedinUrl?: string }): Promise<User> => {
     const newUser = await api.registerCandidate(payload);
+    setUser(newUser);
+    await refreshStates(newUser as any);
     showToast('Account created! Please verify your email.', 'success');
     return newUser;
   };
 
   const registerRecruiter = async (payload: { companyName: string; firstName: string; lastName: string; email: string; password: string; industry?: string; companySize?: string }): Promise<User> => {
     const newUser = await api.registerRecruiter(payload);
+    await refreshStates(newUser as any);
+    setUser(newUser);
     showToast('Recruiter account created! Please verify your email.', 'success');
     return newUser;
   };

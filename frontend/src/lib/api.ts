@@ -132,6 +132,10 @@ export const api = {
     try { return await call<User[]>('/users'); } catch (_) { return []; }
   },
 
+  getCandidates: async (): Promise<any[]> => {
+    try { return await call<any[]>('/candidates'); } catch (_) { return []; }
+  },
+
   saveUser: async (user: Partial<User> & { id?: string }): Promise<User> => {
     const method = user.id ? 'PUT' : 'POST';
     const endpoint = user.id ? `/users/${user.id}` : '/users';

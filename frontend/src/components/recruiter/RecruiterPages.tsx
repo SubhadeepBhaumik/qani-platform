@@ -463,8 +463,10 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   }, [subView, user?.id]);
   const [teamRoleInvite, setTeamRoleInvite] = useState('Recruiter');
 
-  // Load initial historical applicant listings for dashboard tables
-  const allCandidates: any[] = [];
+  const [allCandidates, setAllCandidates] = useState<any[]>([]);
+  useEffect(() => {
+    api.getCandidates().then(setAllCandidates).catch(() => setAllCandidates([]));
+  }, []);
 
   if (!user) return null;
 
@@ -832,7 +834,8 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     const name = (app.candidateName || `${candidate?.firstName || ''} ${candidate?.lastName || ''}`).toLowerCase();
                     const searchMat = name.includes(appSearch.toLowerCase()) ||
                                      (app.candidateEmail || candidate?.email || '').toLowerCase().includes(appSearch.toLowerCase()) ||
-                                     (app.jobTitle || job?.title || '').toLowerCase().includes(appSearch.toLowerCase());
+                                     (app.jobTitle || job?.title || '').toLowerCase().includes(appSearch.toLowerCase())
+                                     || (candidate?.skills || []).some((s: string) => s.toLowerCase().includes(appSearch.toLowerCase()));
                     const statusMat = appFilterStatus === 'All' || app.status === appFilterStatus;
                     const jobMat = !filterJobId || app.jobId === filterJobId || app.roleId === filterJobId;
                     return searchMat && statusMat && jobMat;
