@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthService } from '../../services/auth.service';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -60,12 +61,19 @@ export class CandidatesController {
   static async updateCandidate(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
       const {
         bio, skills, linkedinUrl, githubUrl, workRights,
         salaryExpectation, availableFrom, phone, location,
         cvUrl, cvFilename, profilePhotoUrl,
         firstName, lastName
       } = req.body;
+      if (decoded.userId !== id) { const caller = await prisma.user.findUnique({ where: { id: decoded.userId } }); if (caller === null || caller.role !== 'admin') { return res.status(403).json({ error: 'Forbidden' }); } }
 
       // Update user name if provided
       if (firstName || lastName) {
@@ -113,7 +121,14 @@ export class CandidatesController {
   static async uploadCV(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
       const { cvData, cvFilename } = req.body;
+      if (decoded.userId !== id) { const caller = await prisma.user.findUnique({ where: { id: decoded.userId } }); if (caller === null || caller.role !== 'admin') { return res.status(403).json({ error: 'Forbidden' }); } }
       if (!cvData || !cvFilename) return res.status(400).json({ error: 'cvData and cvFilename required' });
       if (cvData.length > 7 * 1024 * 1024) return res.status(400).json({ error: 'File too large. Max 5MB.' });
 
@@ -132,7 +147,14 @@ export class CandidatesController {
   static async uploadPhoto(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
       const { photoData } = req.body;
+      if (decoded.userId !== id) { const caller = await prisma.user.findUnique({ where: { id: decoded.userId } }); if (caller === null || caller.role !== 'admin') { return res.status(403).json({ error: 'Forbidden' }); } }
       if (!photoData) return res.status(400).json({ error: 'photoData required' });
       if (photoData.length > 3 * 1024 * 1024) return res.status(400).json({ error: 'Photo too large. Max 2MB.' });
 
