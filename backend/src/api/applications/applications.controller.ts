@@ -126,9 +126,27 @@ export class ApplicationsController {
 
   static async getApplication(req: Request, res: Response) {
     try {
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const caller = await prisma.user.findUnique({ where: { id: decoded.userId } });
+      if (caller === null) { return res.status(401).json({ error: 'Unauthorized' }); }
       const app = await prisma.application.findUnique({ where: { id: req.params.id } });
       if (!app) return res.status(404).json({ error: 'Application not found' });
-      return res.json(app);
+      if (caller.role === 'admin') {
+        return res.json(app);
+      } else if (caller.role === 'recruiter') {
+        if (app.jobId === null) { return res.status(403).json({ error: 'Forbidden' }); }
+        const job = await prisma.job.findUnique({ where: { id: app.jobId } });
+        if (job === null || job.recruiterId !== caller.id) { return res.status(403).json({ error: 'Forbidden' }); }
+        return res.json(app);
+      } else {
+        if (app.candidateId !== caller.id) { return res.status(403).json({ error: 'Forbidden' }); }
+        return res.json(app);
+      }
     } catch (error) {
       return res.status(500).json({ error: 'Failed to fetch application' });
     }
@@ -136,10 +154,20 @@ export class ApplicationsController {
 
   static async updateApplicationStatus(req: Request, res: Response) {
     try {
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const caller = await prisma.user.findUnique({ where: { id: decoded.userId } });
+      if (caller === null) { return res.status(401).json({ error: 'Unauthorized' }); }
       const { status, recruiterNotes, interviewDateTime, notes } = req.body;
       const existing = await prisma.application.findUnique({ where: { id: req.params.id } });
       if (!existing) return res.status(404).json({ error: 'Application not found' });
-
+      if (caller.role !== 'admin' && caller.role !== 'recruiter') { return res.status(403).json({ error: 'Forbidden' }); }
+      if (caller.role === 'recruiter' && existing.jobId === null) { return res.status(403).json({ error: 'Forbidden' }); }
+      if (caller.role === 'recruiter' && existing.jobId !== null) { const ownedJob = await prisma.job.findUnique({ where: { id: existing.jobId } }); if (ownedJob === null || ownedJob.recruiterId !== caller.id) { return res.status(403).json({ error: 'Forbidden' }); } }
       const updateData: any = {};
       if (status) {
         updateData.status = status;
