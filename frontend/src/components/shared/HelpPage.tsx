@@ -7,12 +7,6 @@ export const HelpPage: React.FC = () => {
   const { navigate, goBack, refreshStates, showToast } = useApp();
   const cms = useCMS();
 
-  const handleFullReset = () => {
-    localStorage.clear();
-    refreshStates();
-    showToast('Platform database state refreshed to standard values successfully.', 'warning');
-    navigate('landing');
-  };
 
   return (
     <div className="flex-1 p-6 md:p-8 overflow-y-auto max-w-4xl mx-auto space-y-8 font-sans bg-gray-50/20">
@@ -50,24 +44,6 @@ export const HelpPage: React.FC = () => {
             <p className="text-xs text-gray-600 leading-relaxed">{faq.answer}</p>
           </div>
         ))}
-      </div>
-
-      {/* Reset simulator states */}
-      <div className="p-6 bg-red-50/30 border border-red-200 rounded-2xl space-y-3 pt-6">
-        <span className="text-xs font-bold text-red-800 uppercase tracking-wider block">Developer Sandbox Controls</span>
-        <p className="text-xs text-red-700 leading-relaxed">
-          Need to discard current interviews, delete test jobs, or reset local database state? Tap below to perform a hard refresh back to standard values.
-        </p>
-        <div>
-          <button 
-            type="button" 
-            onClick={handleFullReset}
-            className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs transition inline-flex items-center gap-1.5 shadow-md shadow-red-200"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Reset Local Database State</span>
-          </button>
-        </div>
       </div>
 
     </div>
