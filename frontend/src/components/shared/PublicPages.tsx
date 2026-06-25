@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 import { useApp } from '../AppContext';
 import { QANILogo } from './QANILogo';
 import { useCMS } from '../admin/AdminCMS';
@@ -697,8 +698,7 @@ export const PublicCandidatesPage: React.FC = () => {
   const PER_PAGE = 15;
 
   useEffect(() => {
-    fetch(`${API}/candidates`)
-      .then(r => r.json())
+    api.getPublicCandidates()
       .then(data => { setCandidates(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);

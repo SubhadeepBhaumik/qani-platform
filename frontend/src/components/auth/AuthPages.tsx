@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 import { useApp } from '../AppContext';
 import { useCMS } from '../admin/AdminCMS';
 import { 
@@ -28,12 +29,17 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   const [lastName, setLastName] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Candidate Step 2 states
   const [step, setStep] = useState(1);
   const [registeredRole, setRegisteredRole] = useState<'candidate' | 'recruiter' | null>(null);
+  const [registeredUser, setRegisteredUser] = useState<any>(null);
+  const [otpInput, setOtpInput] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpVerifying, setOtpVerifying] = useState(false);
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
@@ -49,6 +55,18 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   const [verificationSent, setVerificationSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  useEffect(() => {
+    if (subView !== 'verify-email' || isVerified) return;
+    if (countdown <= 0) { setVerificationSent(false); return; }
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [subView, isVerified, countdown]);
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   // Password complex validations
   const checks = {
@@ -104,12 +122,14 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     } else {
       setIsLoading(true);
       try {
-        await registerCandidate({
+        const newUser = await registerCandidate({
           firstName, lastName, email, password,
           bio: bio || undefined,
           skills: skills.length > 0 ? skills : undefined,
           linkedinUrl: linkedin || undefined,
         });
+        setRegisteredUser(newUser);
+        api.sendOTP(newUser.email, 'email', newUser.id).catch(console.error);
         setRegisteredRole('candidate');
         navigate('verify-email');
       } catch (err: any) {
@@ -133,11 +153,13 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     }
     setIsLoading(true);
     try {
-      await registerRecruiter({
+      const newUser = await registerRecruiter({
         companyName, firstName, lastName, email, password,
         industry: (industry === 'Other' && customIndustry.trim()) ? customIndustry.trim() : industry, companySize: size,
       });
       setRegisteredRole('recruiter');
+      setRegisteredUser(newUser);
+      api.sendOTP(newUser.email, 'email', newUser.id).catch(console.error);
       navigate('verify-email');
     } catch (err: any) {
       setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
@@ -159,18 +181,37 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
 
   const triggerVerificationResend = () => {
     setVerificationSent(true);
+    setCountdown(60);
     showToast('Verification link transmitted successfully.', 'success');
   };
-
-  const simulateSuccessVerify = () => {
-    setIsVerified(true);
-    showToast('Email verified! Navigating to dashboard...', 'success');
-    setTimeout(() => {
-      navigate(registeredRole === 'recruiter' ? 'recruiter-dashboard' : 'candidate-dashboard');
-    }, 1500);
+  const handleVerifyOTP = async () => {
+    if (!registeredUser || otpInput.length !== 6) {
+      setOtpError('Please enter the 6-digit code sent to your email.');
+      return;
+    }
+    setOtpVerifying(true);
+    setOtpError('');
+    try {
+      await api.verifyOTPCode(registeredUser.email, 'email', otpInput, registeredUser.id);
+      setIsVerified(true);
+      showToast('Email verified! Navigating to dashboard...', 'success');
+      setTimeout(() => {
+        navigate(registeredRole === 'recruiter' ? 'recruiter-dashboard' : 'candidate-dashboard');
+      }, 1500);
+    } catch (err: any) {
+      setOtpError(err.message || 'Invalid or expired code. Please try again.');
+    } finally {
+      setOtpVerifying(false);
+    }
   };
-
+  const resendOTP = () => {
+    if (!registeredUser || resendCooldown > 0) return;
+    api.sendOTP(registeredUser.email, 'email', registeredUser.id).catch(console.error);
+    setResendCooldown(30);
+    triggerVerificationResend();
+  };
   return (
+    <>
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 font-sans bg-gray-50">
       {/* Left graphic banner */}
       <div className="hidden lg:flex lg:col-span-5 bg-[#1E293B] text-white flex-col justify-between p-12 relative overflow-hidden">
@@ -408,11 +449,11 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                       id="terms"
                       type="checkbox"
                       checked={termsAccepted}
-                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      onChange={() => { if (!termsAccepted) { setShowTermsModal(true); } else { setTermsAccepted(false); } }}
                       className="w-4 h-4 border border-gray-300 rounded text-blue-600 focus:ring-blue-500 mt-0.5"
                     />
                     <label htmlFor="terms" className="text-[11px] text-gray-600 ml-2 select-none">
-                      I agree to terms of server evaluation policy and consent to recording interview dialogue.
+                      I agree to the <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-600 underline hover:text-blue-800">Terms & Conditions</button> and consent to recording interview dialogue.
                     </label>
                   </div>
                 </div>
@@ -646,11 +687,11 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                     id="terms-recruiter"
                     type="checkbox"
                     checked={termsAccepted}
-                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    onChange={() => { if (!termsAccepted) { setShowTermsModal(true); } else { setTermsAccepted(false); } }}
                     className="w-4 h-4 border border-gray-300 rounded text-blue-600 focus:ring-blue-500 mt-0.5"
                   />
                   <label htmlFor="terms-recruiter" className="text-[11px] text-gray-600 ml-2 select-none">
-                    Confirm alignment with corporate workspace evaluation criteria and terms of use.
+                    Confirm alignment with corporate workspace evaluation criteria and the <button type="button" onClick={() => setShowTermsModal(true)} className="text-blue-600 underline hover:text-blue-800">Terms & Conditions</button>.
                   </label>
                 </div>
               </div>
@@ -672,7 +713,6 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
               </div>
             </form>
           )}
-
           {/* VIEW: EMAIL VERIFICATION */}
           {subView === 'verify-email' && (
             <div className="text-center space-y-6">
@@ -681,14 +721,13 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                   <Mail className="w-8 h-8" />
                 </div>
               </div>
-
               <div className="space-y-2">
                 <h3 className="text-xl font-bold tracking-tight text-gray-900">Verify Your Email Address</h3>
                 <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  A verification transmission coordinate was linked to your sandbox email. Press the button below to fast-track verification.
+                  We've sent a 6-digit verification code to {registeredUser?.email || 'your email'}. Enter it below to verify your account.
+                  <span className="block mt-1 text-amber-600">Don't see it? Check your spam or junk folder.</span>
                 </p>
               </div>
-
               {isVerified ? (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-xl inline-flex items-center gap-2 text-green-700 text-xs font-semibold shadow-inner">
                   <Check className="w-4 h-4 text-green-500" />
@@ -696,24 +735,36 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <button 
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otpInput}
+                    onChange={(e) => setOtpInput(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Enter 6-digit code"
+                    className="w-full h-12 px-4 text-center text-lg font-bold tracking-widest bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-blue-500"
+                  />
+                  {otpError && (
+                    <p className="text-xs text-red-600 font-semibold">{otpError}</p>
+                  )}
+                  <button
                     type="button"
-                    onClick={simulateSuccessVerify}
-                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-2"
+                    onClick={handleVerifyOTP}
+                    disabled={otpVerifying || otpInput.length !== 6}
+                    className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg text-xs transition uppercase tracking-wider flex items-center justify-center gap-2"
                   >
                     <ClipboardCheck className="w-4 h-4" />
-                    <span>Confirm verification in simulator</span>
+                    <span>{otpVerifying ? 'Verifying...' : 'Verify Code'}</span>
                   </button>
-
                   <div className="pt-2">
-                    <button 
-                      type="button" 
-                      onClick={triggerVerificationResend}
-                      disabled={verificationSent}
+                    <button
+                      type="button"
+                      onClick={resendOTP}
+                      disabled={resendCooldown > 0}
                       className="inline-flex items-center gap-2 text-xs text-gray-500 hover:text-gray-900 font-semibold"
                     >
                       <Clock className="w-3.5 h-3.5" />
-                      <span>{verificationSent ? `Verification re-dispatched.` : `Resend validation link in (${countdown}s)`}</span>
+                      <span>{resendCooldown > 0 ? `Resend code in (${resendCooldown}s)` : 'Resend code'}</span>
                     </button>
                   </div>
                 </div>
@@ -723,5 +774,73 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
         </div>
       </div>
     </div>
+    {showTermsModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <h2 className="text-xl font-bold text-gray-900">QANI Terms & Conditions</h2>
+            <button
+              type="button"
+              onClick={() => setShowTermsModal(false)}
+              className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+            >
+              &times;
+            </button>
+          </div>
+          <div className="overflow-y-auto p-6 space-y-4 text-xs text-gray-600 leading-relaxed">
+            <p><strong>Last updated: June 2026</strong></p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">1. Acceptance of Terms</h3>
+            <p>By creating an account, accessing, or using the QANI platform ("Service"), operated by QANI ("we", "us", "our"), you ("User") agree to be bound by these Terms & Conditions ("Terms"). If you do not agree, you must not use the Service. Continued use of the Service constitutes ongoing acceptance of these Terms as they may be updated from time to time.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">2. Nature of the Service</h3>
+            <p>QANI provides an AI-assisted conversational screening and recruitment support tool. QANI is a qualification and information-gathering layer only. QANI does not make hiring decisions, does not guarantee employment outcomes, and is not a substitute for an employer's own judgment, compliance obligations, or legal duties in hiring. All hiring decisions remain solely the responsibility of the recruiter, company, or organization using the Service ("Recruiter Users").</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">3. No Warranty; AI Limitations</h3>
+            <p>The Service, including all AI-generated scores, assessments, transcripts, and recommendations, is provided "as is" and "as available" without warranties of any kind, whether express, implied, or statutory, including but not limited to warranties of accuracy, completeness, merchantability, fitness for a particular purpose, or non-infringement. AI-generated outputs may contain errors, omissions, or biases. Users acknowledge that automated scoring is probabilistic and must not be relied upon as the sole basis for any employment decision.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">4. Limitation of Liability</h3>
+            <p>To the maximum extent permitted by applicable law, QANI, its officers, directors, employees, contractors, and affiliates shall not be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, including but not limited to loss of profits, data, goodwill, or business opportunity, arising from or related to use of the Service, even if advised of the possibility of such damages. QANI's total cumulative liability arising out of or relating to these Terms or the Service shall not exceed the lesser of (a) the total fees paid by the User to QANI in the twelve (12) months preceding the claim, or (b) one hundred Australian dollars (AUD $100).</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">5. Indemnification</h3>
+            <p>User agrees to indemnify, defend, and hold harmless QANI and its affiliates from and against any and all claims, liabilities, damages, losses, costs, and expenses (including reasonable legal fees) arising out of or related to: (a) User's use or misuse of the Service; (b) User's violation of these Terms; (c) any hiring or employment decision made by a Recruiter User; (d) any content, data, or information submitted by User; or (e) User's violation of any applicable law or third-party right.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">6. Data Collection, Recording, and Use</h3>
+            <p>By using the Service, User consents to the recording, storage, transcription, and AI-based analysis of interview dialogue, written responses, uploaded documents (including CVs and photographs), and related metadata. QANI may use de-identified and aggregated data to improve, train, and operate its AI systems and services. QANI will handle personal information in accordance with its Privacy Policy and applicable Australian Privacy Principles (APPs), but Users acknowledge inherent risks in any data transmission and storage, and QANI disclaims liability for unauthorized access to the extent permitted by law.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">7. Recruiter User Obligations</h3>
+            <p>Recruiter Users represent and warrant that their use of the Service, including any job postings, screening criteria, and hiring decisions, complies with all applicable employment, anti-discrimination, privacy, and labor laws in their jurisdiction. QANI is not responsible for ensuring Recruiter User compliance with such laws, and Recruiter Users assume full responsibility and liability for the legality of their hiring practices.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">8. Intellectual Property</h3>
+            <p>All software, algorithms, AI models, designs, trademarks, and content comprising the Service are and remain the exclusive property of QANI. Nothing in these Terms grants User any right, title, or interest in QANI's intellectual property except a limited, revocable, non-exclusive license to use the Service as intended. AI-generated outputs produced through the Service (including scorecards and summaries) may be used by the Recruiter User for internal hiring purposes only, and QANI retains the right to use such outputs in de-identified, aggregated form for product improvement.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">9. Account Suspension and Termination</h3>
+            <p>QANI reserves the right, at its sole discretion and without prior notice, to suspend, restrict, or terminate any account suspected of violating these Terms, engaging in fraudulent activity, or misusing the Service. QANI is not liable for any loss arising from such suspension or termination.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">10. Dispute Resolution and Governing Law</h3>
+            <p>These Terms are governed by the laws of New South Wales, Australia, without regard to conflict-of-law principles. Any dispute arising out of or relating to these Terms or the Service shall first be attempted to be resolved through good-faith negotiation. If unresolved within thirty (30) days, the dispute shall be submitted to confidential binding arbitration administered in Sydney, Australia, except where prohibited by applicable law, and each party shall bear its own legal costs unless the arbitrator determines otherwise. User waives any right to participate in a class action or class-wide arbitration to the extent permitted by law.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">11. Changes to the Service and Terms</h3>
+            <p>QANI may modify, suspend, or discontinue any part of the Service at any time without liability. QANI may update these Terms from time to time; continued use of the Service after such updates constitutes acceptance of the revised Terms.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">12. Severability and Entire Agreement</h3>
+            <p>If any provision of these Terms is found unenforceable, the remaining provisions shall remain in full force and effect. These Terms, together with QANI's Privacy Policy, constitute the entire agreement between User and QANI regarding the Service and supersede any prior agreements.</p>
+
+            <h3 className="text-sm font-bold text-gray-900 pt-2">13. Contact</h3>
+            <p>For questions regarding these Terms, contact QANI via the Contact page at qani.io.</p>
+          </div>
+          <div className="p-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={() => { setTermsAccepted(true); setShowTermsModal(false); }}
+              className="w-full py-3 px-4 bg-gray-950 hover:bg-gray-900 text-white font-bold rounded-lg text-sm transition uppercase tracking-wider"
+            >
+              I Agree
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };

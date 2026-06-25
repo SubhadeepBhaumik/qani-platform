@@ -136,6 +136,21 @@ export const api = {
     try { return await call<any[]>('/candidates'); } catch (_) { return []; }
   },
 
+  getPublicCandidates: async (): Promise<any[]> => {
+    try {
+      const res = await fetch('/api/v1/candidates/public');
+      return await res.json();
+    } catch (_) { return []; }
+  },
+
+  sendOTP: async (target: string, type: 'email' | 'sms', userId: string): Promise<{ success: boolean; message?: string }> => {
+    return call<any>('/auth/send-otp', { method: 'POST', body: JSON.stringify({ target, type, userId }) });
+  },
+
+  verifyOTPCode: async (target: string, type: 'email' | 'sms', otp: string, userId: string): Promise<{ success: boolean; message?: string }> => {
+    return call<any>('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ target, type, otp, userId }) });
+  },
+
   saveUser: async (user: Partial<User> & { id?: string }): Promise<User> => {
     const method = user.id ? 'PUT' : 'POST';
     const endpoint = user.id ? `/users/${user.id}` : '/users';

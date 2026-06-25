@@ -190,4 +190,27 @@ export class CandidatesController {
       return res.status(500).json({ error: 'Failed to fetch profile' });
     }
   }
+
+  static async getPublicCandidates(_req: Request, res: Response) {
+    try {
+      const users = await prisma.user.findMany({ where: { role: 'candidate' } });
+      const profiles = await prisma.candidateProfile.findMany();
+      const merged = users.map((u: any) => {
+        const profile = profiles.find((p: any) => p.userId === u.id);
+        const skills = profile && Array.isArray((profile as any).skills) ? (profile as any).skills : [];
+        return {
+          id: u.id,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          profile: {
+            location: (profile as any)?.location || '',
+            skills,
+          },
+        };
+      });
+      return res.json(merged);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch candidates' });
+    }
+  }
 }
