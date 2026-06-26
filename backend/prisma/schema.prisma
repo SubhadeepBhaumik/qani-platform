@@ -20,6 +20,7 @@ model User {
   location      String?
   avatarUrl     String?
   emailVerified Boolean  @default(false)
+  phoneVerified Boolean  @default(false)
   suspended     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -139,6 +140,7 @@ model CandidateProfile {
   salaryExpectation Int?
   availableFrom     DateTime?
   phone             String?
+  phoneVerified     Boolean   @default(false)
   location          String?
   profilePhotoUrl   String?
   createdAt         DateTime @default(now())

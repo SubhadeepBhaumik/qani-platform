@@ -109,6 +109,8 @@ export class AuthController {
         role: user.role,
         companyName: user.companyName,
         emailVerified: user.emailVerified,
+        phone: user.phone,
+        phoneVerified: user.phoneVerified,
       });
     } catch (error) {
       return res.status(401).json({ error: 'Invalid token' });
@@ -160,6 +162,13 @@ export class AuthController {
     try {
       const { target, type, userId } = req.body;
       if (!target || !type) return res.status(400).json({ error: 'target and type required' });
+      if (type === 'sms') {
+        const conflictUser = await prisma.user.findFirst({ where: { phone: target, phoneVerified: true, id: { not: userId } } });
+        const conflictProfile = await prisma.candidateProfile.findFirst({ where: { phone: target, phoneVerified: true, userId: { not: userId } } });
+        if (conflictUser !== null || conflictProfile !== null) {
+          return res.status(409).json({ error: 'This phone number is already verified on a different account. Please use a different number.' });
+        }
+      }
 
       const otp = generateOTP();
       const key = userId + ':' + type + ':' + target;
@@ -195,6 +204,19 @@ export class AuthController {
       const result = await verifyOTP(key, otp);
 
       if (!result.valid) return res.status(400).json({ error: result.reason });
+      if (type === 'sms' && userId) {
+        const verifyingUser = await prisma.user.findUnique({ where: { id: userId } });
+        if (verifyingUser !== null) {
+          await prisma.user.update({ where: { id: userId }, data: { phone: target, phoneVerified: true } });
+          if (verifyingUser.role === 'candidate') {
+            await prisma.candidateProfile.upsert({
+              where: { userId },
+              create: { userId, phone: target, phoneVerified: true },
+              update: { phone: target, phoneVerified: true },
+            });
+          }
+        }
+      }
       return res.json({ success: true, message: 'OTP verified' });
     } catch (error) {
       return res.status(500).json({ error: 'Failed to verify OTP' });
