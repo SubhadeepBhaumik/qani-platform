@@ -44,6 +44,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
   const [linkedin, setLinkedin] = useState('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   // Recruiter specific states
   const [companyName, setCompanyName] = useState('');
@@ -129,7 +130,16 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
           linkedinUrl: linkedin || undefined,
         });
         setRegisteredUser(newUser);
+        if (resumeFile) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const cvData = reader.result as string;
+            api.uploadCV(newUser.id, cvData, resumeFile.name).catch(console.error);
+          };
+          reader.readAsDataURL(resumeFile);
+        }
         api.sendOTP(newUser.email, 'email', newUser.id).catch(console.error);
+        setResendCooldown(30);
         setRegisteredRole('candidate');
         navigate('verify-email');
       } catch (err: any) {
@@ -160,6 +170,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
       setRegisteredRole('recruiter');
       setRegisteredUser(newUser);
       api.sendOTP(newUser.email, 'email', newUser.id).catch(console.error);
+      setResendCooldown(30);
       navigate('verify-email');
     } catch (err: any) {
       setErrorMsg(err.message || 'Registration failed. Email may already be in use.');
@@ -508,12 +519,31 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                       className="w-full h-10 px-3 bg-gray-50 border border-gray-300 rounded-lg text-xs outline-none"
                     />
                   </div>
-
                   <div className="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center space-y-1">
                     <span className="text-xs block font-bold text-gray-700">Attach Resume (PDF/DOC)</span>
                     <p className="text-[10px] text-gray-500">Maximum file size 8MB</p>
                     <div className="pt-2">
-                      <button type="button" className="py-1 px-3 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 text-[11px] font-semibold text-gray-800">Choose File</button>
+                      {resumeFile ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-[11px] font-semibold text-gray-700">{resumeFile.name}</span>
+                          <button type="button" onClick={() => setResumeFile(null)} className="text-[11px] text-red-500 hover:text-red-700 font-semibold">Remove</button>
+                        </div>
+                      ) : (
+                        <label className="inline-block py-1 px-3 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 text-[11px] font-semibold text-gray-800 cursor-pointer">
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 8 * 1024 * 1024) { setErrorMsg('File too large. Max 8MB.'); return; }
+                              setResumeFile(file);
+                            }}
+                          />
+                          Choose File
+                        </label>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -533,7 +563,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                   {isLoading ? (
                     <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <span>{step === 1 ? 'Build step 2' : 'Finalize Registration'}</span>
+                    <span>{step === 1 ? 'Continue to Profile' : 'Create My Account'}</span>
                   )}
                 </button>
               </div>
@@ -704,7 +734,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                 {isLoading ? (
                   <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <span>Build Org Workspace</span>
+                  <span>Create Recruiter Account</span>
                 )}
               </button>
 

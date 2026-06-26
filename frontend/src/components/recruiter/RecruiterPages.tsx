@@ -827,7 +827,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
               <tbody className="divide-y divide-gray-100 text-xs text-gray-600">
                 {applications
                   .filter(app => {
-                    const candidate = allCandidates.find(c => c.id === app.candidateId) || allCandidates[0];
+                    const candidate = allCandidates.find(c => c.id === app.candidateId);
                     const job = jobs.find(j => j.id === (app.jobId || app.roleId));
                     const filterJobId = activeParams.filterJobId;
 
@@ -841,7 +841,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     return searchMat && statusMat && jobMat;
                   })
                   .map(app => {
-                    const candidate = allCandidates.find(c => c.id === app.candidateId) || allCandidates[0];
+                    const candidate = allCandidates.find(c => c.id === app.candidateId);
                     const job = jobs.find(j => j.id === app.jobId);
                     const isChecked = bulkChecked.includes(app.id);
 

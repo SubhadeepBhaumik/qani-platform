@@ -143,6 +143,10 @@ export const api = {
     } catch (_) { return []; }
   },
 
+  uploadCV: async (userId: string, cvData: string, cvFilename: string): Promise<any> => {
+    return call<any>(`/candidates/${userId}/upload-cv`, { method: 'POST', body: JSON.stringify({ cvData, cvFilename }) });
+  },
+
   sendOTP: async (target: string, type: 'email' | 'sms', userId: string): Promise<{ success: boolean; message?: string }> => {
     return call<any>('/auth/send-otp', { method: 'POST', body: JSON.stringify({ target, type, userId }) });
   },
