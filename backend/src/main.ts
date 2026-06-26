@@ -131,6 +131,8 @@ app.post('/api/v1/team/accept', TeamController.acceptInvite);
 app.delete('/api/v1/team/members/:id', TeamController.removeTeamMember);
 app.post('/api/v1/auth/send-otp', AuthController.sendOTP);
 app.post('/api/v1/auth/verify-otp', AuthController.verifyOTPEndpoint);
+app.post('/api/v1/auth/forgot-password', AuthController.forgotPassword);
+app.post('/api/v1/auth/reset-password', AuthController.resetPassword);
 
 // Role routes
 app.post('/api/v1/roles', RolesController.createRole);

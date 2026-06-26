@@ -22,6 +22,7 @@ export const ROUTES: Record<string, string> = {
   'auth-register-candidate-1': '/register/candidate',
   'auth-register-recruiter': '/register/recruiter',
   'verify-email': '/verify-email',
+  'forgot-password': '/forgot-password',
   'help': '/help',
   'accept-invite': '/accept-invite',
   'candidate-dashboard': '/candidate/dashboard',
@@ -65,7 +66,7 @@ const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
   Object.entries(ROUTES).map(([view, path]) => [path, view])
 );
 
-const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'help', 'accept-invite', 'how-it-works', 'about', 'contact', 'public-jobs', 'public-candidates'];
+const guestViews = ['landing', 'auth-login', 'auth-register-candidate-1', 'auth-register-recruiter', 'verify-email', 'forgot-password', 'help', 'accept-invite', 'how-it-works', 'about', 'contact', 'public-jobs', 'public-candidates'];
 
 const RouterSync: React.FC = () => {
   const { activeView, navigate: appNavigate, activeParams } = useApp();
@@ -137,6 +138,7 @@ const AppContent: React.FC = () => {
       case 'auth-register-candidate-1': return <AuthPages subView="register-candidate-1" />;
       case 'auth-register-recruiter': return <AuthPages subView="register-recruiter" />;
       case 'verify-email': return <AuthPages subView="verify-email" />;
+      case 'forgot-password': return <AuthPages subView="forgot-password" />;
       case 'help': return <HelpPage />;
       case 'accept-invite': return <AcceptInvitePage />;
       case 'how-it-works': return <HowItWorksPage />;

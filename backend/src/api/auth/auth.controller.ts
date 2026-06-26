@@ -228,4 +228,51 @@ export class AuthController {
     const count = await prisma.user.count();
     console.log('Demo users ready:', count);
   };
+
+  static async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: 'email required' });
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        return res.json({ success: true, message: 'If that email exists, a reset code has been sent.' });
+      }
+      const otp = generateOTP();
+      const key = user.id + ':password-reset:' + email;
+      await storeOTP(key, otp, email, 'email');
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;">
+          <h2 style="color:#111827;">Reset Your QANI Password</h2>
+          <p style="color:#6b7280;font-size:14px;">Use the code below to reset your password.</p>
+          <div style="background:#f3f4f6;border-radius:8px;padding:24px;text-align:center;margin:24px 0;">
+            <p style="font-size:36px;font-weight:900;letter-spacing:8px;color:#2563eb;margin:0;">${otp}</p>
+          </div>
+          <p style="color:#6b7280;font-size:14px;">This code expires in 10 minutes. If you did not request this, you can safely ignore this email.</p>
+        </div>`;
+      await sendEmail(email, 'Reset Your QANI Password', html);
+      return res.json({ success: true, message: 'If that email exists, a reset code has been sent.' });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      return res.status(500).json({ error: 'Failed to process request' });
+    }
+  }
+
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { email, otp, newPassword } = req.body;
+      if (!email || !otp || !newPassword) return res.status(400).json({ error: 'email, otp and newPassword required' });
+      if (newPassword.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) return res.status(400).json({ error: 'Invalid request' });
+      const key = user.id + ':password-reset:' + email;
+      const result = await verifyOTP(key, otp);
+      if (!result.valid) return res.status(400).json({ error: result.reason });
+      const passwordHash = await AuthService.hashPassword(newPassword);
+      await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+      return res.json({ success: true, message: 'Password reset successfully. Please log in.' });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return res.status(500).json({ error: 'Failed to reset password' });
+    }
+  }
 }

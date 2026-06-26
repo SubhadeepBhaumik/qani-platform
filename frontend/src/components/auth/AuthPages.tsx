@@ -17,7 +17,7 @@ import {
   Lock 
 } from 'lucide-react';
 
-export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | 'register-recruiter' | 'verify-email' }> = ({ subView }) => {
+export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | 'register-recruiter' | 'verify-email' | 'forgot-password' }> = ({ subView }) => {
   const { login, registerCandidate, registerRecruiter, navigate, showToast } = useApp();
   const cms = useCMS();
 
@@ -40,6 +40,13 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   const [otpInput, setOtpInput] = useState('');
   const [otpError, setOtpError] = useState('');
   const [otpVerifying, setOtpVerifying] = useState(false);
+  const [fpEmail, setFpEmail] = useState('');
+  const [fpStep, setFpStep] = useState<'email' | 'otp' | 'newPassword' | 'done'>('email');
+  const [fpOtp, setFpOtp] = useState('');
+  const [fpNewPassword, setFpNewPassword] = useState('');
+  const [fpConfirmPassword, setFpConfirmPassword] = useState('');
+  const [fpError, setFpError] = useState('');
+  const [fpLoading, setFpLoading] = useState(false);
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
@@ -221,6 +228,52 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     setResendCooldown(30);
     triggerVerificationResend();
   };
+  const handleForgotPasswordSubmit = async () => {
+    if (!fpEmail) { setFpError('Please enter your email address.'); return; }
+    setFpLoading(true);
+    setFpError('');
+    try {
+      const res = await fetch('https://qani.io/api/v1/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fpEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFpStep('otp');
+        showToast('If that email exists, a reset code has been sent.', 'success');
+      } else {
+        setFpError(data.error || 'Failed to send reset code.');
+      }
+    } catch {
+      setFpError('Failed to send reset code. Try again.');
+    }
+    setFpLoading(false);
+  };
+  const handleResetPasswordSubmit = async () => {
+    if (fpOtp.length !== 6) { setFpError('Please enter the 6-digit code.'); return; }
+    if (fpNewPassword.length < 8) { setFpError('Password must be at least 8 characters.'); return; }
+    if (fpNewPassword !== fpConfirmPassword) { setFpError('Passwords do not match.'); return; }
+    setFpLoading(true);
+    setFpError('');
+    try {
+      const res = await fetch('https://qani.io/api/v1/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fpEmail, otp: fpOtp, newPassword: fpNewPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFpStep('done');
+        showToast('Password reset successfully!', 'success');
+      } else {
+        setFpError(data.error || 'Failed to reset password.');
+      }
+    } catch {
+      setFpError('Failed to reset password. Try again.');
+    }
+    setFpLoading(false);
+  };
   return (
     <>
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 font-sans bg-gray-50">
@@ -295,7 +348,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label htmlFor="pass" className="text-xs font-semibold text-gray-700">Password</label>
-                    <button type="button" onClick={() => navigate('help')} className="text-[11px] text-blue-600 hover:underline">Forgot password?</button>
+                    <button type="button" onClick={() => navigate('forgot-password')} className="text-[11px] text-blue-600 hover:underline">Forgot password?</button>
                   </div>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
@@ -798,6 +851,103 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+          {subView === 'forgot-password' && (
+            <div className="text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-100/30">
+                  <Mail className="w-8 h-8" />
+                </div>
+              </div>
+              {fpStep === 'email' && (
+                <>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold tracking-tight text-gray-900">Reset Your Password</h3>
+                    <p className="text-xs text-gray-500 max-w-sm mx-auto">Enter your email address and we'll send you a 6-digit code to reset your password.</p>
+                  </div>
+                  <div className="space-y-4">
+                    <input
+                      type="email"
+                      value={fpEmail}
+                      onChange={(e) => { setFpEmail(e.target.value); setFpError(''); }}
+                      placeholder="you@email.com"
+                      className="w-full h-10 px-3.5 bg-gray-50 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                    />
+                    {fpError && <p className="text-xs text-red-600 font-semibold">{fpError}</p>}
+                    <button
+                      type="button"
+                      onClick={handleForgotPasswordSubmit}
+                      disabled={fpLoading}
+                      className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg text-xs transition uppercase tracking-wider"
+                    >
+                      {fpLoading ? 'Sending...' : 'Send Reset Code'}
+                    </button>
+                    <button type="button" onClick={() => navigate('auth-login')} className="text-xs text-blue-600 hover:underline">Back to Log In</button>
+                  </div>
+                </>
+              )}
+              {fpStep === 'otp' && (
+                <>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-bold tracking-tight text-gray-900">Enter Reset Code</h3>
+                    <p className="text-xs text-gray-500 max-w-sm mx-auto">We've sent a 6-digit code to {fpEmail}.</p>
+                    <p className="text-xs text-amber-600 font-semibold">Don't see it? Check your spam or junk folder.</p>
+                  </div>
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={fpOtp}
+                      onChange={(e) => { setFpOtp(e.target.value.replace(/[^0-9]/g, '')); setFpError(''); }}
+                      placeholder="Enter 6-digit code"
+                      className="w-full h-12 px-4 text-center text-lg font-bold tracking-widest bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-blue-500"
+                    />
+                    <input
+                      type="password"
+                      value={fpNewPassword}
+                      onChange={(e) => { setFpNewPassword(e.target.value); setFpError(''); }}
+                      placeholder="New password (min 8 characters)"
+                      className="w-full h-10 px-3.5 bg-gray-50 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                    />
+                    <input
+                      type="password"
+                      value={fpConfirmPassword}
+                      onChange={(e) => { setFpConfirmPassword(e.target.value); setFpError(''); }}
+                      placeholder="Confirm new password"
+                      className="w-full h-10 px-3.5 bg-gray-50 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
+                    />
+                    {fpError && <p className="text-xs text-red-600 font-semibold">{fpError}</p>}
+                    <button
+                      type="button"
+                      onClick={handleResetPasswordSubmit}
+                      disabled={fpLoading}
+                      className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold rounded-lg text-xs transition uppercase tracking-wider"
+                    >
+                      {fpLoading ? 'Resetting...' : 'Reset Password'}
+                    </button>
+                    <button type="button" onClick={handleForgotPasswordSubmit} className="text-xs text-blue-600 hover:underline">Resend Code</button>
+                  </div>
+                </>
+              )}
+              {fpStep === 'done' && (
+                <>
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-xl inline-flex items-center gap-2 text-green-700 text-xs font-semibold shadow-inner">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Password reset successfully!</span>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => navigate('auth-login')}
+                      className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition uppercase tracking-wider"
+                    >
+                      Go to Log In
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           )}
