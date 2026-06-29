@@ -2,6 +2,7 @@ import { AdminCMS } from './AdminCMS';
 import { AdminCredits } from './AdminCredits';
 import { AdminPricingCMS } from './AdminPricingCMS';
 import React, { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 import { useApp } from '../AppContext';
 import {
   ShieldAlert, Trash2, Activity, Users, Briefcase,
@@ -141,6 +142,7 @@ const UserModal: React.FC<{ user: any; onClose: () => void; onSave: (u: any) => 
                 { label: 'Role', value: form.role },
                 { label: 'Location', value: form.location || '—' },
                 { label: 'Status', value: form.status },
+                ...(form.flaggedReason ? [{ label: 'Flagged Reason', value: form.flaggedReason.replace(/_/g, ' ') }] : []),
                 { label: 'Verified', value: form.verified ? 'Yes ✓' : 'No ✗' },
                 ...(form.role === 'recruiter' ? [{ label: 'Company', value: form.company || '—' }] : []),
               ].map(item => (
@@ -577,39 +579,15 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
       return saved ? JSON.parse(saved) : defaultCMS;
     } catch { return defaultCMS; }
   });
-
-  const saveCMS = () => {
-    localStorage.setItem('qani_cms_content', JSON.stringify(cmsContent));
-    showToast('Content saved successfully! Changes will reflect on next deploy.', 'success');
-  };
-
-  const [demoUsers, setDemoUsers] = useState([
-    { id: 'u1', firstName: 'Steve', lastName: 'Begg', email: 'admin@qani.io', role: 'admin', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u2', firstName: 'Sarah', lastName: 'Chen', email: 'recruiter@qani.io', role: 'recruiter', location: 'Sydney, NSW', status: 'active', verified: true, company: 'Atlassian' },
-    { id: 'u3', firstName: 'James', lastName: 'Morrison', email: 'james.hr@techcorp.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true, company: 'Canva' },
-    { id: 'u4', firstName: 'Emma', lastName: 'Thompson', email: 'emma.hr@seek.com.au', role: 'recruiter', location: 'Brisbane, QLD', status: 'active', verified: true, company: 'Seek' },
-    { id: 'u5', firstName: 'Michael', lastName: 'Zhang', email: 'michael.hr@rea.com.au', role: 'recruiter', location: 'Melbourne, VIC', status: 'active', verified: true, company: 'REA Group' },
-    { id: 'u6', firstName: 'Liam', lastName: 'Nguyen', email: 'candidate@qani.io', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u7', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
-    { id: 'u8', firstName: 'Tom', lastName: 'Williams', email: 'tom.williams@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
-    { id: 'u9', firstName: 'Jessica', lastName: 'Lee', email: 'jessica.lee@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u10', firstName: 'Marcus', lastName: 'Vance', email: 'marcus.vance@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
-    { id: 'u11', firstName: 'Sophie', lastName: 'Martin', email: 'sophie.martin@gmail.com', role: 'candidate', location: 'Perth, WA', status: 'active', verified: true },
-    { id: 'u12', firstName: 'Natalie', lastName: 'Kim', email: 'natalie.kim@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: false },
-    { id: 'u13', firstName: 'David', lastName: 'Patel', email: 'david.patel@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
-    { id: 'u14', firstName: 'Ethan', lastName: 'Brown', email: 'ethan.brown@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u15', firstName: 'Ava', lastName: 'Thomas', email: 'ava.thomas@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
-    { id: 'u16', firstName: 'Noah', lastName: 'Anderson', email: 'noah.anderson@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'suspended', verified: true },
-    { id: 'u17', firstName: 'Grace', lastName: 'White', email: 'grace.white@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u18', firstName: 'Oliver', lastName: 'Harris', email: 'oliver.harris@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
-    { id: 'u19', firstName: 'Emily', lastName: 'Clark', email: 'emily.clark@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u20', firstName: 'Henry', lastName: 'Robinson', email: 'henry.robinson@gmail.com', role: 'candidate', location: 'Perth, WA', status: 'active', verified: true },
-    { id: 'u21', firstName: 'Charlotte', lastName: 'Lewis', email: 'charlotte.lewis@gmail.com', role: 'candidate', location: 'Adelaide, SA', status: 'active', verified: true },
-    { id: 'u22', firstName: 'Jack', lastName: 'Walker', email: 'jack.walker@gmail.com', role: 'candidate', location: 'Sydney, NSW', status: 'active', verified: true },
-    { id: 'u23', firstName: 'Amelia', lastName: 'Hall', email: 'amelia.hall@gmail.com', role: 'candidate', location: 'Melbourne, VIC', status: 'active', verified: true },
-    { id: 'u24', firstName: 'Lucas', lastName: 'Jackson', email: 'lucas.jackson@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
-    { id: 'u25', firstName: 'William', lastName: 'Young', email: 'william.young@gmail.com', role: 'candidate', location: 'Brisbane, QLD', status: 'active', verified: true },
-  ]);
+  const [demoUsers, setDemoUsers] = useState<any[]>([]);
+  useEffect(() => {
+    api.getUsers().then((users: any[]) => {
+      setDemoUsers(users.map(u => ({
+        ...u,
+        status: u.suspended ? 'suspended' : 'active',
+      })));
+    }).catch(() => setDemoUsers([]));
+  }, []);
 
   const [demoApps, setDemoApps] = useState<any[]>([]);
 
@@ -721,11 +699,17 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
     showToast('User permanently deleted.', 'warning');
   };
 
-  const handleToggleStatus = (u: any) => {
-    const newStatus = u.status === 'active' ? 'suspended' : 'active';
-    setDemoUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: newStatus } : x));
-    setSelectedUser((prev: any) => prev ? { ...prev, status: newStatus } : null);
-    showToast(`${u.firstName} ${newStatus === 'suspended' ? 'suspended' : 'reactivated'}.`, newStatus === 'suspended' ? 'warning' : 'success');
+  const handleToggleStatus = async (u: any) => {
+    const newSuspended = u.status !== 'active';
+    try {
+      const updated = await api.updateUserStatus(u.id, newSuspended);
+      const newStatus = updated.suspended ? 'suspended' : 'active';
+      setDemoUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: newStatus, flaggedReason: updated.flaggedReason } : x));
+      setSelectedUser((prev: any) => prev ? { ...prev, status: newStatus, flaggedReason: updated.flaggedReason } : null);
+      showToast(`${u.firstName} ${newStatus === 'suspended' ? 'suspended' : 'reactivated'}.`, newStatus === 'suspended' ? 'warning' : 'success');
+    } catch {
+      showToast('Failed to update user status.', 'error');
+    }
   };
 
   const handleToggleJobStatus = (id: string) => {
@@ -1092,7 +1076,7 @@ Question 1: Describe your most relevant experience for this role.` },
                             </div>
                             <div>
                               <p className="font-semibold text-gray-900">{u.firstName} {u.lastName}</p>
-                              <p className="text-[10px] text-gray-400">{u.verified ? '✓ Verified' : '⚠ Unverified'}</p>
+                              <p className="text-[10px] text-gray-400">{u.emailVerified ? '✓ Verified' : '⚠ Unverified'}</p>
                             </div>
                           </div>
                         </td>

@@ -23,6 +23,8 @@ model User {
   emailVerified Boolean  @default(false)
   phoneVerified Boolean  @default(false)
   suspended     Boolean  @default(false)
+  flaggedReason String?
+  pendingFlagToken String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

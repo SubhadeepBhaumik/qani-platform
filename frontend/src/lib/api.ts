@@ -132,6 +132,10 @@ export const api = {
     try { return await call<User[]>('/users'); } catch (_) { return []; }
   },
 
+  updateUserStatus: async (userId: string, suspended: boolean): Promise<any> => {
+    return call<any>(`/users/${userId}/status`, { method: 'PATCH', body: JSON.stringify({ suspended }) });
+  },
+
   getCandidates: async (): Promise<any[]> => {
     try { return await call<any[]>('/candidates'); } catch (_) { return []; }
   },

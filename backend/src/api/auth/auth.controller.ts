@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { generateOTP, storeOTP, verifyOTP, checkOTPValid, consumeOTP } from '../../services/otp.service';
-import { sendEmail } from '../../services/email.service';
+import { sendEmail, sendPasswordChangedEmail } from '../../services/email.service';
 import { sendOTPSMS } from '../../services/sms.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -278,10 +278,34 @@ export class AuthController {
       const newHistory = [user.passwordHash, ...(user.passwordHistory || [])].slice(0, 2);
       await prisma.user.update({ where: { id: user.id }, data: { passwordHash, passwordHistory: newHistory } });
       await consumeOTP(key);
+      const flagToken = require('crypto').randomBytes(32).toString('hex');
+      await prisma.user.update({ where: { id: user.id }, data: { pendingFlagToken: flagToken } });
+      sendPasswordChangedEmail(user.email, user.firstName, flagToken).catch(console.error);
       return res.json({ success: true, message: 'Password reset successfully. Please log in.' });
     } catch (error) {
       console.error('Reset password error:', error);
       return res.status(500).json({ error: 'Failed to reset password' });
+    }
+  }
+
+  static async flagPasswordChange(req: Request, res: Response) {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).send('Invalid or missing token.');
+      }
+      const user = await prisma.user.findFirst({ where: { pendingFlagToken: token } });
+      if (!user) {
+        return res.status(400).send('This link is invalid or has already been used.');
+      }
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { suspended: true, flaggedReason: 'unauthorized_password_change', pendingFlagToken: null },
+      });
+      return res.send('Your account has been temporarily suspended for security. Please contact support to verify your identity and restore access.');
+    } catch (error) {
+      console.error('Flag password change error:', error);
+      return res.status(500).send('Something went wrong. Please contact support directly.');
     }
   }
 }

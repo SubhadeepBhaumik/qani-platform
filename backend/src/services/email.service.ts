@@ -143,3 +143,29 @@ export async function sendRecruiterScreeningAlertEmail(to: string, recruiterName
   `;
   return sendEmail(to, `Screening Complete — ${candidateName} scored ${score}% for ${jobTitle}`, html);
 }
+
+export async function sendPasswordChangedEmail(to: string, firstName: string, flagToken: string): Promise<boolean> {
+  const flagUrl = `https://qani.io/api/v1/auth/flag-password-change?token=${flagToken}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:32px;">
+      <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+        <div style="margin-bottom:24px;">
+          <span style="background:#1e40af;color:#fff;font-weight:900;font-size:14px;padding:6px 12px;border-radius:6px;font-family:monospace;">Q</span>
+          <span style="font-weight:800;font-size:18px;color:#111827;margin-left:8px;">QANI</span>
+        </div>
+        <h2 style="color:#111827;font-size:20px;margin:0 0 8px;">Your Password Was Changed</h2>
+        <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">Hi ${firstName},</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;">This is a confirmation that the password for your QANI account was just changed.</p>
+        <a href="https://qani.io/" style="display:inline-block;background:#2563eb;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin:16px 0;">Go to Log In</a>
+        <div style="background:#fef2f2;border-radius:8px;padding:16px;margin:24px 0;border-left:4px solid #dc2626;">
+          <p style="color:#991b1b;font-size:13px;font-weight:600;margin:0 0 8px;">Didn't make this change?</p>
+          <p style="color:#7f1d1d;font-size:13px;margin:0 0 12px;">If you did not change your password, click below immediately to secure your account. This will temporarily suspend access until our support team verifies your identity.</p>
+          <a href="${flagUrl}" style="display:inline-block;background:#dc2626;color:#fff;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;text-decoration:none;">This wasn't me — secure my account</a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+        <p style="color:#9ca3af;font-size:12px;">QANI AI Recruitment Platform · Australia · <a href="https://qani.io" style="color:#6b7280;">qani.io</a></p>
+      </div>
+    </div>
+  `;
+  return sendEmail(to, 'Your QANI Password Was Changed', html);
+}

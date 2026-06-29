@@ -133,6 +133,7 @@ app.post('/api/v1/auth/send-otp', AuthController.sendOTP);
 app.post('/api/v1/auth/verify-otp', AuthController.verifyOTPEndpoint);
 app.post('/api/v1/auth/forgot-password', AuthController.forgotPassword);
 app.post('/api/v1/auth/reset-password', AuthController.resetPassword);
+app.get('/api/v1/auth/flag-password-change', AuthController.flagPasswordChange);
 
 // Role routes
 app.post('/api/v1/roles', RolesController.createRole);
@@ -224,10 +225,27 @@ app.get('/api/v1/users', requireAdmin, async (_req, res) => {
     const { PrismaClient } = require('@prisma/client');
     const prisma = new PrismaClient();
     const users = await prisma.user.findMany({
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, companyName: true, suspended: true, createdAt: true }
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, companyName: true, suspended: true, flaggedReason: true, phoneVerified: true, emailVerified: true, location: true, createdAt: true }
     });
     res.json(users);
   } catch(e) { res.json([]); }
+});
+app.patch('/api/v1/users/:id/status', requireAdmin, async (req: any, res) => {
+  try {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    const { suspended } = req.body;
+    const data: any = { suspended };
+    if (suspended === false) data.flaggedReason = null;
+    const updated = await prisma.user.update({
+      where: { id: req.params.id },
+      data,
+      select: { id: true, email: true, suspended: true, flaggedReason: true },
+    });
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update user status' });
+  }
 });
 
 // ─── CMS API ─────────────────────────────────────────────────────────────────
