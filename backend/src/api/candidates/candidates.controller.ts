@@ -195,6 +195,7 @@ export class CandidatesController {
     try {
       const users = await prisma.user.findMany({ where: { role: 'candidate' } });
       const profiles = await prisma.candidateProfile.findMany();
+      const applications = await prisma.application.findMany({ where: { aiScore: { not: null } }, orderBy: { screeningCompletedAt: 'desc' } });
       const merged = users.map((u: any) => {
         const profile = profiles.find((p: any) => p.userId === u.id);
         const skills = profile && Array.isArray((profile as any).skills) ? (profile as any).skills : [];
@@ -205,6 +206,7 @@ export class CandidatesController {
           profile: {
             location: (profile as any)?.location || '',
             skills,
+            latestScore: (() => { const myApps = applications.filter((a) => (a as any).candidateId === u.id); if (myApps.length === 0) return null; const sum = myApps.reduce((acc, a) => acc + ((a as any).aiScore || 0), 0); return Math.round(sum / myApps.length); })(),
           },
         };
       });
