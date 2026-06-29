@@ -112,7 +112,7 @@ const RouterSync: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  const { user, activeView, toast, clearToast, isAppLoading } = useApp();
+  const { user, activeView, toast, clearToast, isAppLoading, navigate } = useApp();
   const cms = useCMS();
 
   useEffect(() => {
@@ -130,8 +130,9 @@ const AppContent: React.FC = () => {
     const metaKeywords = document.querySelector('meta[name="keywords"]');
     if (metaKeywords && cms.seo?.keywords) metaKeywords.setAttribute('content', cms.seo.keywords);
   }, [cms.seo]);
-
   const renderPage = () => {
+    if (user?.role === 'recruiter' && activeView === 'public-jobs') { setTimeout(() => navigate('recruiter-dashboard'), 0); return null; }
+    if (user?.role === 'candidate' && activeView === 'public-candidates') { setTimeout(() => navigate('candidate-dashboard'), 0); return null; }
     switch (activeView) {
       case 'landing': return <HomePage />;
       case 'auth-login': return <AuthPages subView="login" />;
