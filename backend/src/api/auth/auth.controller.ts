@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { generateOTP, storeOTP, verifyOTP } from '../../services/otp.service';
+import { generateOTP, storeOTP, verifyOTP, checkOTPValid, consumeOTP } from '../../services/otp.service';
 import { sendEmail } from '../../services/email.service';
 import { sendOTPSMS } from '../../services/sms.service';
 import { AuthService } from '../../services/auth.service';
@@ -265,10 +265,19 @@ export class AuthController {
       const user = await prisma.user.findUnique({ where: { email } });
       if (!user) return res.status(400).json({ error: 'Invalid request' });
       const key = user.id + ':password-reset:' + email;
-      const result = await verifyOTP(key, otp);
+      const result = await checkOTPValid(key, otp);
       if (!result.valid) return res.status(400).json({ error: result.reason });
+      const allPastHashes = [user.passwordHash, ...(user.passwordHistory || [])].slice(0, 2);
+      for (const oldHash of allPastHashes) {
+        const matches = await AuthService.comparePassword(newPassword, oldHash);
+        if (matches) {
+          return res.status(400).json({ error: 'New password must be different from your last 2 passwords.' });
+        }
+      }
       const passwordHash = await AuthService.hashPassword(newPassword);
-      await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+      const newHistory = [user.passwordHash, ...(user.passwordHistory || [])].slice(0, 2);
+      await prisma.user.update({ where: { id: user.id }, data: { passwordHash, passwordHistory: newHistory } });
+      await consumeOTP(key);
       return res.json({ success: true, message: 'Password reset successfully. Please log in.' });
     } catch (error) {
       console.error('Reset password error:', error);

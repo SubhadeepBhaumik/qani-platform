@@ -47,6 +47,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   const [fpConfirmPassword, setFpConfirmPassword] = useState('');
   const [fpError, setFpError] = useState('');
   const [fpLoading, setFpLoading] = useState(false);
+  const [fpResendCooldown, setFpResendCooldown] = useState(0);
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState('');
@@ -75,6 +76,11 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
     const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [resendCooldown]);
+  useEffect(() => {
+    if (fpResendCooldown <= 0) return;
+    const timer = setTimeout(() => setFpResendCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [fpResendCooldown]);
 
   // Password complex validations
   const checks = {
@@ -230,6 +236,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
   };
   const handleForgotPasswordSubmit = async () => {
     if (!fpEmail) { setFpError('Please enter your email address.'); return; }
+    if (fpResendCooldown > 0) return;
     setFpLoading(true);
     setFpError('');
     try {
@@ -241,6 +248,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
       const data = await res.json();
       if (res.ok) {
         setFpStep('otp');
+        setFpResendCooldown(30);
         showToast('If that email exists, a reset code has been sent.', 'success');
       } else {
         setFpError(data.error || 'Failed to send reset code.');
@@ -912,6 +920,24 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                       placeholder="New password (min 8 characters)"
                       className="w-full h-10 px-3.5 bg-gray-50 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500"
                     />
+                    <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-500 text-left">
+                      <span className="flex items-center gap-1">
+                        {fpNewPassword.length >= 8 ? <Check className="w-3 h-3 text-green-500" /> : <X className="w-3 h-3 text-gray-300" />}
+                        <span>Minimum 8 chars</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {/[A-Z]/.test(fpNewPassword) ? <Check className="w-3 h-3 text-green-500" /> : <X className="w-3 h-3 text-gray-300" />}
+                        <span>1 Uppercase (A-Z)</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {/[0-9]/.test(fpNewPassword) ? <Check className="w-3 h-3 text-green-500" /> : <X className="w-3 h-3 text-gray-300" />}
+                        <span>1 Number (0-9)</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {/[@$!%*?&]/.test(fpNewPassword) ? <Check className="w-3 h-3 text-green-500" /> : <X className="w-3 h-3 text-gray-300" />}
+                        <span>1 Special (@$!%*?&)</span>
+                      </span>
+                    </div>
                     <input
                       type="password"
                       value={fpConfirmPassword}
@@ -928,7 +954,7 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
                     >
                       {fpLoading ? 'Resetting...' : 'Reset Password'}
                     </button>
-                    <button type="button" onClick={handleForgotPasswordSubmit} className="text-xs text-blue-600 hover:underline">Resend Code</button>
+                    <button type="button" onClick={handleForgotPasswordSubmit} disabled={fpResendCooldown > 0} className="text-xs text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline">{fpResendCooldown > 0 ? `Resend code in (${fpResendCooldown}s)` : 'Resend Code'}</button>
                   </div>
                 </>
               )}
