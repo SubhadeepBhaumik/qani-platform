@@ -29,7 +29,7 @@ export const Header: React.FC = () => {
           AI Recruiter is active — screening candidates automatically
         </div>
       )}
-      {user && user.role === 'recruiter' && <TrialBanner onBuyCredits={() => navigate('landing')} />}
+      {user && user.role === 'recruiter' && <TrialBanner onBuyCredits={() => { navigate('landing'); setTimeout(() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }), 100); }} />}
       <div className="h-16 px-6 flex items-center justify-between">
 
       {/* Left: QANI Logo + public nav links */}

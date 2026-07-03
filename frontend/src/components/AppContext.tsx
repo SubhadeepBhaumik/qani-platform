@@ -178,6 +178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setActiveView(urlView as any);
             setActiveParams(viewParams);
           } else if (savedUser.role === 'candidate') setActiveView('candidate-dashboard');
+          else if (new URLSearchParams(window.location.search).get('payment')) setActiveView('landing');
           else if (savedUser.role === 'recruiter') setActiveView('recruiter-dashboard');
           else {
             // Allow admin to preview landing page with ?preview=true

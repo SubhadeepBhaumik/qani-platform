@@ -14,7 +14,20 @@ export const HomePage: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState(0);
   const [dynamicPlans, setDynamicPlans] = useState<any[]>([]);
   const [buyingPlan, setBuyingPlan] = useState<string | null>(null);
+  const [purchaseSuccess, setPurchaseSuccess] = useState<{ credits: string } | null>(null);
   useEffect(() => { fetch('/api/v1/pricing-plans').then(r => r.json()).then(setDynamicPlans).catch(() => {}); }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      const credits = params.get('credits');
+      setPurchaseSuccess({ credits: credits || '0' });
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }), 300);
+    } else if (params.get('payment') === 'cancelled') {
+      showToast('Payment cancelled. No charge was made.', 'info');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
   const handleBuyPlan = async (plan: any) => {
     if (plan.ctaAction === 'contact_sales') { navigate('help'); return; }
     if (user === null) { navigate('auth-register-recruiter'); return; }
@@ -186,6 +199,19 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="bg-gray-50 text-gray-900 min-h-screen font-sans">
+      {purchaseSuccess && (
+        <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4" onClick={() => setPurchaseSuccess(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Payment successful</h3>
+            <p className="text-gray-500 text-sm mb-6">{purchaseSuccess.credits} credits have been added to your account. A receipt has been sent to your email.</p>
+            <button onClick={() => { setPurchaseSuccess(null); navigate('recruiter-dashboard'); }} className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition mb-2">Go to Dashboard</button>
+            <button onClick={() => { setPurchaseSuccess(null); navigate('recruiter-dashboard'); }} className="cursor-pointer w-full text-gray-500 hover:text-gray-700 text-sm font-medium py-2">Continue browsing</button>
+          </div>
+        </div>
+      )}
 
       {/* Top banner */}
       {(cms.global?.announcementBarEnabled !== false) && (

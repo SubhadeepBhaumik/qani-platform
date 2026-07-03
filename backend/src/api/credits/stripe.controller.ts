@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
 import { AuthService } from '../../services/auth.service';
+import { sendCreditPurchaseEmail } from '../../services/email.service';
 
 const prisma = new PrismaClient();
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://qani.io';
@@ -37,6 +38,9 @@ export async function createCheckoutSession(req: Request, res: Response) {
 
     const plan = await prisma.pricingPlan.findUnique({ where: { id: planId } });
     if (!plan || !plan.isActive) return res.status(404).json({ error: 'Plan not found' });
+    if (plan.isCustomPricing) {
+      return res.status(400).json({ error: 'This plan requires contacting sales and cannot be purchased directly.' });
+    }
 
     const { secretKey } = await getStripeKeys();
     if (!secretKey || secretKey.indexOf('placeholder') !== -1) {
@@ -108,6 +112,13 @@ export async function stripeWebhook(req: Request, res: Response) {
     }
 
     const creditsToAdd = parseInt(credits, 10);
+    let finalBalance = 0;
+
+    const existing = await prisma.creditTransaction.findUnique({ where: { sessionId: session.id } });
+    if (existing) {
+      console.log(`Webhook: session ${session.id} already processed, skipping duplicate`);
+      return res.status(200).json({ received: true });
+    }
 
     try {
       await prisma.$transaction(async (tx) => {
@@ -123,12 +134,22 @@ export async function stripeWebhook(req: Request, res: Response) {
             amount: creditsToAdd,
             reason: 'stripe_purchase',
             stripePaymentId: session.payment_intent as string,
+            sessionId: session.id,
             balanceAfter: record.balance,
           },
         });
+        finalBalance = record.balance;
       });
 
       console.log(`Credits added: ${creditsToAdd} to recruiter ${recruiterId} (${planName})`);
+      try {
+        const recruiter = await prisma.user.findUnique({ where: { id: recruiterId } });
+        if (recruiter?.email) {
+          await sendCreditPurchaseEmail(recruiter.email, recruiter.firstName || 'there', planName || 'QANI Plan', creditsToAdd, session.amount_total || 0, finalBalance);
+        }
+      } catch (emailErr) {
+        console.error('Failed to send purchase confirmation email:', emailErr);
+      }
     } catch (err) {
       console.error('Failed to add credits after payment:', err);
     }

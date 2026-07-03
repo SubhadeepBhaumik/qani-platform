@@ -169,3 +169,32 @@ export async function sendPasswordChangedEmail(to: string, firstName: string, fl
   `;
   return sendEmail(to, 'Your QANI Password Was Changed', html);
 }
+
+export async function sendCreditPurchaseEmail(to: string, firstName: string, planName: string, credits: number, amountCents: number, balanceAfter: number): Promise<boolean> {
+  const amountFormatted = (amountCents / 100).toFixed(2);
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f9fafb;padding:32px;">
+      <div style="background:#fff;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
+        <div style="margin-bottom:24px;">
+          <span style="background:#1e40af;color:#fff;font-weight:900;font-size:14px;padding:6px 12px;border-radius:6px;font-family:monospace;">Q</span>
+          <span style="font-weight:800;font-size:18px;color:#111827;margin-left:8px;">QANI</span>
+        </div>
+        <h2 style="color:#111827;font-size:20px;margin:0 0 8px;">Payment Confirmed</h2>
+        <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">Hi ${firstName},</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;">Thanks for your purchase. Here are your receipt details:</p>
+        <div style="background:#f3f4f6;border-radius:8px;padding:20px;margin:20px 0;">
+          <table style="width:100%;font-size:14px;color:#374151;">
+            <tr><td style="padding:6px 0;color:#6b7280;">Plan</td><td style="padding:6px 0;text-align:right;font-weight:600;">${planName}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Credits added</td><td style="padding:6px 0;text-align:right;font-weight:600;">${credits}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">Amount charged</td><td style="padding:6px 0;text-align:right;font-weight:600;">AUD $${amountFormatted}</td></tr>
+            <tr><td style="padding:6px 0;color:#6b7280;">New balance</td><td style="padding:6px 0;text-align:right;font-weight:600;">${balanceAfter} credits</td></tr>
+          </table>
+        </div>
+        <a href="https://qani.io/" style="display:inline-block;background:#2563eb;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:8px;text-decoration:none;margin:8px 0;">Go to Dashboard</a>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;" />
+        <p style="color:#9ca3af;font-size:12px;">QANI AI Recruitment Platform · Australia · <a href="https://qani.io" style="color:#6b7280;">qani.io</a></p>
+      </div>
+    </div>
+  `;
+  return sendEmail(to, 'QANI Payment Receipt', html);
+}

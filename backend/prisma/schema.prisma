@@ -211,7 +211,7 @@ model CreditTransaction {
   type            String
   amount          Int
   reason          String
-  sessionId       String?
+  sessionId       String?  @unique
   stripePaymentId String?
   balanceAfter    Int
   createdAt       DateTime @default(now())
