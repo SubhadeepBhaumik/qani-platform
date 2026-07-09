@@ -825,6 +825,9 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                       setShowCompareModal(true);
                     }} className="cursor-pointer bg-purple-600 text-white font-bold py-1 px-2.5 rounded text-[10px]">Compare ({bulkChecked.length})</button>
                   )}
+                  {bulkChecked.length > 3 && (
+                    <span className="text-[10px] text-amber-600 font-semibold italic">Uncheck some to compare (max 3)</span>
+                  )}
                   <button onClick={() => {
                     const selected = applications.filter(a => bulkChecked.includes(a.id));
                     const csv = ['Name,Email,Job,Score,Status,AI Feedback', ...selected.map(a => `"${a.candidateName||''}","${a.candidateEmail||''}","${a.jobTitle||''}","${a.aiScore??a.score??''}","${a.status}","${(a.aiFeedback||'').replace(/"/g,"'")}"`)].join('\n');
@@ -2061,7 +2064,13 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
               <button onClick={() => setShowCompareModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer font-bold text-xl">×</button>
             </div>
             <div className="p-6 overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
+              <table className="w-full text-xs border-collapse table-fixed">
+                <colgroup>
+                  <col style={{ width: "140px" }} />
+                  {compareModalApps.map((app: any) => (
+                    <col key={app.id} style={{ width: `${80 / compareModalApps.length}%`, minWidth: "180px" }} />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="p-3 text-left text-[10px] font-bold text-gray-400 uppercase border-b border-gray-200">Criteria</th>
