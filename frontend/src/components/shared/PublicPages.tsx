@@ -116,7 +116,7 @@ const PublicFooter: React.FC = () => {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 pb-12 border-b border-gray-800">
         <div className="lg:col-span-4 space-y-4">
           <QANILogo size="md" dark={true} onClick={() => navigate('landing')} />
-          <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "Australia's AI-powered recruitment platform. Screening candidates 24/7 so you don't have to."}</p>
+          <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "The AI-powered recruitment platform. Screening candidates 24/7 so you don't have to."}</p>
         </div>
         <div className="lg:col-span-2 space-y-4">
           <h5 className="text-white text-xs font-bold uppercase tracking-wider">For Candidates</h5>
@@ -299,7 +299,7 @@ export const AboutPage: React.FC = () => {
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white" style={{textShadow:'0 2px 8px rgba(0,0,0,0.7)'}}>
             {aboutHero.title || 'About'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{aboutHero.title ? '' : 'QANI'}</span>
           </h1>
-          <p className="text-lg text-white max-w-2xl mx-auto" style={{textShadow:'0 1px 4px rgba(0,0,0,0.7)'}}>{aboutHero.subtitle || "We're building Australia's smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones."}</p>
+          <p className="text-lg text-white max-w-2xl mx-auto" style={{textShadow:'0 1px 4px rgba(0,0,0,0.7)'}}>{aboutHero.subtitle || "We're building the smartest AI recruitment platform — making great hiring accessible to every company, not just the big ones."}</p>
         </div>
       </section>
 
@@ -365,7 +365,7 @@ export const AboutPage: React.FC = () => {
       {/* CTA */}
       <section className="py-16 px-6 sm:px-12 bg-blue-600">
         <div className="max-w-3xl mx-auto text-center space-y-6">
-          <h2 className="text-2xl font-extrabold text-white">Join the future of Australian recruitment</h2>
+          <h2 className="text-2xl font-extrabold text-white">Join the future of recruitment</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer bg-white text-blue-600 font-bold py-3.5 px-8 rounded-xl hover:bg-blue-50 transition shadow-lg text-sm">
               Start Recruiting Free →
@@ -593,7 +593,7 @@ export const PublicJobsPage: React.FC = () => {
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="text-center space-y-3">
             <h1 className="text-3xl font-extrabold" style={cms.publicJobsPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 2px 8px rgba(0,0,0,0.7)'} : {color:'#111827'}}>{cms.publicJobsPage?.hero?.title || cms.homepage?.jobs?.title || 'Open Positions'}</h1>
-            <p className="text-sm" style={cms.publicJobsPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 1px 4px rgba(0,0,0,0.7)'} : {color:'#6b7280'}}>{cms.publicJobsPage?.hero?.subtitle || cms.homepage?.jobs?.subtitle || 'AI-screened jobs from top Australian companies. Login to apply.'}</p>
+            <p className="text-sm" style={cms.publicJobsPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 1px 4px rgba(0,0,0,0.7)'} : {color:'#6b7280'}}>{cms.publicJobsPage?.hero?.subtitle || cms.homepage?.jobs?.subtitle || 'AI-screened jobs from top companies. Login to apply.'}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search jobs, companies, skills..." className="flex-1 h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />

@@ -43,7 +43,7 @@ export const HomePage: React.FC = () => {
 
   const slides = [
     {
-      badgeText: "Australia's #1 AI Recruitment Platform",
+      badgeText: "AI-Powered Recruitment, Built to Scale",
       badgeIcon: <Cpu className="w-3.5 h-3.5" />,
       titleLine1: "Let AI Screen Your",
       titleLine2: "Candidates 24/7",
@@ -88,9 +88,9 @@ export const HomePage: React.FC = () => {
     {
       badgeText: "Multi-Dimensional Candidate Scoring",
       badgeIcon: <Sparkles className="w-3.5 h-3.5 text-indigo-500" />,
-      titleLine1: "Score Every Candidate",
+      titleLine1: "QANI Scores Every Candidate,",
       titleLine2: "Across 5 Dimensions",
-      description: "QANI automatically scores salary expectations, Australian work rights, location match, technical skills, and qualifications. Recruiters see a ranked shortlist — not a pile of resumes.",
+      description: <>QANI automatically scores salary expectations, work rights, location match, technical skills, and qualifications. Recruiters see a <strong>ranked shortlist</strong> — not a pile of resumes.</>,
       gradient: "from-indigo-50/70 via-white to-emerald-50/40",
       primaryText: "Post a Job Free",
       primaryAction: () => navigate('auth-register-recruiter'),
@@ -103,11 +103,11 @@ export const HomePage: React.FC = () => {
           <div className="absolute top-4 right-4 bg-indigo-50 text-indigo-700 text-[10px] font-bold uppercase py-0.5 px-2.5 rounded-full border border-indigo-200/50">
             Scorecard
           </div>
-          <p className="text-xs font-bold uppercase text-indigo-600 tracking-wider font-mono">Candidate Match Report</p>
+          <p className="text-xs font-bold uppercase text-indigo-600 tracking-wider font-mono">QANI SCORE</p>
           <h4 className="text-sm font-bold text-gray-900">Product Manager — Melbourne</h4>
           <div className="space-y-3 pt-2">
             {[
-              { label: 'Australian Work Rights', score: '100%', color: 'bg-emerald-500', width: 'w-full' },
+              { label: 'Work Rights', score: '100%', color: 'bg-emerald-500', width: 'w-full' },
               { label: 'Salary Expectations ($120k)', score: '92%', color: 'bg-emerald-500', width: 'w-[92%]' },
               { label: 'Technical Skills Match', score: '88%', color: 'bg-indigo-600', width: 'w-[88%]' },
               { label: 'Location (Melbourne CBD)', score: '95%', color: 'bg-emerald-500', width: 'w-[95%]' },
@@ -125,17 +125,17 @@ export const HomePage: React.FC = () => {
             ))}
           </div>
           <div className="bg-indigo-50/50 p-2 text-indigo-900 border border-indigo-100 rounded-lg text-center font-bold text-xs">
-            🎯 Overall Match Score: 90%
+            🎯 Overall QANI Score: 90%
           </div>
         </div>
       )
     },
     {
-      badgeText: "Built for Australian Recruitment Agencies",
+      badgeText: "Built for Modern Recruitment Teams",
       badgeIcon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />,
       titleLine1: "Save 80% of Your",
       titleLine2: "Screening Time",
-      description: "Australian recruitment agencies use QANI to screen 10x more candidates without hiring more staff. The AI works overnight — you wake up to a scored, ranked shortlist ready to present to clients.",
+      description: "Save up to 80% of your screening time. QANI automatically screens every applicant against your hiring criteria, filters out unsuitable applicants, and presents recruiters with a scored, ranked list of suitable applicants.",
       gradient: "from-emerald-50/70 via-white to-blue-50/40",
       primaryText: "Start Free Trial",
       primaryAction: () => navigate('auth-register-recruiter'),
@@ -184,10 +184,10 @@ export const HomePage: React.FC = () => {
   ];
 
   const topRecruiters = [
-    { company: 'TechTalent AU', location: 'Sydney', placements: 142, speciality: 'Tech & Engineering', rating: 4.9 },
-    { company: 'Hays Australia', location: 'Melbourne', placements: 287, speciality: 'Finance & Accounting', rating: 4.8 },
-    { company: 'Robert Half', location: 'Brisbane', placements: 198, speciality: 'IT & Digital', rating: 4.7 },
-    { company: 'Michael Page', location: 'Perth', placements: 163, speciality: 'Executive Search', rating: 4.8 },
+    { company: 'TechTalent Global', location: 'Sydney', placements: 142, speciality: 'Tech & Engineering', rating: 4.9 },
+    { company: 'Hays', location: 'London', placements: 287, speciality: 'Finance & Accounting', rating: 4.8 },
+    { company: 'Robert Half', location: 'New York', placements: 198, speciality: 'IT & Digital', rating: 4.7 },
+    { company: 'Michael Page', location: 'Singapore', placements: 163, speciality: 'Executive Search', rating: 4.8 },
   ];
 
   useEffect(() => {
@@ -217,7 +217,7 @@ export const HomePage: React.FC = () => {
       {(cms.global?.announcementBarEnabled !== false) && (
       <div className="bg-blue-600 text-white text-xs text-center py-2 px-4 flex items-center justify-center gap-2">
         <Zap className="w-3.5 h-3.5" />
-        <span>{cms.global?.announcementBar || "Australia's AI Recruitment Platform — Screen 10x more candidates with zero extra headcount."}</span>
+        <span>{cms.global?.announcementBar || "The AI Recruitment Platform — Screen 10x more candidates with zero extra headcount."}</span>
         <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer underline font-bold ml-1 hover:text-blue-200 transition">Start free →</button>
       </div>
       )}
@@ -315,7 +315,7 @@ export const HomePage: React.FC = () => {
           {[
             { value: '2,400+', label: 'Active Job Listings' },
             { value: '18,000+', label: 'Screened Candidates' },
-            { value: '340+', label: 'Australian Companies' },
+            { value: '340+', label: 'Companies Worldwide' },
             { value: '94%', label: 'Recruiter Satisfaction' },
           ].map(s => (
             <div key={s.label}>
@@ -331,7 +331,7 @@ export const HomePage: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{cms.homepage?.jobs?.title || "Top Job Opportunities"}</h2>
-            <p className="text-sm text-gray-500 mt-1">{cms.homepage?.jobs?.subtitle || "AI-screened positions from Australia's leading companies"}</p>
+            <p className="text-sm text-gray-500 mt-1">{cms.homepage?.jobs?.subtitle || "AI-screened positions from leading companies worldwide"}</p>
           </div>
           <button onClick={() => navigate('auth-login')} className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition">
             View all jobs <ArrowRight className="w-4 h-4" />
@@ -416,7 +416,7 @@ export const HomePage: React.FC = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{cms.homepage?.companies?.title || "Top Recruiting Companies"}</h2>
-            <p className="text-sm text-gray-500 mt-1">{cms.homepage?.companies?.subtitle || "Australia's most active hirers using QANI AI"}</p>
+            <p className="text-sm text-gray-500 mt-1">{cms.homepage?.companies?.subtitle || "The most active hirers using QANI AI worldwide"}</p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -445,14 +445,14 @@ export const HomePage: React.FC = () => {
       <section id="features" className="py-20 bg-white border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-6 sm:px-12 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.features?.title || "Why Australian Recruiters Choose QANI"}</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{cms.homepage?.features?.title || "Why Recruiters Worldwide Choose QANI"}</h2>
             <p className="text-gray-500">{cms.homepage?.features?.subtitle || "Stop spending 80% of your time on first-round phone screens. Let the AI do it."}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: <Cpu className="w-6 h-6" />, title: 'AI Conducts The Interview', desc: 'QANI\'s conversational AI asks your custom questions, understands nuanced answers, and scores every candidate automatically — 24 hours a day.' },
               { icon: <TrendingUp className="w-6 h-6" />, title: 'Instant Ranked Shortlist', desc: 'Wake up to a ranked list of candidates scored on salary fit, work rights, location, qualifications, and technical skills. No more resume piles.' },
-              { icon: <Bolt className="w-6 h-6" />, title: 'Australian Work Rights Check', desc: 'QANI automatically screens for Australian citizenship, PR, and visa status so only work-eligible candidates reach your shortlist.' },
+              { icon: <Bolt className="w-6 h-6" />, title: 'Work Eligibility Check', desc: 'QANI automatically screens for citizenship, residency, and visa status so only work-eligible candidates reach your shortlist.' },
             ].map(f => (
               <div key={f.title} className="p-6 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
                 <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">{f.icon}</div>
@@ -555,7 +555,7 @@ export const HomePage: React.FC = () => {
       <section className="py-20 max-w-7xl mx-auto px-6 sm:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-gray-900">What Australian recruiters say</h3>
+            <h3 className="text-2xl font-bold text-gray-900">What recruiters worldwide say</h3>
             <p className="text-gray-500 text-sm">Real results from real recruitment agencies using QANI.</p>
             <div className="flex items-center gap-4 pt-4">
               <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold">{(cms.homepage?.testimonial?.author || "Sarah Chen").split(' ').map((n: string) => n[0]).join('')}</div>
@@ -576,7 +576,7 @@ export const HomePage: React.FC = () => {
       <section className="py-16 px-6 sm:px-12 bg-blue-600">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <h2 className="text-3xl font-extrabold text-white">{cms.homepage?.cta?.title || "Ready to hire smarter?"}</h2>
-          <p className="text-blue-100 text-lg">{cms.homepage?.cta?.subtitle || "Join 340+ Australian companies screening candidates with AI. Start free, no credit card required."}</p>
+          <p className="text-blue-100 text-lg">{cms.homepage?.cta?.subtitle || "Join 340+ companies worldwide screening candidates with AI. Start free, no credit card required."}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer bg-white text-blue-600 font-bold py-3.5 px-8 rounded-xl hover:bg-blue-50 transition shadow-lg text-sm">
               Start Recruiting Free →
@@ -593,7 +593,7 @@ export const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 pb-12 border-b border-gray-800">
           <div className="lg:col-span-4 space-y-4">
             <QANILogo size="md" dark={true} onClick={() => navigate('landing')} />
-            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "Australia's leading AI recruitment platform. Screen more candidates, faster, with zero extra headcount."}</p>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-sm">{cms.footer?.tagline || "The leading AI recruitment platform. Screen more candidates, faster, with zero extra headcount."}</p>
           </div>
           <div className="lg:col-span-2 space-y-4">
             <h5 className="text-white text-xs font-bold uppercase tracking-wider">For Candidates</h5>
