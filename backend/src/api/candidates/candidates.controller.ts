@@ -216,3 +216,29 @@ export class CandidatesController {
     }
   }
 }
+
+export async function getPublicCandidateProfile(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user || user.role !== 'candidate') return res.status(404).json({ error: 'Candidate not found' });
+    const profile = await prisma.candidateProfile.findUnique({ where: { userId: id } });
+    const applications = await prisma.application.findMany({ where: { candidateId: id, aiScore: { not: null } } });
+    const latestScore = applications.length > 0 ? Math.round(applications.reduce((acc, a) => acc + (a.aiScore || 0), 0) / applications.length) : null;
+    return res.json({
+      id: user.id,
+      displayName: `${(user.firstName || '').charAt(0)}.${(user.lastName || '').charAt(0)}.`,
+      bio: profile?.bio || '',
+      skills: profile?.skills || [],
+      location: profile?.location || '',
+      workRights: profile?.workRights || '',
+      availableFrom: profile?.availableFrom || null,
+      linkedinUrl: profile?.linkedinUrl || '',
+      githubUrl: profile?.githubUrl || '',
+      latestScore,
+      screeningCount: applications.length,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch candidate profile' });
+  }
+}

@@ -200,3 +200,64 @@ export const CandidatesDirectory: React.FC = () => {
     </div>
   );
 };
+
+export const RecruiterCandidateDetailPage: React.FC = () => {
+  const { navigate, activeParams } = useApp();
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const candidateId = activeParams?.candidateId;
+    if (!candidateId) { setLoading(false); return; }
+    setLoading(true);
+    fetch(`/api/v1/candidates/${candidateId}/public-profile`, { headers: { Authorization: 'Bearer ' + localStorage.getItem('qani_auth_token') } })
+      .then(r => r.json())
+      .then(setProfileData)
+      .catch(() => setProfileData(null))
+      .finally(() => setLoading(false));
+  }, [activeParams?.candidateId]);
+  return (
+    <div className="flex-1 p-6 md:p-8 overflow-y-auto max-w-4xl mx-auto space-y-6 font-sans">
+      <button onClick={() => navigate('public-candidates')} className="cursor-pointer text-sm text-blue-600 hover:underline font-semibold">← Back to Candidates</button>
+      {loading ? (
+        <div className="py-20 text-center text-gray-400">Loading...</div>
+      ) : !profileData ? (
+        <div className="py-20 text-center text-gray-400">Could not load candidate profile.</div>
+      ) : (
+        <div className="bg-white border border-gray-200 rounded-2xl p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xl">
+              {profileData.displayName?.split(' ').map((p: string) => p[0]).join('') || '?'}
+            </div>
+            <div>
+              <h1 className="font-bold text-gray-900 text-2xl">{profileData.displayName}</h1>
+              {profileData.location && <p className="text-sm text-gray-500">{profileData.location}</p>}
+            </div>
+            {profileData.latestScore !== null && (
+              <div className="ml-auto text-sm font-bold px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-200">QANI Score: {profileData.latestScore}%</div>
+            )}
+          </div>
+          {profileData.bio && <p className="text-gray-600 mb-6">{profileData.bio}</p>}
+          {(profileData.skills || []).length > 0 && (
+            <div className="mb-6">
+              <p className="text-xs font-semibold text-gray-500 mb-2">SKILLS</p>
+              <div className="flex flex-wrap gap-2">
+                {profileData.skills.map((s: string) => <span key={s} className="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full">{s}</span>)}
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            {profileData.workRights && <div><p className="text-xs text-gray-400">Work Rights</p><p className="font-semibold text-gray-800">{profileData.workRights}</p></div>}
+            {profileData.availableFrom && <div><p className="text-xs text-gray-400">Available From</p><p className="font-semibold text-gray-800">{new Date(profileData.availableFrom).toLocaleDateString()}</p></div>}
+          </div>
+          {(profileData.linkedinUrl || profileData.githubUrl) && (
+            <div className="flex gap-4 mb-6">
+              {profileData.linkedinUrl && <a href={profileData.linkedinUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-semibold">LinkedIn →</a>}
+              {profileData.githubUrl && <a href={profileData.githubUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm font-semibold">GitHub →</a>}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 border-t border-gray-100 pt-4">{profileData.screeningCount > 0 ? `Completed ${profileData.screeningCount} QANI screening(s)` : 'Did not give any QANI screening test yet'}</p>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -10,7 +10,7 @@ import { HowItWorksPage, AboutPage, ContactPage, PublicJobsPage, PublicCandidate
 import { AcceptInvitePage } from './components/shared/AcceptInvitePage';
 import { CandidatePages } from './components/candidate/CandidatePages';
 import { RecruiterPages } from './components/recruiter/RecruiterPages';
-import { CandidatesDirectory } from './components/recruiter/CandidatesDirectory';
+import { CandidatesDirectory, RecruiterCandidateDetailPage } from './components/recruiter/CandidatesDirectory';
 import { AdminPages } from './components/admin/AdminPages';
 import { SupportChatbot } from './components/shared/SupportChatbot';
 import { Check, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
@@ -46,6 +46,7 @@ export const ROUTES: Record<string, string> = {
   'recruiter-team': '/recruiter/team',
   'recruiter-settings': '/recruiter/settings',
   'recruiter-candidates': '/recruiter/candidates',
+  'recruiter-candidate-detail': '/recruiter/candidates/profile',
   'how-it-works': '/how-it-works',
   'about': '/about',
   'contact': '/contact',
@@ -168,6 +169,7 @@ const AppContent: React.FC = () => {
       case 'recruiter-team': return <RecruiterPages subView="team" />;
       case 'recruiter-settings': return <RecruiterPages subView="settings" />;
       case 'recruiter-candidates': return <CandidatesDirectory />;
+      case 'recruiter-candidate-detail': return <RecruiterCandidateDetailPage />;
       case 'admin-dashboard': return <AdminPages subView="overview" />;
       case 'admin-users': return <AdminPages subView="users" />;
       case 'admin-jobs': return <AdminPages subView="jobs" />;

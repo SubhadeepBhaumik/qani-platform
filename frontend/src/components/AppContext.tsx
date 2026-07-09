@@ -25,6 +25,7 @@ export type AppView =
   | 'recruiter-create-job'
   | 'recruiter-reports'
   | 'recruiter-candidates'
+  | 'recruiter-candidate-detail'
   | 'recruiter-team'
   | 'recruiter-settings'
   | 'admin-dashboard'
@@ -44,6 +45,7 @@ interface ViewParams {
   applicationId?: string;
   sessionId?: string;
   editJobId?: string;
+  candidateId?: string;
 }
 
 interface AppContextType {

@@ -19,6 +19,7 @@ import { DashboardController } from './api/dashboard/dashboard.controller';
 import { TeamController } from './api/team/team.controller';
 import { getStatus, getTransactions, adminListRecruiters, adminUpdateTrialDays, adminAdjustCredits, getPricingPlans, adminGetPricingPlans, adminUpdatePricingPlan } from './api/credits/credits.controller';
 import { createCheckoutSession, stripeWebhook } from './api/credits/stripe.controller';
+import { getPublicCandidateProfile } from './api/candidates/candidates.controller';
 
 dotenv.config();
 
@@ -157,6 +158,7 @@ app.put('/api/v1/candidates/:id', CandidatesController.updateCandidate);
 app.post('/api/v1/candidates/:id/upload-cv', CandidatesController.uploadCV);
 app.post('/api/v1/candidates/:id/upload-photo', CandidatesController.uploadPhoto);
 app.get('/api/v1/candidates/:id/profile', requireAuth, CandidatesController.getProfile);
+app.get('/api/v1/candidates/:id/public-profile', requireAuth, getPublicCandidateProfile);
 
 // Application routes
 app.post('/api/v1/applications', ApplicationsController.applyForRole);

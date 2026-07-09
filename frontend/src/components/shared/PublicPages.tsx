@@ -21,8 +21,8 @@ const PublicNav: React.FC<{ activePage?: string }> = ({ activePage }) => {
 
   const navLinks = [
     { label: 'How It Works', page: 'how-it-works' },
-    { label: 'Jobs', page: 'public-jobs' },
-    { label: 'Candidates', page: 'public-candidates' },
+    ...(user&&user.role==='recruiter'?[]:[{ label: 'Jobs', page: 'public-jobs' }]),
+    ...(user&&user.role==='candidate'?[]:[{ label: 'Candidates', page: 'public-candidates' }]),
     { label: 'About', page: 'about' },
     { label: 'Contact', page: 'contact' },
   ];
@@ -538,7 +538,7 @@ export const ContactPage: React.FC = () => {
 // ─── PUBLIC JOBS PAGE ─────────────────────────────────────────────────────────
 
 export const PublicJobsPage: React.FC = () => {
-  const { navigate } = useApp();
+  const { navigate, user } = useApp();
   const cms = useCMS();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -615,7 +615,7 @@ export const PublicJobsPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {paginated.map((job: any) => (
-                  <div key={job.id} onClick={() => navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
+                  <div key={job.id} onClick={() => user && user.role === 'candidate' ? navigate('candidate-job-detail', { jobId: job.id }) : navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
                     <div className="flex items-start justify-between mb-3">
                       <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                         <Building2 className="w-5 h-5 text-blue-600" />
@@ -642,7 +642,7 @@ export const PublicJobsPage: React.FC = () => {
                     )}
                     <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                       <span className="text-[10px] text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(job.postedDate || job.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
-                      <span className="text-xs text-blue-600 font-semibold group-hover:underline">Login to Apply →</span>
+                      <span className="text-xs text-blue-600 font-semibold group-hover:underline">{user && user.role === 'candidate' ? 'View Details →' : 'Login to Apply →'}</span>
                     </div>
                   </div>
                 ))}
@@ -689,7 +689,7 @@ export const PublicJobsPage: React.FC = () => {
 // ─── PUBLIC CANDIDATES PAGE ───────────────────────────────────────────────────
 
 export const PublicCandidatesPage: React.FC = () => {
-  const { navigate } = useApp();
+  const { navigate, user } = useApp();
   const cms = useCMS();
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -750,7 +750,7 @@ export const PublicCandidatesPage: React.FC = () => {
                 {paginated.map((c: any) => {
                   const score = getScore(c);
                   return (
-                    <div key={c.id} onClick={() => navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
+                    <div key={c.id} onClick={() => user ? navigate('recruiter-candidate-detail', { candidateId: c.id }) : navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
                       <div className="flex items-center justify-between mb-4">
                         <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                           {getInitials(c)}
@@ -761,7 +761,7 @@ export const PublicCandidatesPage: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{c.firstName} {c.lastName}</h3>
+                      <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{(c.firstName||'').charAt(0)}.{(c.lastName||'').charAt(0)}.</h3>
                       {c.profile?.location && (
                         <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                           <MapPin className="w-3 h-3" />{c.profile.location}
@@ -776,7 +776,7 @@ export const PublicCandidatesPage: React.FC = () => {
                         </div>
                       )}
                       <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-blue-600 font-semibold group-hover:underline">
-                        Login to view full profile →
+                        {user ? "View full profile →" : "Login to view full profile →"}
                       </div>
                     </div>
                   );

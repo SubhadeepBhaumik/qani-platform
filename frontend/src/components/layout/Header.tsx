@@ -37,8 +37,8 @@ export const Header: React.FC = () => {
         <QANILogo size="sm" dark={false} onClick={() => navigate('landing')} showText={false} />
       <div className="flex items-center gap-5 text-xs font-medium text-gray-500">
         <button onClick={() => navigate('how-it-works')} className="cursor-pointer hover:text-blue-600 transition">How It Works</button>
-        <button onClick={() => navigate('public-jobs')} className="cursor-pointer hover:text-blue-600 transition">Jobs</button>
-        <button onClick={() => navigate('public-candidates')} className="cursor-pointer hover:text-blue-600 transition">Candidates</button>
+        {!(user && user.role === 'recruiter') && <button onClick={() => navigate('public-jobs')} className="cursor-pointer hover:text-blue-600 transition">Jobs</button>}
+        {!(user && user.role === 'candidate') && <button onClick={() => navigate('public-candidates')} className="cursor-pointer hover:text-blue-600 transition">Candidates</button>}
         <button onClick={() => navigate('about')} className="cursor-pointer hover:text-blue-600 transition">About</button>
         <button onClick={() => navigate('contact')} className="cursor-pointer hover:text-blue-600 transition">Contact</button>
       </div>
