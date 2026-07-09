@@ -705,6 +705,9 @@ export const PublicCandidatesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [skillFilter, setSkillFilter] = useState('');
+  const [analysisCandidateId, setAnalysisCandidateId] = useState<string | null>(null);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
   const [locationFilter, setLocationFilter] = useState('');
   const PER_PAGE = 15;
 
@@ -736,10 +739,42 @@ export const PublicCandidatesPage: React.FC = () => {
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const getInitials = (c: any) => `${c.firstName?.[0] || ''}${c.lastName?.[0] || ''}`.toUpperCase() || '?';
+  useEffect(() => {
+    if (!analysisCandidateId) { setAnalysisData(null); return; }
+    setAnalysisLoading(true);
+    fetch(`/api/v1/candidates/${analysisCandidateId}/public-profile`, { headers: { Authorization: 'Bearer ' + localStorage.getItem('qani_auth_token') } })
+      .then(r => r.json())
+      .then(setAnalysisData)
+      .catch(() => setAnalysisData(null))
+      .finally(() => setAnalysisLoading(false));
+  }, [analysisCandidateId]);
   const getScore = (c: any) => c.latestScore || c.profile?.latestScore || null;
 
   return (
     <div className="bg-gray-50 min-h-screen">
+      {analysisCandidateId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setAnalysisCandidateId(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-900">QANI Analysis</h3>
+              <button onClick={() => setAnalysisCandidateId(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer font-bold text-xl">×</button>
+            </div>
+            {analysisLoading ? (
+              <div className="py-8 text-center text-gray-400 text-sm">Loading...</div>
+            ) : !analysisData || analysisData.latestScore === null ? (
+              <p className="text-sm text-gray-500 py-4">Did not give any QANI screening test yet.</p>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="text-2xl font-extrabold text-blue-600">{analysisData.latestScore}%</div>
+                  <div className="text-xs text-gray-400">QANI Score{analysisData.latestFeedbackJobTitle ? ` — ${analysisData.latestFeedbackJobTitle}` : ''}</div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">{analysisData.latestFeedback || 'No detailed feedback available for this screening.'}</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <PublicNav activePage="public-candidates" />
 
       {/* Hero */}
@@ -781,11 +816,12 @@ export const PublicCandidatesPage: React.FC = () => {
                         <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                           {getInitials(c)}
                         </div>
-                        {score !== null && (
-                          <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full border ${score >= 70 ? 'bg-green-50 text-green-700 border-green-200' : score >= 45 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                            <Award className="w-3 h-3" />{Math.round(score)}%
-                          </div>
-                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (!user) { navigate('auth-login'); return; } setAnalysisCandidateId(c.id); }}
+                          className={`cursor-pointer flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full border transition ${score !== null ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'}`}
+                        >
+                          <Award className="w-3 h-3" />{score !== null ? 'Click for QANI analysis' : 'QANI Screening Pending'}
+                        </button>
                       </div>
                       <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{(c.firstName||'').charAt(0)}.{(c.lastName||'').charAt(0)}.</h3>
                       {c.profile?.location && (

@@ -223,8 +223,9 @@ export async function getPublicCandidateProfile(req: Request, res: Response) {
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user || user.role !== 'candidate') return res.status(404).json({ error: 'Candidate not found' });
     const profile = await prisma.candidateProfile.findUnique({ where: { userId: id } });
-    const applications = await prisma.application.findMany({ where: { candidateId: id, aiScore: { not: null } } });
+    const applications = await prisma.application.findMany({ where: { candidateId: id, aiScore: { not: null } }, orderBy: { screeningCompletedAt: 'desc' } });
     const latestScore = applications.length > 0 ? Math.round(applications.reduce((acc, a) => acc + (a.aiScore || 0), 0) / applications.length) : null;
+    const mostRecent = applications[0];
     return res.json({
       id: user.id,
       displayName: `${(user.firstName || '').charAt(0)}.${(user.lastName || '').charAt(0)}.`,
@@ -237,6 +238,8 @@ export async function getPublicCandidateProfile(req: Request, res: Response) {
       githubUrl: profile?.githubUrl || '',
       latestScore,
       screeningCount: applications.length,
+      latestFeedback: mostRecent?.aiFeedback || null,
+      latestFeedbackJobTitle: mostRecent?.jobTitle || null,
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch candidate profile' });
