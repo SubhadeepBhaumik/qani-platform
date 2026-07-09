@@ -566,13 +566,23 @@ export const PublicJobsPage: React.FC = () => {
   const filtered = jobs.filter(j => {
     const q = search.toLowerCase();
     const matchSearch = !q || j.title?.toLowerCase().includes(q) || j.company?.toLowerCase().includes(q) || (j.skillsRequired || []).some((s: string) => s.toLowerCase().includes(q));
-    const matchLoc = !locationFilter || j.location?.toLowerCase().includes(locationFilter.toLowerCase());
+    const norm = (s: string) => (s || "").trim().toLowerCase().replace(/,/g, "").replace(/\s+/g, " ");
+    const matchLoc = !locationFilter || norm(j.location) === norm(locationFilter);
     return matchSearch && matchLoc;
   });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const locations = [...new Set(jobs.map((j: any) => j.location).filter(Boolean))];
+  const locations = (() => {
+    const seen = new Map<string, string>();
+    jobs.forEach((j: any) => {
+      const loc = j.location;
+      if (!loc) return;
+      const key = loc.trim().toLowerCase().replace(/,/g, "").replace(/\s+/g, " ");
+      if (!seen.has(key)) seen.set(key, loc.trim());
+    });
+    return Array.from(seen.values()).sort();
+  })();
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -694,7 +704,8 @@ export const PublicCandidatesPage: React.FC = () => {
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [skillFilter, setSkillFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const PER_PAGE = 15;
 
   useEffect(() => {
@@ -703,11 +714,22 @@ export const PublicCandidatesPage: React.FC = () => {
       .catch(() => setLoading(false));
   }, []);
 
+  const locations = (() => {
+    const seen = new Map<string, string>();
+    candidates.forEach((c: any) => {
+      const loc = c.profile?.location;
+      if (!loc) return;
+      const key = loc.trim().toLowerCase().replace(/,/g, "").replace(/\s+/g, " ");
+      if (!seen.has(key)) seen.set(key, loc.trim());
+    });
+    return Array.from(seen.values()).sort();
+  })();
   const filtered = candidates.filter(c => {
-    const q = search.toLowerCase();
-    return !q || c.firstName?.toLowerCase().includes(q) || c.lastName?.toLowerCase().includes(q) ||
-      (c.profile?.skills || []).some((s: string) => s.toLowerCase().includes(q)) ||
-      c.profile?.location?.toLowerCase().includes(q);
+    const skillQ = skillFilter.toLowerCase();
+    const matchSkill = !skillQ || (c.profile?.skills || []).some((s: string) => s.toLowerCase().includes(skillQ));
+    const norm = (s: string) => (s || "").trim().toLowerCase().replace(/,/g, "").replace(/\s+/g, " ");
+    const matchLocation = !locationFilter || norm(c.profile?.location) === norm(locationFilter);
+    return matchSkill && matchLocation;
   });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -725,8 +747,12 @@ export const PublicCandidatesPage: React.FC = () => {
         <div className="max-w-5xl mx-auto space-y-6 text-center">
           <h1 className="text-3xl font-extrabold" style={cms.publicCandidatesPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 2px 8px rgba(0,0,0,0.7)'} : {color:'#111827'}}>{cms.publicCandidatesPage?.hero?.title || cms.homepage?.candidates?.title || 'AI-Screened Candidates'}</h1>
           <p className="text-sm" style={cms.publicCandidatesPage?.hero?.backgroundImage ? {color:'white', textShadow:'0 1px 4px rgba(0,0,0,0.7)'} : {color:'#6b7280'}}>{cms.publicCandidatesPage?.hero?.subtitle || cms.homepage?.candidates?.subtitle || 'Pre-qualified talent ready for your shortlist. Login to view full profiles and screening transcripts.'}</p>
-          <div className="max-w-md mx-auto">
-            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search by name, skill, or location..." className="w-full h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />
+          <div className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+            <input value={skillFilter} onChange={e => { setSkillFilter(e.target.value); setPage(1); }} placeholder="Search by skill..." className="flex-1 h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm" />
+            <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setPage(1); }} className="h-11 border border-gray-200 bg-white rounded-xl px-4 text-sm outline-none focus:border-blue-500 transition shadow-sm min-w-[160px]">
+              <option value="">All Locations</option>
+              {locations.map((l: string) => <option key={l} value={l}>{l}</option>)}
+            </select>
           </div>
         </div>
       </section>
