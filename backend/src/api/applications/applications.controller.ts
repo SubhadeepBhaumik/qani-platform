@@ -39,15 +39,37 @@ export async function syncApplicationsToMemory() {
   }));
 }
 
+export async function expireStaleApplications() {
+  const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000);
+  try {
+    const result = await prisma.application.updateMany({
+      where: {
+        status: 'applied',
+        aiScore: null,
+        screeningCompletedAt: null,
+        appliedAt: { lt: fiveDaysAgo },
+      },
+      data: { status: 'expired' },
+    });
+    if (result.count > 0) {
+      console.log(`Expired ${result.count} stale application(s) with no completed screening.`);
+      await syncApplicationsToMemory();
+    }
+  } catch (err) {
+    console.error('expireStaleApplications error:', err);
+  }
+}
+
 export class ApplicationsController {
   static async applyForRole(req: Request, res: Response) {
     try {
+      await expireStaleApplications();
       const { candidateId, roleId, candidateName, candidateEmail, jobTitle, company, cvUrl, cvFilename } = req.body;
       if (!candidateId || !roleId) {
         return res.status(400).json({ error: 'candidateId and roleId required' });
       }
       const exists = await prisma.application.findFirst({
-        where: { candidateId, jobId: roleId }
+        where: { candidateId, jobId: roleId, status: { not: 'expired' } }
       });
       if (exists) return res.status(409).json({ error: 'Already applied for this role' });
 
@@ -96,6 +118,7 @@ export class ApplicationsController {
 
   static async getApplications(req: Request, res: Response) {
     try {
+      await expireStaleApplications();
       const authHeader = req.headers.authorization;
       const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
       if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }

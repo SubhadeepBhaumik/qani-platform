@@ -422,7 +422,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">{job.department}</span>
                       <div className="flex items-center gap-2">
-                        {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id) && (
+                        {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id && a.status !== 'expired') && (
                           <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-green-50 text-green-700 rounded-full border border-green-200">✓ Applied</span>
                         )}
                         <span className="text-[10px] font-semibold text-gray-500 uppercase">{job.experienceLevel} Level</span>
@@ -445,7 +445,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id) ? (
+                      {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id && a.status !== 'expired') ? (
                         <span className="text-xs font-semibold py-2 px-3 bg-green-50 text-green-700 border border-green-200 rounded-lg">✓ Applied</span>
                       ) : (
                         <button onClick={(e) => { e.stopPropagation(); applyForJob(job.id); }}
@@ -490,7 +490,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
           </div>
         );
 
-        const alreadyApplied = applications.some(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id);
+        const alreadyApplied = applications.some(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id && a.status !== 'expired');
 
         return (
           <div className="space-y-6">
@@ -705,6 +705,16 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     );
                   })()}
                 </div>
+                {app.status === 'expired' && (
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-start gap-3">
+                    <span className="text-lg shrink-0">⏳</span>
+                    <div>
+                      <p className="font-semibold mb-1">This application expired</p>
+                      <p>It expired because the QANI AI screening wasn't completed within 5 days of applying. You can re-apply from the Jobs page and take the QANI AI screening instantly.</p>
+                      <button onClick={() => navigate('candidate-jobs')} className="cursor-pointer mt-3 text-xs font-bold text-amber-900 underline hover:no-underline">Go to Browse Jobs →</button>
+                    </div>
+                  </div>
+                )}
 
                 {/* score details panel */}
                 {!(app.scorecard || (app as any).scoreBreakdown) && (app.status === 'applied' || app.status === 'screening') && (
