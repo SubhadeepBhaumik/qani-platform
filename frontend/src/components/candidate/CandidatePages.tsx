@@ -483,6 +483,12 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
         const jobId = activeParams.jobId;
         const job = jobs.find(j => j.id === jobId);
         if (!job) return <p className="text-red-500">Job context not existing.</p>;
+        if (!user) return (
+          <div className="max-w-md mx-auto text-center py-20 space-y-4">
+            <p className="text-gray-700 font-semibold">You need to login or register to view and apply for this job.</p>
+            <button onClick={() => navigate('auth-login', { jobId })} className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition">Login / Register</button>
+          </div>
+        );
 
         const alreadyApplied = applications.some(a => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id);
 

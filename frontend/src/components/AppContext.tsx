@@ -255,7 +255,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(loggedUser);
       await refreshStates(loggedUser as any);
       showToast(`Welcome back, ${loggedUser.firstName}!`, 'success');
-      if (loggedUser.role === 'candidate') navigate('candidate-dashboard');
+      const returnJobId = activeParams?.jobId;
+      const returnCandidateId = activeParams?.candidateId;
+      if (loggedUser.role === 'candidate' && returnJobId) navigate('candidate-job-detail', { jobId: returnJobId });
+      else if (loggedUser.role === 'recruiter' && returnCandidateId) navigate('recruiter-candidate-detail', { candidateId: returnCandidateId });
+      else if (loggedUser.role === 'candidate') navigate('candidate-dashboard');
       else if (loggedUser.role === 'recruiter') navigate('recruiter-dashboard');
       else navigate('admin-dashboard');
       return true;

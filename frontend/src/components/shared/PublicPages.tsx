@@ -625,7 +625,7 @@ export const PublicJobsPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {paginated.map((job: any) => (
-                  <div key={job.id} onClick={() => user && user.role === 'candidate' ? navigate('candidate-job-detail', { jobId: job.id }) : navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
+                  <div key={job.id} onClick={() => user && user.role === 'candidate' ? navigate('candidate-job-detail', { jobId: job.id }) : navigate('auth-login', { jobId: job.id })} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
                     <div className="flex items-start justify-between mb-3">
                       <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                         <Building2 className="w-5 h-5 text-blue-600" />
@@ -811,7 +811,7 @@ export const PublicCandidatesPage: React.FC = () => {
                 {paginated.map((c: any) => {
                   const score = getScore(c);
                   return (
-                    <div key={c.id} onClick={() => user ? navigate('recruiter-candidate-detail', { candidateId: c.id }) : navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
+                    <div key={c.id} onClick={() => user ? navigate('recruiter-candidate-detail', { candidateId: c.id }) : navigate('auth-login', { candidateId: c.id })} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
                       <div className="flex items-center justify-between mb-4">
                         <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
                           {getInitials(c)}
