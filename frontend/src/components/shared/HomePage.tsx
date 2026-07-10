@@ -392,7 +392,7 @@ export const HomePage: React.FC = () => {
                     {c.score}%
                   </div>
                 </div>
-                <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{c.name}</h3>
+                <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{c.name.split(' ').map(n => n[0]).join('.') + '.'}</h3>
                 <p className="text-xs text-gray-500 mt-0.5">{c.role}</p>
                 <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
                   <MapPin className="w-3 h-3" />{c.location}
