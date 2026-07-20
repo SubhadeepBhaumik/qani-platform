@@ -16,6 +16,38 @@ export const HomePage: React.FC = () => {
   const [buyingPlan, setBuyingPlan] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<{ credits: string } | null>(null);
   useEffect(() => { fetch('/api/v1/pricing-plans').then(r => r.json()).then(setDynamicPlans).catch(() => {}); }, []);
+  const [homeCandidates, setHomeCandidates] = useState<any[]>([]);
+  const [analysisCandidateId, setAnalysisCandidateId] = useState<string | null>(null);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  useEffect(() => {
+    fetch('/api/v1/candidates/public')
+      .then(r => r.json())
+      .then((data: any[]) => {
+        const sorted = Array.isArray(data) ? [...data].sort((a, b) => (b.profile?.latestScore ?? -1) - (a.profile?.latestScore ?? -1)) : [];
+        setHomeCandidates(sorted.slice(0, 4));
+      })
+      .catch(() => setHomeCandidates([]));
+  }, []);
+  useEffect(() => {
+    if (!analysisCandidateId) { setAnalysisData(null); return; }
+    setAnalysisLoading(true);
+    fetch(`/api/v1/candidates/${analysisCandidateId}/public-profile`, { headers: { Authorization: 'Bearer ' + localStorage.getItem('qani_auth_token') } })
+      .then(r => r.json())
+      .then(setAnalysisData)
+      .catch(() => setAnalysisData(null))
+      .finally(() => setAnalysisLoading(false));
+  }, [analysisCandidateId]);
+  const [homeJobs, setHomeJobs] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/v1/roles')
+      .then(r => r.json())
+      .then((data: any[]) => {
+        const open = Array.isArray(data) ? data.filter((j: any) => j.status === 'open' || j.status === 'active') : [];
+        setHomeJobs(open.slice(0, 6));
+      })
+      .catch(() => setHomeJobs([]));
+  }, []);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
@@ -167,21 +199,7 @@ export const HomePage: React.FC = () => {
     }
   ];
 
-  const topJobs = [
-    { title: 'Senior React Developer', company: 'Atlassian', location: 'Sydney, NSW', salary: '$140k–$170k', type: 'Full-time', tags: ['React', 'TypeScript', 'AWS'] },
-    { title: 'Product Manager', company: 'Canva', location: 'Melbourne, VIC', salary: '$120k–$150k', type: 'Full-time', tags: ['Agile', 'B2B', 'SaaS'] },
-    { title: 'Data Scientist', company: 'Commonwealth Bank', location: 'Sydney, NSW', salary: '$130k–$160k', type: 'Full-time', tags: ['Python', 'ML', 'SQL'] },
-    { title: 'DevOps Engineer', company: 'Seek', location: 'Remote, AUS', salary: '$120k–$145k', type: 'Remote', tags: ['Kubernetes', 'CI/CD', 'AWS'] },
-    { title: 'UX Designer', company: 'REA Group', location: 'Melbourne, VIC', salary: '$95k–$120k', type: 'Hybrid', tags: ['Figma', 'Research', 'Design'] },
-    { title: 'Backend Engineer', company: 'Afterpay', location: 'Brisbane, QLD', salary: '$125k–$155k', type: 'Full-time', tags: ['Go', 'Microservices', 'Postgres'] },
-  ];
 
-  const topCandidates = [
-    { name: 'Sarah Chen', role: 'Full Stack Developer', location: 'Sydney', score: 94, skills: ['React', 'Node.js', 'AWS'], available: 'Immediately' },
-    { name: 'James Okafor', role: 'Data Engineer', location: 'Melbourne', score: 91, skills: ['Python', 'Spark', 'BigQuery'], available: '2 weeks' },
-    { name: 'Priya Sharma', role: 'Product Manager', location: 'Brisbane', score: 89, skills: ['Roadmapping', 'Agile', 'Analytics'], available: 'Immediately' },
-    { name: 'Tom Williams', role: 'DevOps Engineer', location: 'Perth', score: 87, skills: ['Terraform', 'AWS', 'Docker'], available: '1 month' },
-  ];
 
   const topRecruiters = [
     { company: 'TechTalent Global', location: 'Sydney', placements: 142, speciality: 'Tech & Engineering', rating: 4.9 },
@@ -209,6 +227,30 @@ export const HomePage: React.FC = () => {
             <p className="text-gray-500 text-sm mb-6">{purchaseSuccess.credits} credits have been added to your account. A receipt has been sent to your email.</p>
             <button onClick={() => { setPurchaseSuccess(null); navigate('recruiter-dashboard'); }} className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition mb-2">Go to Dashboard</button>
             <button onClick={() => { setPurchaseSuccess(null); navigate('recruiter-dashboard'); }} className="cursor-pointer w-full text-gray-500 hover:text-gray-700 text-sm font-medium py-2">Continue browsing</button>
+          </div>
+        </div>
+      )}
+
+      {analysisCandidateId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setAnalysisCandidateId(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-900">QANI Analysis</h3>
+              <button onClick={() => setAnalysisCandidateId(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer font-bold text-xl">×</button>
+            </div>
+            {analysisLoading ? (
+              <div className="py-8 text-center text-gray-400 text-sm">Loading...</div>
+            ) : !analysisData || analysisData.latestScore === null ? (
+              <p className="text-sm text-gray-500 py-4">Did not give any QANI screening test yet.</p>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="text-2xl font-extrabold text-blue-600">{analysisData.latestScore}%</div>
+                  <div className="text-xs text-gray-400">QANI Score{analysisData.latestFeedbackJobTitle ? ` — ${analysisData.latestFeedbackJobTitle}` : ''}</div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">{analysisData.latestFeedback || 'No detailed feedback available for this screening.'}</p>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -333,35 +375,41 @@ export const HomePage: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900">{cms.homepage?.jobs?.title || "Top Job Opportunities"}</h2>
             <p className="text-sm text-gray-500 mt-1">{cms.homepage?.jobs?.subtitle || "AI-screened positions from leading companies worldwide"}</p>
           </div>
-          <button onClick={() => navigate('auth-login')} className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition">
+          <button onClick={() => navigate('public-jobs')} className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition">
             View all jobs <ArrowRight className="w-4 h-4" />
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {topJobs.map((job, i) => (
-            <div key={i} onClick={() => navigate('auth-login')} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
+          {homeJobs.length === 0 && (
+            <p className="col-span-full text-center text-sm text-gray-400 py-8">Loading jobs…</p>
+          )}
+          {homeJobs.map((job: any) => (
+            <div key={job.id} onClick={() => user && user.role === 'candidate' ? navigate('candidate-job-detail', { jobId: job.id }) : navigate('auth-login', { jobId: job.id })} className="cursor-pointer bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
                   <Building2 className="w-5 h-5 text-blue-600" />
                 </div>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${job.type === 'Remote' ? 'bg-green-50 text-green-700' : job.type === 'Hybrid' ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'}`}>
-                  {job.type}
+                <span className="flex items-center gap-1 text-[10px] bg-green-50 text-green-700 font-bold px-2 py-0.5 rounded-full border border-green-200">
+                  <Zap className="w-2.5 h-2.5" /> AI Screened
                 </span>
               </div>
-              <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{job.title}</h3>
-              <p className="text-sm text-gray-500 mt-1">{job.company}</p>
-              <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
-                <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
-                <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{job.salary}</span>
+              <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition leading-snug">{job.title}</h3>
+              <p className="text-sm text-gray-500 mt-1">{job.company || 'Confidential'}</p>
+              <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-400">
+                {job.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>}
+                {job.salaryMin && <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />${Math.round(job.salaryMin / 1000)}k–${Math.round(job.salaryMax / 1000)}k</span>}
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {job.tags.map(tag => (
-                  <span key={tag} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{tag}</span>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-[10px] text-gray-400 flex items-center gap-1"><Zap className="w-3 h-3 text-blue-500" />AI Screened</span>
-                <span className="text-xs text-blue-600 font-semibold group-hover:underline">Apply Now →</span>
+              {(job.skillsRequired || []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {(job.skillsRequired || []).slice(0, 3).map((s: string) => (
+                    <span key={s} className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{s}</span>
+                  ))}
+                  {(job.skillsRequired || []).length > 3 && <span className="text-[10px] text-gray-400">+{job.skillsRequired.length - 3} more</span>}
+                </div>
+              )}
+              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(job.postedDate || job.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                <span className="text-xs text-blue-600 font-semibold group-hover:underline">{user && user.role === 'candidate' ? 'View Details →' : 'Login to Apply →'}</span>
               </div>
             </div>
           ))}
@@ -381,29 +429,38 @@ export const HomePage: React.FC = () => {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {topCandidates.map((c, i) => (
-              <div key={i} onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer bg-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
+            {homeCandidates.length === 0 && (
+              <p className="col-span-full text-center text-sm text-gray-400 py-8">Loading candidates…</p>
+            )}
+            {homeCandidates.map((c: any, i: number) => (
+              <div key={c.id || i} onClick={() => user ? navigate('recruiter-candidate-detail', { candidateId: c.id }) : navigate('auth-login', { candidateId: c.id })} className="cursor-pointer bg-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
-                    {c.name.split(' ').map(n => n[0]).join('')}
+                    {(c.firstName?.[0] || '')}{(c.lastName?.[0] || '')}
                   </div>
-                  <div className="flex items-center gap-1 bg-green-50 text-green-700 text-xs font-bold px-2 py-1 rounded-full border border-green-200">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); if (!user) { navigate('auth-login'); return; } setAnalysisCandidateId(c.id); }}
+                    className="cursor-pointer flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-2 py-1 rounded-full border border-blue-200 hover:bg-blue-100 transition"
+                  >
                     <Award className="w-3 h-3" />
-                    {c.score}%
+                    QANI Screened
+                  </button>
+                </div>
+                <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{(c.firstName?.[0] || '')}.{(c.lastName?.[0] || '')}.</h3>
+                {c.profile?.location && (
+                  <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
+                    <MapPin className="w-3 h-3" />{c.profile.location}
                   </div>
-                </div>
-                <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{c.name.split(' ').map(n => n[0]).join('.') + '.'}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{c.role}</p>
-                <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
-                  <MapPin className="w-3 h-3" />{c.location}
-                </div>
-                <div className="flex flex-wrap gap-1 mt-3">
-                  {c.skills.map(s => (
-                    <span key={s} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{s}</span>
-                  ))}
-                </div>
-                <div className="mt-4 flex items-center gap-1 text-[10px] text-gray-400">
-                  <Clock className="w-3 h-3" />Available: <span className="text-green-600 font-semibold">{c.available}</span>
+                )}
+                {(c.profile?.skills || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {(c.profile.skills || []).slice(0, 3).map((s: string) => (
+                      <span key={s} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{s}</span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-blue-600 font-semibold group-hover:underline">
+                  {user ? "View full profile →" : "Login to view full profile →"}
                 </div>
               </div>
             ))}
