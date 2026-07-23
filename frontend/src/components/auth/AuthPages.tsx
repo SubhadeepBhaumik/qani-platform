@@ -304,9 +304,9 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
           <span className="text-xs bg-blue-900/60 border border-blue-800 text-blue-300 font-semibold py-1 px-3 rounded-full uppercase tracking-wider">
             Secured server sandbox
           </span>
-          <h2 className="text-3xl font-extrabold tracking-tight">AI Recruitment Screen Core</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight">AI Recruitment Screening</h2>
           <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
-            Validate experience parameters, filter compensation configurations, and score work capability indices flawlessly using direct server integrations.
+            Automatically validate skills, experience, qualifications, salary expectations and location against your hiring criteria—filtering out unsuitable applicants and delivering a Q-Score for every suitable applicant.
           </p>
         </div>
 
