@@ -416,58 +416,6 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Top Candidates */}
-      <section id="candidates" className="py-20 px-6 sm:px-12 bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Top AI-Screened Candidates</h2>
-              <p className="text-sm text-gray-500 mt-1">Pre-qualified talent ready for your shortlist</p>
-            </div>
-            <button onClick={() => navigate('auth-register-recruiter')} className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 transition">
-              Access all candidates <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {homeCandidates.length === 0 && (
-              <p className="col-span-full text-center text-sm text-gray-400 py-8">Loading candidates…</p>
-            )}
-            {homeCandidates.map((c: any, i: number) => (
-              <div key={c.id || i} onClick={() => user ? navigate('recruiter-candidate-detail', { candidateId: c.id }) : navigate('auth-login', { candidateId: c.id })} className="cursor-pointer bg-gray-50 border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:border-blue-200 transition group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">
-                    {(c.firstName?.[0] || '')}{(c.lastName?.[0] || '')}
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); if (!user) { navigate('auth-login'); return; } setAnalysisCandidateId(c.id); }}
-                    className="cursor-pointer flex items-center gap-1 bg-blue-50 text-blue-700 text-xs font-bold px-2 py-1 rounded-full border border-blue-200 hover:bg-blue-100 transition"
-                  >
-                    <Award className="w-3 h-3" />
-                    QANI Screened
-                  </button>
-                </div>
-                <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{(c.firstName?.[0] || '')}.{(c.lastName?.[0] || '')}.</h3>
-                {c.profile?.location && (
-                  <div className="flex items-center gap-1 text-xs text-gray-400 mt-2">
-                    <MapPin className="w-3 h-3" />{c.profile.location}
-                  </div>
-                )}
-                {(c.profile?.skills || []).length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {(c.profile.skills || []).slice(0, 3).map((s: string) => (
-                      <span key={s} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{s}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-blue-600 font-semibold group-hover:underline">
-                  {user ? "View full profile →" : "Login to view full profile →"}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Top Recruiters */}
       <section className="py-20 px-6 sm:px-12 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
