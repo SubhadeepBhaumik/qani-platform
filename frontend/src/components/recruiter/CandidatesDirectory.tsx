@@ -233,7 +233,7 @@ export const RecruiterCandidateDetailPage: React.FC = () => {
               {profileData.location && <p className="text-sm text-gray-500">{profileData.location}</p>}
             </div>
             {profileData.latestScore !== null && (
-              <div className="ml-auto text-sm font-bold px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-200">QANI Score: {profileData.latestScore}%</div>
+              <div className="ml-auto text-sm font-bold px-4 py-2 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Q-Score: {profileData.latestScore}%</div>
             )}
           </div>
           {profileData.bio && <p className="text-gray-600 mb-6">{profileData.bio}</p>}

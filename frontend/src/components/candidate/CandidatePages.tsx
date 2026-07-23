@@ -219,7 +219,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-normal">
                       <th className="p-4">Job Title</th>
                       <th className="p-4">Applied Date</th>
-                      <th className="p-4">AI Recruiter Score</th>
+                      <th className="p-4">Q-Score</th>
                       <th className="p-4 text-center">Pipeline Status</th>
                       <th className="p-4 text-right">Action</th>
                     </tr>
@@ -1370,7 +1370,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   <th className="p-4">Position</th>
                   <th className="p-4">Company</th>
                   <th className="p-4">Applied</th>
-                  <th className="p-4">AI Score</th>
+                  <th className="p-4">Q-Score</th>
                   <th className="p-4 text-center">Status</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>

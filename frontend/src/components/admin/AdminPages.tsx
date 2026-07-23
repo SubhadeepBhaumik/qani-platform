@@ -759,7 +759,7 @@ export const AdminPages: React.FC<{ subView: string }> = ({ subView }) => {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="p-4 bg-blue-50 rounded-xl">
                   <p className="text-2xl font-extrabold text-blue-600">{selectedApp.score !== undefined ? `${selectedApp.score}/100` : '—'}</p>
-                  <p className="text-xs text-gray-500 mt-1">AI Score</p>
+                  <p className="text-xs text-gray-500 mt-1">Q-Score</p>
                 </div>
                 <div className="p-4 bg-gray-50 rounded-xl">
                   <p className="text-sm font-bold text-gray-900 capitalize">{selectedApp.status}</p>
@@ -1197,7 +1197,7 @@ Question 1: Describe your most relevant experience for this role.` },
                       <th className="p-4">Candidate</th>
                       <th className="p-4">Email</th>
                       <th className="p-4">Job</th>
-                      <th className="p-4">AI Score</th>
+                      <th className="p-4">Q-Score</th>
                       <th className="p-4">Status</th>
                       <th className="p-4">Date</th>
                       <th className="p-4 text-right">Actions</th>

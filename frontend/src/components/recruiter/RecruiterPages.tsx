@@ -762,7 +762,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     <th className="p-4">Title</th>
                     <th className="p-4">Department / Domain</th>
                     <th className="p-4">Applications volume</th>
-                    <th className="p-4">AI Score Average</th>
+                    <th className="p-4">Q-Score Average</th>
                     <th className="p-4 text-right">Action</th>
                   </tr>
                 </thead>
@@ -830,7 +830,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   )}
                   <button onClick={() => {
                     const selected = applications.filter(a => bulkChecked.includes(a.id));
-                    const csv = ['Name,Email,Job,Score,Status,AI Feedback', ...selected.map(a => `"${a.candidateName||''}","${a.candidateEmail||''}","${a.jobTitle||''}","${a.aiScore??a.score??''}","${a.status}","${(a.aiFeedback||'').replace(/"/g,"'")}"`)].join('\n');
+                    const csv = ['Name,Email,Job,Q-Score,Status,AI Feedback', ...selected.map(a => `"${a.candidateName||''}","${a.candidateEmail||''}","${a.jobTitle||''}","${a.aiScore??a.score??''}","${a.status}","${(a.aiFeedback||'').replace(/"/g,"'")}"`)].join('\n');
                     const blob = new Blob([csv], {type:'text/csv'});
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
@@ -887,7 +887,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                   <th className="p-4">Candidate Profile</th>
                   <th className="p-4">Expected Job Title</th>
                   <th className="p-4">Applied Date</th>
-                  <th className="p-4">AI Recruiter Score</th>
+                  <th className="p-4">Q-Score</th>
                   <th className="p-4 text-center">Assessment Status</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
@@ -1078,7 +1078,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                       </div>
                     ) : (
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-400 text-xs font-semibold">
-                        <span>AI Score</span><span className="font-black text-sm">—</span><span>Unscreened</span>
+                        <span>Q-Score</span><span className="font-black text-sm">—</span><span>Unscreened</span>
                       </div>
                     )}
                   </div>
@@ -1466,7 +1466,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                     </div>
                     <div>
                       <span className="font-bold text-gray-900 block text-sm">{app.candidateName}</span>
-                      <span className="text-[10px] text-gray-400 block">{app.jobTitle} · Score: {app.aiScore ?? app.score ?? 'N/A'}{(app.aiScore || app.score) ? '%' : ''}</span>
+                      <span className="text-[10px] text-gray-400 block">{app.jobTitle} · Q-Score: {app.aiScore ?? app.score ?? 'N/A'}{(app.aiScore || app.score) ? '%' : ''}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1833,7 +1833,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Total Applications', value: total, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' },
-                { label: 'Avg AI Score', value: avgScore ? `${avgScore}%` : 'N/A', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
+                { label: 'Avg Q-Score', value: avgScore ? `${avgScore}%` : 'N/A', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
                 { label: 'Qualified Rate', value: `${conversionRate}%`, color: 'text-green-600', bg: 'bg-green-50 border-green-200' },
                 { label: 'Screening Rate', value: `${screeningRate}%`, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-200' },
               ].map(kpi => (
@@ -1899,7 +1899,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                       <th className="pb-2 text-left font-semibold">Job Title</th>
                       <th className="pb-2 text-center font-semibold">Applications</th>
                       <th className="pb-2 text-center font-semibold">Qualified</th>
-                      <th className="pb-2 text-center font-semibold">Avg Score</th>
+                      <th className="pb-2 text-center font-semibold">Avg Q-Score</th>
                       <th className="pb-2 text-center font-semibold">Conversion</th>
                     </tr>
                   </thead>
@@ -1920,7 +1920,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
 
             {/* Score Distribution */}
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">AI Score Distribution</h3>
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4">Q-Score Distribution</h3>
               <div className="grid grid-cols-3 gap-3">
                 {[['High (80-100%)', applications.filter(a => (a.aiScore ?? a.score ?? 0) >= 80).length, 'text-green-600 bg-green-50 border-green-200'],
                   ['Mid (60-79%)', applications.filter(a => { const s = a.aiScore ?? a.score ?? 0; return s >= 60 && s < 80; }).length, 'text-orange-600 bg-orange-50 border-orange-200'],
@@ -2084,7 +2084,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   <tr>
-                    <td className="p-3 font-semibold text-gray-700">Overall Score</td>
+                    <td className="p-3 font-semibold text-gray-700">Overall Q-Score</td>
                     {compareModalApps.map((app: any) => {
                       const score = Math.round(app.aiScore ?? app.score ?? 0);
                       return (

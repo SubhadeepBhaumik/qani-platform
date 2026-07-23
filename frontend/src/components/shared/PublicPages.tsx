@@ -334,7 +334,7 @@ export const AboutPage: React.FC = () => {
               { q: 'Candidate:', m: 'Around $140,000.', c: 'text-green-400' },
               { q: 'QANI:', m: "That's within our budget. How many years of relevant experience do you have?", c: 'text-blue-400' },
               { q: 'Candidate:', m: '7 years in frontend engineering.', c: 'text-green-400' },
-              { q: 'Score:', m: 'Work Rights 95% · Location 100% · Salary 100% · Skills 82%', c: 'text-yellow-400' },
+              { q: 'Q-Score:', m: 'Work Rights 95% · Location 100% · Salary 100% · Skills 82%', c: 'text-yellow-400' },
             ].map((line, i) => (
               <div key={i} className={line.c}>
                 <span className="text-gray-500">{line.q}</span> {line.m}
@@ -767,7 +767,7 @@ export const PublicCandidatesPage: React.FC = () => {
               <>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="text-2xl font-extrabold text-blue-600">{analysisData.latestScore}%</div>
-                  <div className="text-xs text-gray-400">QANI Score{analysisData.latestFeedbackJobTitle ? ` — ${analysisData.latestFeedbackJobTitle}` : ''}</div>
+                  <div className="text-xs text-gray-400">Q-Score{analysisData.latestFeedbackJobTitle ? ` — ${analysisData.latestFeedbackJobTitle}` : ''}</div>
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed">{analysisData.latestFeedback || 'No detailed feedback available for this screening.'}</p>
               </>

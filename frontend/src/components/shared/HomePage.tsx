@@ -16,28 +16,6 @@ export const HomePage: React.FC = () => {
   const [buyingPlan, setBuyingPlan] = useState<string | null>(null);
   const [purchaseSuccess, setPurchaseSuccess] = useState<{ credits: string } | null>(null);
   useEffect(() => { fetch('/api/v1/pricing-plans').then(r => r.json()).then(setDynamicPlans).catch(() => {}); }, []);
-  const [homeCandidates, setHomeCandidates] = useState<any[]>([]);
-  const [analysisCandidateId, setAnalysisCandidateId] = useState<string | null>(null);
-  const [analysisData, setAnalysisData] = useState<any>(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
-  useEffect(() => {
-    fetch('/api/v1/candidates/public')
-      .then(r => r.json())
-      .then((data: any[]) => {
-        const sorted = Array.isArray(data) ? [...data].sort((a, b) => (b.profile?.latestScore ?? -1) - (a.profile?.latestScore ?? -1)) : [];
-        setHomeCandidates(sorted.slice(0, 4));
-      })
-      .catch(() => setHomeCandidates([]));
-  }, []);
-  useEffect(() => {
-    if (!analysisCandidateId) { setAnalysisData(null); return; }
-    setAnalysisLoading(true);
-    fetch(`/api/v1/candidates/${analysisCandidateId}/public-profile`, { headers: { Authorization: 'Bearer ' + localStorage.getItem('qani_auth_token') } })
-      .then(r => r.json())
-      .then(setAnalysisData)
-      .catch(() => setAnalysisData(null))
-      .finally(() => setAnalysisLoading(false));
-  }, [analysisCandidateId]);
   const [homeJobs, setHomeJobs] = useState<any[]>([]);
   useEffect(() => {
     fetch('/api/v1/roles')
@@ -107,7 +85,7 @@ export const HomePage: React.FC = () => {
           </div>
           <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
             <div>
-              <span className="font-semibold text-gray-500 block">AI Score</span>
+              <span className="font-semibold text-gray-500 block">Q-Score</span>
               <span className="text-green-600 font-bold text-sm">QUALIFIED — 88/100</span>
             </div>
             <button onClick={() => navigate('auth-register-candidate-1')} className="cursor-pointer bg-blue-600 text-white text-[11px] font-semibold py-1.5 px-3 rounded-lg hover:bg-blue-700 transition">
@@ -157,7 +135,7 @@ export const HomePage: React.FC = () => {
             ))}
           </div>
           <div className="bg-indigo-50/50 p-2 text-indigo-900 border border-indigo-100 rounded-lg text-center font-bold text-xs">
-            🎯 Overall QANI Score: 90%
+            🎯 Q-Score: 90%
           </div>
         </div>
       )
@@ -227,30 +205,6 @@ export const HomePage: React.FC = () => {
             <p className="text-gray-500 text-sm mb-6">{purchaseSuccess.credits} credits have been added to your account. A receipt has been sent to your email.</p>
             <button onClick={() => { setPurchaseSuccess(null); navigate('recruiter-dashboard'); }} className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition mb-2">Go to Dashboard</button>
             <button onClick={() => { setPurchaseSuccess(null); navigate('recruiter-dashboard'); }} className="cursor-pointer w-full text-gray-500 hover:text-gray-700 text-sm font-medium py-2">Continue browsing</button>
-          </div>
-        </div>
-      )}
-
-      {analysisCandidateId && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setAnalysisCandidateId(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-900">QANI Analysis</h3>
-              <button onClick={() => setAnalysisCandidateId(null)} className="text-gray-400 hover:text-gray-600 cursor-pointer font-bold text-xl">×</button>
-            </div>
-            {analysisLoading ? (
-              <div className="py-8 text-center text-gray-400 text-sm">Loading...</div>
-            ) : !analysisData || analysisData.latestScore === null ? (
-              <p className="text-sm text-gray-500 py-4">Did not give any QANI screening test yet.</p>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="text-2xl font-extrabold text-blue-600">{analysisData.latestScore}%</div>
-                  <div className="text-xs text-gray-400">QANI Score{analysisData.latestFeedbackJobTitle ? ` — ${analysisData.latestFeedbackJobTitle}` : ''}</div>
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed">{analysisData.latestFeedback || 'No detailed feedback available for this screening.'}</p>
-              </>
-            )}
           </div>
         </div>
       )}
