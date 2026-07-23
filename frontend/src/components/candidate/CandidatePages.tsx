@@ -88,6 +88,40 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [linkedIn, setLinkedIn] = useState((user as any)?.linkedIn || '');
   const [workRights, setWorkRights] = useState((user as any)?.workRights || '');
   const [salaryExpectation, setSalaryExpectation] = useState((user as any)?.salaryExpectation || '');
+  const normTerm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const computeJobMatchScore = (job: any): number => {
+    let scoreSum = 0;
+    let totalWeight = 0;
+    if ((job.skillsRequired || []).length > 0 && skills.length > 0) {
+      const jobSkills = job.skillsRequired.map(normTerm);
+      const mySkills = skills.map(normTerm);
+      const matched = jobSkills.filter((sk: string) => mySkills.some(ms => ms.includes(sk) || sk.includes(ms))).length;
+      scoreSum += (matched / jobSkills.length) * 100 * 0.5;
+      totalWeight += 0.5;
+    }
+    if (job.location && location) {
+      const isRemote = /remote/i.test(job.location);
+      const jobWords = new Set(job.location.toLowerCase().split(/[^a-z]+/).filter((w: string) => w.length > 2));
+      const myWords = new Set(location.toLowerCase().split(/[^a-z]+/).filter((w: string) => w.length > 2));
+      const locMatch = isRemote || [...jobWords].some(w => myWords.has(w as string));
+      scoreSum += (locMatch ? 100 : 40) * 0.25;
+      totalWeight += 0.25;
+    }
+    const expectedSalaryNum = parseInt(salaryExpectation, 10);
+    if (job.salaryMin && job.salaryMax && expectedSalaryNum) {
+      let fitScore = 100;
+      if (expectedSalaryNum > job.salaryMax) fitScore = Math.max(0, 100 - ((expectedSalaryNum - job.salaryMax) / job.salaryMax) * 100);
+      scoreSum += fitScore * 0.25;
+      totalWeight += 0.25;
+    }
+    if (totalWeight === 0) return 50;
+    return Math.round(scoreSum / totalWeight);
+  };
+  const recommendedJobs = jobs.filter((j: any) => j.status === 'open' || j.status === 'active')
+    .map((job: any) => ({ job, matchScore: computeJobMatchScore(job) }))
+    .filter(({ matchScore }: any) => matchScore >= 70)
+    .sort((a: any, b: any) => b.matchScore - a.matchScore)
+    .slice(0, 2);
   const [salaryRateType, setSalaryRateType] = useState('annual');
   const [salaryAnnual, setSalaryAnnual] = useState('');
   const [salaryHourly, setSalaryHourly] = useState('');
@@ -271,12 +305,18 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               {/* Recommended Jobs */}
               <div className="space-y-3 pt-4">
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Recommended Positions</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {jobs.filter(j => j.status === 'open' || j.status === 'active').slice(0, 2).map(job => (
+                <div className={`grid grid-cols-1 gap-4 ${recommendedJobs.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+                  {recommendedJobs.length === 0 && (
+                    <p className="text-xs text-gray-400 py-6 text-center">No strong matches yet — keep your profile updated for better recommendations.</p>
+                  )}
+                  {recommendedJobs.map(({ job, matchScore }: any) => (
                     <div key={job.id} className="p-5 bg-white border border-gray-200 rounded-xl space-y-4 shadow-sm hover:border-blue-400 transition cursor-pointer" onClick={() => navigate('candidate-job-detail', { jobId: job.id })}>
-                      <div>
-                        <span className="text-[10px] uppercase text-blue-600 font-bold tracking-wider">{job.department}</span>
-                        <h4 className="font-bold text-gray-950 mt-1 line-clamp-1">{job.title}</h4>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <span className="text-[10px] uppercase text-blue-600 font-bold tracking-wider">{job.department}</span>
+                          <h4 className="font-bold text-gray-950 mt-1 line-clamp-1">{job.title}</h4>
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 shrink-0">Q-Score: {matchScore}%</span>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
