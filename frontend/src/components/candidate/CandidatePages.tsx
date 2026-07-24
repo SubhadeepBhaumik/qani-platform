@@ -122,6 +122,30 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
     .filter(({ matchScore }: any) => matchScore >= 70)
     .sort((a: any, b: any) => b.matchScore - a.matchScore)
     .slice(0, 2);
+  const [dashSortField, setDashSortField] = useState<string | null>(null);
+  const [dashSortDir, setDashSortDir] = useState<'asc' | 'desc'>('asc');
+  const toggleDashSort = (field: string) => {
+    if (dashSortField === field) setDashSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setDashSortField(field); setDashSortDir('asc'); }
+  };
+  const dashSortArrow = (field: string) => dashSortField === field ? (dashSortDir === 'asc' ? ' \u25B2' : ' \u25BC') : '';
+  const myDashApps = (() => {
+    const base = applications.filter((a: any) => a.candidateId === user.id);
+    if (!dashSortField) return base;
+    const withJob = base.map((a: any) => ({ app: a, job: jobs.find((j: any) => j.id === (a.jobId ?? a.roleId)) }));
+    withJob.sort((x: any, y: any) => {
+      let av: any, bv: any;
+      if (dashSortField === 'title') { av = x.job?.title || ''; bv = y.job?.title || ''; }
+      else if (dashSortField === 'date') { av = x.app.appliedDate || ''; bv = y.app.appliedDate || ''; }
+      else if (dashSortField === 'score') { av = x.app.score ?? x.app.aiScore ?? -1; bv = y.app.score ?? y.app.aiScore ?? -1; }
+      else if (dashSortField === 'status') { av = x.app.status || ''; bv = y.app.status || ''; }
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      if (av < bv) return dashSortDir === 'asc' ? -1 : 1;
+      if (av > bv) return dashSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return withJob.map((w: any) => w.app);
+  })();
   const [salaryRateType, setSalaryRateType] = useState('annual');
   const [salaryAnnual, setSalaryAnnual] = useState('');
   const [salaryHourly, setSalaryHourly] = useState('');
@@ -251,16 +275,16 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase tracking-normal">
-                      <th className="p-4">Job Title</th>
-                      <th className="p-4">Applied Date</th>
-                      <th className="p-4">Q-Score</th>
-                      <th className="p-4 text-center">Pipeline Status</th>
+                      <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleDashSort('title')}>Job Title{dashSortArrow('title')}</th>
+                      <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleDashSort('date')}>Applied Date{dashSortArrow('date')}</th>
+                      <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleDashSort('score')}>Q-Score{dashSortArrow('score')}</th>
+                      <th className="p-4 text-center cursor-pointer select-none hover:text-gray-600" onClick={() => toggleDashSort('status')}>Pipeline Status{dashSortArrow('status')}</th>
                       <th className="p-4 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-xs">
-                    {applications.filter(a => a.candidateId === user.id).map(app => {
-                      const job = jobs.find(j => j.id === (app.jobId ?? (app as any).roleId));
+                    {myDashApps.map((app: any) => {
+                      const job = jobs.find((j: any) => j.id === (app.jobId ?? app.roleId));
                       return (
                         <tr key={app.id} className="hover:bg-gray-50">
                           <td className="p-4">
@@ -291,7 +315,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                         </tr>
                       );
                     })}
-                    {applications.filter(a => a.candidateId === user.id).length === 0 && (
+                    {myDashApps.length === 0 && (
                       <tr>
                         <td colSpan={5} className="p-12 text-center text-gray-400 select-none">
                           No active applications found. Tap "Explore Open Jobs" above to begin.
