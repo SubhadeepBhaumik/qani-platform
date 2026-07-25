@@ -170,6 +170,17 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   };
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
+  const profileFieldsTop = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
+  const profileFilledTop = profileFieldsTop.filter(Boolean).length;
+  const profileCompletionPct = Math.round(((profileFilledTop + (skills.length > 0 ? 1 : 0)) / (profileFieldsTop.length + 1)) * 100);
+  const guardApply = (jobId: string) => {
+    if (profileCompletionPct < 100) {
+      showToast('Complete your profile to 100% before applying — incomplete profiles may be rejected.', 'error');
+      navigate('candidate-profile');
+      return;
+    }
+    applyForJob(jobId);
+  };
   const [cvUploading, setCvUploading] = useState(false);
   const [profileVisible, setProfileVisible] = useState(true);
   const [interviewModal, setInterviewModal] = useState<{title: string; dateTime: string} | null>(null);
@@ -246,6 +257,16 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             </div>
           </div>
 
+          {profileCompletionPct < 100 && (
+            <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs text-amber-800 font-semibold">
+                Your profile is only {profileCompletionPct}% complete. Complete it to 100% — incomplete profiles may be rejected when you apply for jobs.
+              </p>
+              <button onClick={() => navigate('candidate-profile')} className="cursor-pointer shrink-0 text-xs font-bold py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition">
+                Complete Profile
+              </button>
+            </div>
+          )}
           {/* Quick counters grid */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="p-4 bg-white border border-gray-200 rounded-xl space-y-2">
@@ -512,7 +533,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id && a.status !== 'expired') ? (
                         <span className="text-xs font-semibold py-2 px-3 bg-green-50 text-green-700 border border-green-200 rounded-lg">✓ Applied</span>
                       ) : (
-                        <button onClick={(e) => { e.stopPropagation(); applyForJob(job.id); }}
+                        <button onClick={(e) => { e.stopPropagation(); guardApply(job.id); }}
                           className="text-xs font-semibold py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition cursor-pointer">
                           Apply
                         </button>
@@ -666,7 +687,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   return (
                     <button
                       id="apply-job-btn-trigger"
-                      onClick={() => applyForJob(job.id)}
+                      onClick={() => guardApply(job.id)}
                       className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition active:scale-95 shadow-lg shadow-blue-500/15 cursor-pointer"
                     >
                       Apply Now via QANI
