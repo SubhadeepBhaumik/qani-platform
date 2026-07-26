@@ -170,6 +170,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   };
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const profileFieldsTop = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
   const profileFilledTop = profileFieldsTop.filter(Boolean).length;
   const profileCompletionPct = Math.round(((profileFilledTop + (skills.length > 0 ? 1 : 0)) / (profileFieldsTop.length + 1)) * 100);
@@ -456,7 +457,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             (filterSalary === '100k-140k' && (j.salaryMin || 0) >= 100000 && (j.salaryMax || 0) <= 140000) ||
             (filterSalary === '140k-180k' && (j.salaryMin || 0) >= 140000 && (j.salaryMax || 0) <= 180000) ||
             (filterSalary === '180k+' && (j.salaryMin || 0) >= 180000);
-          return matchesSearch && matchesDept && matchesLoc && matchesSalary;
+          const matchesQScore = showAllJobs || computeJobMatchScore(j) >= 70;
+          return matchesSearch && matchesDept && matchesLoc && matchesSalary && matchesQScore;
         });
         const totalPages = Math.max(1, Math.ceil(filtered.length / JOBS_PER_PAGE));
         const paginated = filtered.slice((jobsPage - 1) * JOBS_PER_PAGE, jobsPage * JOBS_PER_PAGE);
@@ -465,7 +467,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight text-gray-900">Explore Open Positions</h2>
-                <p className="text-xs text-gray-500">{filtered.length} open {filtered.length === 1 ? 'role' : 'roles'} available across Australia</p>
+                <p className="text-xs text-gray-500">{filtered.length} open {filtered.length === 1 ? 'role' : 'roles'} {showAllJobs ? 'available' : 'matching your profile (Q-Score 70%+)'}</p>
               </div>
             </div>
             <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center shadow-sm flex-wrap">
@@ -491,6 +493,12 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <option value="140k-180k">$140k – $180k</option>
                 <option value="180k+">$180k+</option>
               </select>
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer whitespace-nowrap select-none">
+                <input type="checkbox" checked={showAllJobs}
+                  onChange={(e) => { setShowAllJobs(e.target.checked); setJobsPage(1); }}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                Show all roles
+              </label>
               {(searchQuery || filterType !== 'All' || filterLocation !== 'All' || filterSalary !== 'All') && (
                 <button onClick={() => { setSearchQuery(''); setFilterType('All'); setFilterLocation('All'); setFilterSalary('All'); setJobsPage(1); }}
                   className="text-xs text-red-500 hover:text-red-700 font-semibold cursor-pointer whitespace-nowrap">
@@ -510,6 +518,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                         {applications.some((a: any) => (a.jobId === job.id || a.roleId === job.id) && a.candidateId === user.id && a.status !== 'expired') && (
                           <span className="text-[10px] font-bold uppercase py-1 px-2.5 bg-green-50 text-green-700 rounded-full border border-green-200">✓ Applied</span>
                         )}
+                        <span className="text-[10px] font-bold py-1 px-2.5 bg-green-50 text-green-700 rounded-full border border-green-200">Q-Score: {computeJobMatchScore(job)}%</span>
                         <span className="text-[10px] font-semibold text-gray-500 uppercase">{job.experienceLevel} Level</span>
                       </div>
                     </div>
