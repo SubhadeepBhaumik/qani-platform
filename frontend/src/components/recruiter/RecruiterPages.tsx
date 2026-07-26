@@ -854,7 +854,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">Corporate Applications Tracker</h2>
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900 font-sans">Applicant Tracker</h2>
               <p className="text-xs text-gray-500">Filter candidate metrics, evaluate overall scorecards, and execute status modifications.</p>
               {activeParams.filterJobId && (
                 <div className="flex items-center gap-2 mt-1">
@@ -1022,7 +1022,7 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                         <td className="p-4 text-right">
                           <button 
                             id={`view-app-details-trigger-${app.id}`}
-                            onClick={() => navigate('recruiter-app-detail', { applicationId: app.id })}
+                            onClick={() => navigate('recruiter-app-detail', { applicationId: app.id, filterJobId: activeParams.filterJobId })}
                             className="cursor-pointer text-xs text-blue-600 hover:text-blue-800 font-bold"
                           >
                             View Assessment
@@ -1060,11 +1060,11 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
         return (
           <div className="space-y-6">
             <button 
-              onClick={() => navigate('recruiter-applications')}
+              onClick={() => navigate('recruiter-applications', activeParams.filterJobId ? { filterJobId: activeParams.filterJobId } : {})}
               className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 font-semibold"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Active tracker</span>
+              <span>{activeParams.filterJobId ? 'Back to applicants for this job' : 'Back to Applicant Tracker'}</span>
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
