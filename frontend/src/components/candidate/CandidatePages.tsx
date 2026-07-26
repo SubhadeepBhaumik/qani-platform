@@ -145,6 +145,10 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
   const [showAllJobs, setShowAllJobs] = useState(false);
+  const [newEmail, setNewEmailC] = useState('');
+  const [otpSentC, setOtpSentC] = useState(false);
+  const [otpC, setOtpC] = useState('');
+  const [sendingC, setSendingC] = useState(false);
   const profileFieldsTop = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
   const profileFilledTop = profileFieldsTop.filter(Boolean).length;
   const profileCompletionPct = Math.round(((profileFilledTop + (skills.length > 0 ? 1 : 0)) / (profileFieldsTop.length + 1)) * 100);
@@ -1532,10 +1536,6 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                 <label className="text-xs font-semibold text-gray-700 block">Email Address</label>
                 <input type="text" disabled value={user.email} className="w-full text-xs p-2.5 bg-gray-100 text-gray-500 border rounded cursor-not-allowed" />
                 {(() => {
-                  const [newEmail, setNewEmailC] = React.useState('');
-                  const [otpSentC, setOtpSentC] = React.useState(false);
-                  const [otpC, setOtpC] = React.useState('');
-                  const [sendingC, setSendingC] = React.useState(false);
                   return (
                     <div className="space-y-2 pt-1">
                       <input type="email" value={newEmail} onChange={e => setNewEmailC(e.target.value)} placeholder="New email address" className="w-full text-xs p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
