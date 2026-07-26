@@ -341,7 +341,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                             <span className={`inline-block text-[10px] font-bold uppercase py-1 px-2.5 rounded-full ${
                               app.status === 'qualified' ? 'bg-green-100 text-green-700' :
                               app.status === 'screening' ? 'bg-blue-100 text-blue-700 animate-pulse' :
-                              app.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                              app.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                              app.status === 'expired' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'
                             }`}>
                               {app.status}
                             </span>
@@ -1552,6 +1553,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           app.status === 'screening' ? 'bg-blue-100 text-blue-700' :
                           app.status === 'rejected' ? 'bg-red-100 text-red-700' :
                           app.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
+                          app.status === 'expired' ? 'bg-amber-100 text-amber-800' :
                           'bg-gray-100 text-gray-700'
                         }`}>{app.status}</span>
                       </td>
