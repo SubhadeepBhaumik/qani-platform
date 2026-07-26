@@ -156,6 +156,7 @@ app.get('/api/v1/candidates/public', CandidatesController.getPublicCandidates);
 app.get('/api/v1/candidates/:id', requireAuth, CandidatesController.getCandidate);
 app.put('/api/v1/candidates/:id', CandidatesController.updateCandidate);
 app.post('/api/v1/candidates/:id/upload-cv', CandidatesController.uploadCV);
+app.post('/api/v1/candidates/:id/parse-cv', CandidatesController.parseCV);
 app.post('/api/v1/candidates/:id/upload-photo', CandidatesController.uploadPhoto);
 app.get('/api/v1/candidates/:id/profile', requireAuth, CandidatesController.getProfile);
 app.get('/api/v1/candidates/:id/public-profile', requireAuth, getPublicCandidateProfile);

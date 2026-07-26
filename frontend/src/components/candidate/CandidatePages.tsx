@@ -1116,6 +1116,24 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             <h2 className="text-2xl font-bold tracking-tight text-gray-900">My Candidate Profile</h2>
             <p className="text-xs text-gray-500">Complete your profile to improve your chances with recruiters.</p>
           </div>
+          {!cvFileName && (
+            <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-blue-900">Start with your CV — we'll do the typing</p>
+                <p className="text-xs text-blue-800 leading-relaxed">
+                  Upload your CV first and QANI will automatically fill in your professional summary, skills, contact details,
+                  location and work rights. You can review and edit everything before saving. Salary expectations and
+                  availability still need to be entered manually.
+                </p>
+              </div>
+              <button
+                onClick={() => (document.getElementById('cv-upload-input') as HTMLElement | null)?.click()}
+                className="cursor-pointer shrink-0 text-xs font-bold py-2.5 px-5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-sm"
+              >
+                Upload CV &amp; Auto-Fill
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8 bg-white border border-gray-200 rounded-xl p-6 sm:p-8 space-y-6 shadow-sm">
               <div className="flex items-center justify-between">
@@ -1362,7 +1380,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                   </div>
                 ) : (
                   <label className="block p-6 bg-gray-50 border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-xl text-center cursor-pointer transition">
-                    <input type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={async (e) => {
+                    <input id="cv-upload-input" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       if (file.size > 5 * 1024 * 1024) { showToast('File too large. Max 5MB.', 'error'); return; }
@@ -1379,7 +1397,25 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                           });
                           if (res.ok) {
                             setCvFileName(file.name);
-                            showToast('CV uploaded successfully.', 'success');
+                            showToast('CV uploaded successfully. Parsing to auto-fill your profile...', 'success');
+                            try {
+                              const parseRes = await fetch(`https://qani.io/api/v1/candidates/${user?.id}/parse-cv`, {
+                                method: 'POST',
+                                headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                              });
+                              if (parseRes.ok) {
+                                const parsed = await parseRes.json();
+                                if (parsed.bio && !bio) setBio(parsed.bio);
+                                if (parsed.phone && !phone) setPhone(parsed.phone);
+                                if (parsed.location && !location) setLocation(parsed.location);
+                                if (parsed.workRights && !workRights) setWorkRights(parsed.workRights);
+                                if (parsed.linkedinUrl && !linkedIn) setLinkedIn(parsed.linkedinUrl);
+                                if (Array.isArray(parsed.skills) && parsed.skills.length > 0 && skills.length === 0) setSkills(parsed.skills);
+                                showToast('Profile fields auto-filled from your CV — please review and save.', 'success');
+                              }
+                            } catch (e) {
+                              // Parsing is best-effort; upload already succeeded, so no error shown to the user here.
+                            }
                           } else {
                             showToast('Failed to upload CV. Try again.', 'error');
                           }

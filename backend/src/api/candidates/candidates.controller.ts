@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../../services/auth.service';
 import { PrismaClient } from '@prisma/client';
+import OpenAI from 'openai';
 
 const prisma = new PrismaClient();
 
@@ -146,6 +147,67 @@ export class CandidatesController {
     }
   }
 
+  static async parseCV(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
+      if (decoded.userId !== id) { return res.status(403).json({ error: 'Forbidden' }); }
+      const profile = await prisma.candidateProfile.findUnique({ where: { userId: id } });
+      if (!profile || !profile.cvUrl || !profile.cvFilename) {
+        return res.status(400).json({ error: 'No CV uploaded yet' });
+      }
+      const match = profile.cvUrl.match(/^data:(.+);base64,(.+)$/);
+      if (!match) return res.status(400).json({ error: 'Invalid CV data' });
+      const mimeType = match[1];
+      const base64 = match[2];
+      const buffer = Buffer.from(base64, 'base64');
+      const filename = profile.cvFilename.toLowerCase();
+      let text = '';
+      if (filename.endsWith('.pdf') || mimeType.includes('pdf')) {
+        const pdfParse = require('pdf-parse');
+        const data = await pdfParse(buffer);
+        text = data.text;
+      } else if (filename.endsWith('.docx') || filename.endsWith('.doc') || mimeType.includes('word')) {
+        const mammoth = require('mammoth');
+        const result = await mammoth.extractRawText({ buffer });
+        text = result.value;
+      } else {
+        return res.status(400).json({ error: 'Unsupported file type for parsing' });
+      }
+      if (!text || text.trim().length < 20) {
+        return res.status(422).json({ error: 'Could not extract readable text from CV' });
+      }
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You extract structured candidate profile data from resume/CV text. Respond ONLY with valid JSON, no markdown, no commentary.' },
+          { role: 'user', content: `Extract the following fields from this CV text as JSON with exactly these keys: bio (a 2-3 sentence professional summary written in third person based on the CV), skills (array of up to 12 technical/professional skill strings), phone (string or null), location (city/region string or null), workRights (string or null, e.g. "Citizen", "PR", "Visa" if mentioned), linkedinUrl (string or null, only if a linkedin.com URL appears in the text).\n\nCV TEXT:\n${text.slice(0, 8000)}` },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+      });
+      const raw = completion.choices[0]?.message?.content || '{}';
+      let parsed: any;
+      try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+      return res.json({
+        bio: typeof parsed.bio === 'string' ? parsed.bio : null,
+        skills: Array.isArray(parsed.skills) ? parsed.skills.filter((sk: any) => typeof sk === 'string').slice(0, 12) : [],
+        phone: typeof parsed.phone === 'string' ? parsed.phone : null,
+        location: typeof parsed.location === 'string' ? parsed.location : null,
+        workRights: typeof parsed.workRights === 'string' ? parsed.workRights : null,
+        linkedinUrl: typeof parsed.linkedinUrl === 'string' ? parsed.linkedinUrl : null,
+      });
+    } catch (error) {
+      console.error('CV parse error:', error);
+      return res.status(500).json({ error: 'Failed to parse CV' });
+    }
+  }
   static async uploadPhoto(req: Request, res: Response) {
     try {
       const { id } = req.params;
