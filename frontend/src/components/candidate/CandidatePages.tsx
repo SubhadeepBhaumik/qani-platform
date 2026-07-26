@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp, AppView } from '../AppContext';
+import { computeJobMatchScore as computeJobMatchScoreShared } from '../../lib/jobMatch';
 import { api } from '../../lib/api';
 import { Job, Application, ScreeningSession, ChatMessage, Notification } from '../../types';
 import { 
@@ -88,35 +89,8 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [linkedIn, setLinkedIn] = useState((user as any)?.linkedIn || '');
   const [workRights, setWorkRights] = useState((user as any)?.workRights || '');
   const [salaryExpectation, setSalaryExpectation] = useState((user as any)?.salaryExpectation || '');
-  const normTerm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const computeJobMatchScore = (job: any): number => {
-    let scoreSum = 0;
-    let totalWeight = 0;
-    if ((job.skillsRequired || []).length > 0 && skills.length > 0) {
-      const jobSkills = job.skillsRequired.map(normTerm);
-      const mySkills = skills.map(normTerm);
-      const matched = jobSkills.filter((sk: string) => mySkills.some(ms => ms.includes(sk) || sk.includes(ms))).length;
-      scoreSum += (matched / jobSkills.length) * 100 * 0.5;
-      totalWeight += 0.5;
-    }
-    if (job.location && location) {
-      const isRemote = /remote/i.test(job.location);
-      const jobWords = new Set(job.location.toLowerCase().split(/[^a-z]+/).filter((w: string) => w.length > 2));
-      const myWords = new Set(location.toLowerCase().split(/[^a-z]+/).filter((w: string) => w.length > 2));
-      const locMatch = isRemote || [...jobWords].some(w => myWords.has(w as string));
-      scoreSum += (locMatch ? 100 : 40) * 0.25;
-      totalWeight += 0.25;
-    }
-    const expectedSalaryNum = parseInt(salaryExpectation, 10);
-    if (job.salaryMin && job.salaryMax && expectedSalaryNum) {
-      let fitScore = 100;
-      if (expectedSalaryNum > job.salaryMax) fitScore = Math.max(0, 100 - ((expectedSalaryNum - job.salaryMax) / job.salaryMax) * 100);
-      scoreSum += fitScore * 0.25;
-      totalWeight += 0.25;
-    }
-    if (totalWeight === 0) return 50;
-    return Math.round(scoreSum / totalWeight);
-  };
+  const computeJobMatchScore = (job: any): number =>
+    computeJobMatchScoreShared(job, { skills, location, salaryExpectation });
   const recommendedJobs = jobs.filter((j: any) => j.status === 'open' || j.status === 'active')
     .map((job: any) => ({ job, matchScore: computeJobMatchScore(job) }))
     .filter(({ matchScore }: any) => matchScore >= 70)

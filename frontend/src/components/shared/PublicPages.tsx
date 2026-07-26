@@ -10,6 +10,8 @@ import {
   Linkedin, Twitter, MessageSquare
 } from 'lucide-react';
 
+import { computeJobMatchScore } from '../../lib/jobMatch';
+
 const API = '/api/v1';
 
 // ─── SHARED PUBLIC NAV ────────────────────────────────────────────────────────
@@ -548,7 +550,25 @@ export const PublicJobsPage: React.FC = () => {
   });
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [myProfile, setMyProfile] = useState<any>(null);
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const PER_PAGE = 15;
+
+  useEffect(() => {
+    if (user?.role !== 'candidate') { setMyProfile(null); return; }
+    const token = localStorage.getItem('qani_auth_token');
+    fetch(`${API}/candidates/${user.id}/profile`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.json())
+      .then(p => setMyProfile(p && !p.error ? p : null))
+      .catch(() => setMyProfile(null));
+  }, [user?.id, user?.role]);
+
+  const canScore = user?.role === 'candidate' && myProfile !== null;
+  const scoreOf = (j: any) => computeJobMatchScore(j, {
+    skills: myProfile?.skills || [],
+    location: myProfile?.location || '',
+    salaryExpectation: myProfile?.salaryExpectation || '',
+  });
 
   useEffect(() => {
     fetch(`${API}/roles`)
@@ -568,7 +588,8 @@ export const PublicJobsPage: React.FC = () => {
     const matchSearch = !q || j.title?.toLowerCase().includes(q) || j.company?.toLowerCase().includes(q) || (j.skillsRequired || []).some((s: string) => s.toLowerCase().includes(q));
     const norm = (s: string) => (s || "").trim().toLowerCase().replace(/,/g, "").replace(/\s+/g, " ");
     const matchLoc = !locationFilter || norm(j.location) === norm(locationFilter);
-    return matchSearch && matchLoc;
+    const matchQScore = !canScore || showAllJobs || scoreOf(j) >= 70;
+    return matchSearch && matchLoc && matchQScore;
   });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -601,6 +622,14 @@ export const PublicJobsPage: React.FC = () => {
               <option value="">All Locations</option>
               {locations.map((l: any) => <option key={l}>{l}</option>)}
             </select>
+            {canScore && (
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer whitespace-nowrap select-none">
+                <input type="checkbox" checked={showAllJobs}
+                  onChange={e => { setShowAllJobs(e.target.checked); setPage(1); }}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                Show all roles
+              </label>
+            )}
           </div>
         </div>
       </section>
@@ -631,6 +660,11 @@ export const PublicJobsPage: React.FC = () => {
                         <Building2 className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex items-center gap-1.5">
+                        {canScore && (
+                          <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                            Q-Score: {scoreOf(job)}%
+                          </span>
+                        )}
                         <span className="flex items-center gap-1 text-[10px] bg-green-50 text-green-700 font-bold px-2 py-0.5 rounded-full border border-green-200">
                           <Zap className="w-2.5 h-2.5" /> AI Screened
                         </span>
