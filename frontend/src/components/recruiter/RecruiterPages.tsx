@@ -49,7 +49,8 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
   const [jobSearch, setJobSearch] = React.useState("");
   const [jobStatusFilter, setJobStatusFilter] = React.useState("all");
   const filteredJobs = jobs.filter(j => {
-    const matchSearch = !jobSearch || j.title.toLowerCase().includes(jobSearch.toLowerCase()) || (j.department||"").toLowerCase().includes(jobSearch.toLowerCase());
+    const jq = jobSearch.toLowerCase();
+    const matchSearch = !jobSearch || j.title.toLowerCase().includes(jq) || (j.department||"").toLowerCase().includes(jq) || (j.company||"").toLowerCase().includes(jq) || (j.location||"").toLowerCase().includes(jq);
     const matchStatus = jobStatusFilter === "all" || (j.status||"active") === jobStatusFilter;
     return matchSearch && matchStatus;
   });
@@ -67,7 +68,7 @@ const RecruiterJobsList: React.FC<{ jobs: any[]; applications: any[]; navigate: 
       <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row gap-3 shadow-sm">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-          <input type="text" placeholder="Search jobs by title or department..." value={jobSearch} onChange={e => setJobSearch(e.target.value)}
+          <input type="text" placeholder="Search jobs by title, company, department or location..." value={jobSearch} onChange={e => setJobSearch(e.target.value)}
             className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg pl-10 text-xs focus:bg-white outline-none focus:border-blue-500 transition" />
         </div>
         <select value={jobStatusFilter} onChange={e => setJobStatusFilter(e.target.value)}

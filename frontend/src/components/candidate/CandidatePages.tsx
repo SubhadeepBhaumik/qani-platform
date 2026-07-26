@@ -444,9 +444,11 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
           return m ? m[1].trim() : loc;
         }).filter(Boolean))).sort() as string[]];
         const filtered = openJobs.filter((j: any) => {
-          const matchesSearch = !searchQuery || j.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (j.skillsRequired || []).some((s: string) => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (j.department || '').toLowerCase().includes(searchQuery.toLowerCase());
+          const cq = searchQuery.toLowerCase();
+          const matchesSearch = !searchQuery || j.title.toLowerCase().includes(cq) ||
+            (j.skillsRequired || []).some((s: string) => s.toLowerCase().includes(cq)) ||
+            (j.department || '').toLowerCase().includes(cq) ||
+            (j.company || '').toLowerCase().includes(cq);
           const matchesDept = filterType === 'All' || j.department === filterType;
           const matchesLoc = filterLocation === 'All' || (j.location || '').includes(filterLocation);
           const matchesSalary = filterSalary === 'All' ||
@@ -470,7 +472,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
             <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-3 items-center shadow-sm flex-wrap">
               <div className="relative flex-1 w-full min-w-48">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-                <input type="text" placeholder="Search by title, skill, or keyword..." value={searchQuery}
+                <input type="text" placeholder="Search by title, company, skill, or keyword..." value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setJobsPage(1); }}
                   className="w-full h-11 bg-gray-50 border border-gray-200 focus:bg-white focus:border-blue-500 rounded-lg text-xs pl-10 outline-none transition" />
               </div>
