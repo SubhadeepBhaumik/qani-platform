@@ -353,6 +353,44 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
   goBack,
   } = useApp();
 
+  const [jobTblSearch, setJobTblSearch] = React.useState('');
+  const [jobTblHideCompleted, setJobTblHideCompleted] = React.useState(false);
+  const [jobTblSortField, setJobTblSortField] = React.useState<string | null>(null);
+  const [jobTblSortDir, setJobTblSortDir] = React.useState<'asc' | 'desc'>('asc');
+  const toggleJobTblSort = (f: string) => {
+    if (jobTblSortField === f) setJobTblSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setJobTblSortField(f); setJobTblSortDir('asc'); }
+  };
+  const jobTblArrow = (f: string) => jobTblSortField === f ? (jobTblSortDir === 'asc' ? ' \u25B2' : ' \u25BC') : '';
+  const jobTblRows = (() => {
+    let rows = jobs.map((job: any) => {
+      const appsForJob = applications.filter((a: any) => a.jobId === job.id || a.roleId === job.id);
+      const scoredApps = appsForJob.filter((a: any) => a.aiScore !== undefined || a.score !== undefined);
+      const avgScoreNum = scoredApps.length ? Math.round(scoredApps.reduce((sum: number, c: any) => sum + (c.aiScore ?? c.score ?? 0), 0) / scoredApps.length) : null;
+      return { job, appsForJob, avgScoreNum };
+    });
+    const q = jobTblSearch.toLowerCase().trim();
+    if (q) rows = rows.filter((r: any) =>
+      (r.job.title || '').toLowerCase().includes(q) ||
+      (r.job.department || '').toLowerCase().includes(q) ||
+      (r.job.location || '').toLowerCase().includes(q) ||
+      (r.job.company || '').toLowerCase().includes(q));
+    if (jobTblHideCompleted) rows = rows.filter((r: any) => !['closed', 'filled'].includes(r.job.status || 'active'));
+    if (jobTblSortField) {
+      rows.sort((x: any, y: any) => {
+        let av: any, bv: any;
+        if (jobTblSortField === 'title') { av = x.job.title || ''; bv = y.job.title || ''; }
+        else if (jobTblSortField === 'dept') { av = x.job.department || ''; bv = y.job.department || ''; }
+        else if (jobTblSortField === 'apps') { av = x.appsForJob.length; bv = y.appsForJob.length; }
+        else { av = x.avgScoreNum ?? -1; bv = y.avgScoreNum ?? -1; }
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+        if (av < bv) return jobTblSortDir === 'asc' ? -1 : 1;
+        if (av > bv) return jobTblSortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return rows;
+  })();
   // Search & sorting state for applications
   const [appSearch, setAppSearch] = useState('');
   const [appFilterStatus, setAppFilterStatus] = useState('All');
@@ -754,23 +792,38 @@ export const RecruiterPages: React.FC<{ subView: string }> = ({ subView }) => {
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
+            <div className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col sm:flex-row gap-3 items-center shadow-sm">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                <input type="text" placeholder="Search jobs by title, department, location or company..."
+                  value={jobTblSearch} onChange={e => setJobTblSearch(e.target.value)}
+                  className="w-full h-9 bg-gray-50 border border-gray-200 rounded-lg pl-10 text-xs focus:bg-white outline-none focus:border-blue-500 transition" />
+              </div>
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 cursor-pointer whitespace-nowrap select-none">
+                <input type="checkbox" checked={jobTblHideCompleted}
+                  onChange={e => setJobTblHideCompleted(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                Hide completed roles
+              </label>
+            </div>
 
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-bold text-gray-400 uppercase">
-                    <th className="p-4">Title</th>
-                    <th className="p-4">Department / Domain</th>
-                    <th className="p-4">Applications volume</th>
-                    <th className="p-4">Q-Score Average</th>
+                    <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleJobTblSort('title')}>Title{jobTblArrow('title')}</th>
+                    <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleJobTblSort('dept')}>Department / Domain{jobTblArrow('dept')}</th>
+                    <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleJobTblSort('apps')}>Applications volume{jobTblArrow('apps')}</th>
+                    <th className="p-4 cursor-pointer select-none hover:text-gray-600" onClick={() => toggleJobTblSort('score')}>Q-Score Average{jobTblArrow('score')}</th>
                     <th className="p-4 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-xs text-gray-600">
-                  {jobs.map(job => {
-                    const appsForJob = applications.filter(a => a.jobId === job.id || a.roleId === job.id);
-                    const scoredApps = appsForJob.filter(a => a.aiScore !== undefined || a.score !== undefined);
-                    const avgScore = scoredApps.length ? Math.round(scoredApps.reduce((sum, current) => sum + (current.aiScore ?? current.score ?? 0), 0) / scoredApps.length) : 'N/A';
+                  {jobTblRows.length === 0 && (
+                    <tr><td colSpan={5} className="p-8 text-center text-gray-400">No jobs match your search.</td></tr>
+                  )}
+                  {jobTblRows.map(({ job, appsForJob, avgScoreNum }: any) => {
+                    const avgScore = avgScoreNum === null ? 'N/A' : avgScoreNum;
                     return (
                       <tr key={job.id} className="hover:bg-gray-50">
                         <td className="p-4">
