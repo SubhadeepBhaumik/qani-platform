@@ -219,6 +219,69 @@ export class CandidatesController {
       return res.status(500).json({ error: 'Failed to parse CV' });
     }
   }
+  static async parseLinkedIn(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const authHeader = req.headers.authorization;
+      const hasValidHeader = authHeader !== undefined && authHeader.startsWith('Bearer ');
+      if (hasValidHeader === false) { return res.status(401).json({ error: 'Unauthorized' }); }
+      const token = authHeader.split(' ')[1];
+      const decoded = AuthService.verifyToken(token) as any;
+      if (decoded === null) { return res.status(401).json({ error: 'Unauthorized' }); }
+      if (decoded.userId !== id) { return res.status(403).json({ error: 'Forbidden' }); }
+      const { linkedinUrl } = req.body;
+      if (!linkedinUrl || !/^https?:\/\/([a-z]{2,3}\.)?linkedin\.com\//i.test(linkedinUrl)) {
+        return res.status(400).json({ error: 'Please provide a valid linkedin.com profile URL' });
+      }
+      let html = '';
+      try {
+        const pageRes = await fetch(linkedinUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+        });
+        html = await pageRes.text();
+      } catch {
+        return res.status(502).json({ error: 'Could not reach that LinkedIn URL' });
+      }
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;|&amp;|&#\d+;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const loginWallHit = /sign in to linkedin|join linkedin|authwall/i.test(html) && text.length < 1500;
+      if (!text || text.length < 200 || loginWallHit) {
+        return res.status(422).json({ error: 'LinkedIn blocked this request (public pages usually require sign-in to view). Try uploading your CV instead.' });
+      }
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You extract structured candidate profile data from a LinkedIn public page\'s raw text. The text may contain navigation clutter unrelated to the profile - ignore it. Respond ONLY with valid JSON, no markdown, no commentary.' },
+          { role: 'user', content: `Extract the following fields as JSON with exactly these keys: bio (a 2-3 sentence professional summary written in third person), skills (array of up to 12 technical/professional skill strings), location (city/region string or null). If the text does not look like a real LinkedIn profile (e.g. it's a login page), return {"bio": null, "skills": [], "location": null}.\n\nPAGE TEXT:\n${text.slice(0, 8000)}` },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+      });
+      const raw = completion.choices[0]?.message?.content || '{}';
+      let parsed: any;
+      try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+      if (!parsed.bio && (!parsed.skills || parsed.skills.length === 0)) {
+        return res.status(422).json({ error: 'Could not extract profile data from that page. Try uploading your CV instead.' });
+      }
+      return res.json({
+        bio: typeof parsed.bio === 'string' ? parsed.bio : null,
+        skills: Array.isArray(parsed.skills) ? parsed.skills.filter((sk: any) => typeof sk === 'string').slice(0, 12) : [],
+        location: typeof parsed.location === 'string' ? parsed.location : null,
+      });
+    } catch (error) {
+      console.error('LinkedIn parse error:', error);
+      return res.status(500).json({ error: 'Failed to parse LinkedIn profile' });
+    }
+  }
   static async uploadPhoto(req: Request, res: Response) {
     try {
       const { id } = req.params;

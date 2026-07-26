@@ -144,6 +144,29 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   };
   const [availableFrom, setAvailableFrom] = useState((user as any)?.availableFrom || '');
   const [cvFileName, setCvFileName] = useState((user as any)?.resumeName || '');
+  const [linkedinImporting, setLinkedinImporting] = useState(false);
+  const importFromLinkedIn = async () => {
+    if (!linkedIn || !linkedIn.includes('linkedin.com')) { showToast('Enter a valid linkedin.com URL first.', 'error'); return; }
+    setLinkedinImporting(true);
+    try {
+      const token = localStorage.getItem('qani_auth_token');
+      const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}/parse-linkedin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ linkedinUrl: linkedIn }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || 'Could not import from LinkedIn.', 'error'); return; }
+      if (data.bio && !bio) setBio(data.bio);
+      if (data.location && !location) setLocation(data.location);
+      if (Array.isArray(data.skills) && data.skills.length > 0 && skills.length === 0) setSkills(data.skills);
+      showToast('Profile fields imported from LinkedIn — please review and save.', 'success');
+    } catch {
+      showToast('Could not import from LinkedIn. Try uploading your CV instead.', 'error');
+    } finally {
+      setLinkedinImporting(false);
+    }
+  };
   const [showAllJobs, setShowAllJobs] = useState(false);
   const [newEmail, setNewEmailC] = useState('');
   const [otpSentC, setOtpSentC] = useState(false);
@@ -1278,6 +1301,12 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                       <input type="url" value={linkedIn} onChange={(e) => setLinkedIn(e.target.value)} placeholder="https://linkedin.com/in/yourname"
                         className={`w-full text-xs p-2.5 bg-gray-50 border rounded ${linkedIn && !linkedIn.includes('linkedin.com') ? 'border-red-400' : 'border-gray-300'}`} />
                       {linkedIn && !linkedIn.includes('linkedin.com') && <p className="text-[10px] text-red-500">Must be a linkedin.com URL</p>}
+                      {linkedIn && linkedIn.includes('linkedin.com') && (
+                        <button type="button" onClick={importFromLinkedIn} disabled={linkedinImporting}
+                          className="cursor-pointer text-[10px] font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50 mt-1">
+                          {linkedinImporting ? 'Importing…' : 'Import profile fields from this LinkedIn URL'}
+                        </button>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs text-gray-500">GitHub URL</label>
