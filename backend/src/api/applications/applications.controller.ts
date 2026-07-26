@@ -136,6 +136,9 @@ export class ApplicationsController {
         const myJobs = await prisma.job.findMany({ where: { recruiterId: caller.id }, select: { id: true } });
         const myJobIds = myJobs.map((j: any) => j.id);
         where.jobId = { in: myJobIds };
+        const hiddenProfiles = await prisma.candidateProfile.findMany({ where: { profileVisible: false }, select: { userId: true } });
+        const hiddenIds = hiddenProfiles.map((h: any) => h.userId);
+        if (hiddenIds.length > 0) { where.candidateId = { notIn: hiddenIds }; }
       } else {
         where.candidateId = caller.id;
       }
@@ -165,6 +168,10 @@ export class ApplicationsController {
         if (app.jobId === null) { return res.status(403).json({ error: 'Forbidden' }); }
         const job = await prisma.job.findUnique({ where: { id: app.jobId } });
         if (job === null || job.recruiterId !== caller.id) { return res.status(403).json({ error: 'Forbidden' }); }
+        if (app.candidateId) {
+          const cProf = await prisma.candidateProfile.findUnique({ where: { userId: app.candidateId } });
+          if (cProf !== null && (cProf as any).profileVisible === false) { return res.status(403).json({ error: 'Forbidden' }); }
+        }
         return res.json(app);
       } else {
         if (app.candidateId !== caller.id) { return res.status(403).json({ error: 'Forbidden' }); }

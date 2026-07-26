@@ -146,6 +146,9 @@ model CandidateProfile {
   phoneVerified     Boolean   @default(false)
   location          String?
   profilePhotoUrl   String?
+  profileVisible    Boolean  @default(true)
+  notifyScreening   Boolean  @default(true)
+  notifyJobs        Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

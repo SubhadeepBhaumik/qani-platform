@@ -149,6 +149,22 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
   const [otpSentC, setOtpSentC] = useState(false);
   const [otpC, setOtpC] = useState('');
   const [sendingC, setSendingC] = useState(false);
+  const savePref = async (patch: Record<string, boolean>, okMsg: string) => {
+    const token = localStorage.getItem('qani_auth_token');
+    try {
+      const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error('save failed');
+      showToast(okMsg, 'success');
+      return true;
+    } catch {
+      showToast('Could not save preference. Please try again.', 'error');
+      return false;
+    }
+  };
   const profileFieldsTop = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
   const profileFilledTop = profileFieldsTop.filter(Boolean).length;
   const profileCompletionPct = Math.round(((profileFilledTop + (skills.length > 0 ? 1 : 0)) / (profileFieldsTop.length + 1)) * 100);
@@ -193,6 +209,9 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
       if (p.availableFrom) setAvailableFrom(p.availableFrom.split('T')[0]);
       if (p.cvFilename) setCvFileName(p.cvFilename);
       if (p.profilePhotoUrl) setAvatarUrl(p.profilePhotoUrl);
+      if ((p as any).profileVisible !== undefined) setProfileVisible((p as any).profileVisible);
+      if ((p as any).notifyScreening !== undefined) setNotifyScreening((p as any).notifyScreening);
+      if ((p as any).notifyJobs !== undefined) setNotifyJobs((p as any).notifyJobs);
     }).catch(() => {});
   }, [user?.id, subView]);
 
@@ -1608,7 +1627,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Privacy</h3>
               <div className="space-y-3">
                 <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
-                  <input type="checkbox" checked={profileVisible} onChange={(e) => { setProfileVisible(e.target.checked); showToast(e.target.checked ? 'Profile visible to recruiters.' : 'Profile hidden from recruiters.', 'success'); }} className="mt-0.5 cursor-pointer" />
+                  <input type="checkbox" checked={profileVisible} onChange={async (e) => { const v = e.target.checked; setProfileVisible(v); const ok = await savePref({ profileVisible: v }, v ? 'Profile visible to recruiters.' : 'Profile hidden from recruiters.'); if (!ok) setProfileVisible(!v); }} className="mt-0.5 cursor-pointer" />
                   <div>
                     <p className="text-xs font-semibold text-gray-800">Show profile to recruiters</p>
                     <p className="text-[10px] text-gray-500">Recruiters can find and view your profile in the candidate directory.</p>
@@ -1627,14 +1646,14 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
               <h3 className="text-sm font-bold uppercase text-gray-900 tracking-wider">Notification Preferences</h3>
               <div className="space-y-3">
                 <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
-                  <input type="checkbox" checked={notifyScreening} onChange={(e) => { setNotifyScreening(e.target.checked); showToast('Preference saved.', 'success'); }} className="mt-0.5 cursor-pointer" />
+                  <input type="checkbox" checked={notifyScreening} onChange={async (e) => { const v = e.target.checked; setNotifyScreening(v); const ok = await savePref({ notifyScreening: v }, 'Preference saved.'); if (!ok) setNotifyScreening(!v); }} className="mt-0.5 cursor-pointer" />
                   <div>
                     <p className="text-xs font-semibold text-gray-800">AI screening results</p>
                     <p className="text-[10px] text-gray-500">Notify when your screening score is ready.</p>
                   </div>
                 </label>
                 <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition">
-                  <input type="checkbox" checked={notifyJobs} onChange={(e) => { setNotifyJobs(e.target.checked); showToast('Preference saved.', 'success'); }} className="mt-0.5 cursor-pointer" />
+                  <input type="checkbox" checked={notifyJobs} onChange={async (e) => { const v = e.target.checked; setNotifyJobs(v); const ok = await savePref({ notifyJobs: v }, 'Preference saved.'); if (!ok) setNotifyJobs(!v); }} className="mt-0.5 cursor-pointer" />
                   <div>
                     <p className="text-xs font-semibold text-gray-800">New job recommendations</p>
                     <p className="text-[10px] text-gray-500">Weekly digest of jobs matching your profile.</p>
