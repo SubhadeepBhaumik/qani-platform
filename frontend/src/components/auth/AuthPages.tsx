@@ -306,7 +306,9 @@ export const AuthPages: React.FC<{ subView: 'login' | 'register-candidate-1' | '
           </span>
           <h2 className="text-3xl font-extrabold tracking-tight">AI Recruitment Screening</h2>
           <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
-            Automatically validate skills, experience, qualifications, salary expectations and location against your hiring criteria—filtering out unsuitable applicants and delivering a Q-Score for every suitable applicant.
+            {subView === 'login'
+              ? 'Validate skills, experience, qualifications, salary expectations and location against your hiring criteria—automatically filtering out unsuitable applicants before your recruiters spend valuable time reviewing them.'
+              : 'Automatically validate skills, experience, qualifications, salary expectations and location against your hiring criteria—filtering out unsuitable applicants and delivering a Q-Score for every suitable applicant.'}
           </p>
         </div>
 
