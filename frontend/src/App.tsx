@@ -75,39 +75,33 @@ const RouterSync: React.FC = () => {
   const location = useLocation();
   const isSyncing = useRef(false);
 
+  const PARAM_KEYS = ['jobId', 'applicationId', 'sessionId', 'editJobId', 'mode', 'candidateId', 'recruiterId', 'filterJobId'];
   useEffect(() => {
     if (isSyncing.current) return;
     const targetPath = ROUTES[activeView] || '/';
-    if (location.pathname !== targetPath) {
-      const params = new URLSearchParams();
-      if (activeParams.jobId) params.set('jobId', activeParams.jobId);
-      if (activeParams.applicationId) params.set('applicationId', activeParams.applicationId);
-      if (activeParams.sessionId) params.set('sessionId', activeParams.sessionId);
-      if (activeParams.editJobId) params.set('editJobId', activeParams.editJobId);
-      if (activeParams.mode) params.set('mode', activeParams.mode);
-      if (activeParams.candidateId) params.set('candidateId', activeParams.candidateId);
-      if (activeParams.recruiterId) params.set('recruiterId', activeParams.recruiterId);
-      const search = params.toString() ? `?${params.toString()}` : '';
-      routerNavigate(`${targetPath}${search}`, { replace: false });
+    const params = new URLSearchParams();
+    PARAM_KEYS.forEach(k => { if ((activeParams as any)[k]) params.set(k, (activeParams as any)[k]); });
+    const search = params.toString() ? `?${params.toString()}` : '';
+    const targetUrl = `${targetPath}${search}`;
+    const currentUrl = `${location.pathname}${location.search}`;
+    if (currentUrl !== targetUrl) {
+      routerNavigate(targetUrl, { replace: false });
     }
-  }, [activeView]);
+  }, [activeView, activeParams]);
 
   useEffect(() => {
     const view = PATH_TO_VIEW[location.pathname];
-    if (view && view !== activeView) {
+    if (!view) return;
+    const params = new URLSearchParams(location.search);
+    const viewParams: any = {};
+    PARAM_KEYS.forEach(k => { const v = params.get(k); if (v) viewParams[k] = v; });
+    const paramsChanged = JSON.stringify(viewParams) !== JSON.stringify(activeParams || {});
+    if (view !== activeView || paramsChanged) {
       isSyncing.current = true;
-      const params = new URLSearchParams(location.search);
-      const viewParams: any = {};
-      if (params.get('jobId')) viewParams.jobId = params.get('jobId');
-      if (params.get('applicationId')) viewParams.applicationId = params.get('applicationId');
-      if (params.get('sessionId')) viewParams.sessionId = params.get('sessionId');
-      if (params.get('editJobId')) viewParams.editJobId = params.get('editJobId');
-      if (params.get('mode')) viewParams.mode = params.get('mode');
-      if (params.get('candidateId')) viewParams.candidateId = params.get('candidateId');
       appNavigate(view as any, viewParams);
       setTimeout(() => { isSyncing.current = false; }, 100);
     }
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   return null;
 };

@@ -135,7 +135,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
     else if (field === 'Weekly') hourly = num / 40;
     else if (field === 'Monthly') hourly = num / 240;
     else if (field === 'Annual') hourly = num / 2880;
-    const fmt = (v: number) => v > 0 ? Math.round(v).toLocaleString() : '';
+    const fmt = (v: number) => v > 0 ? String(Math.round(v)) : '';
     if (field === 'Hourly') setSalaryHourly(clean); else setSalaryHourly(fmt(hourly));
     if (field === 'Daily') setSalaryDaily(clean); else setSalaryDaily(fmt(hourly * 8));
     if (field === 'Weekly') setSalaryWeekly(clean); else setSalaryWeekly(fmt(hourly * 40));
@@ -168,11 +168,21 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
     }
   };
   const [showAllJobs, setShowAllJobs] = useState(false);
+  const [hiddenCompanies, setHiddenCompanies] = useState<string[]>([]);
+  const [knownCompanies, setKnownCompanies] = useState<string[]>([]);
+  useEffect(() => {
+    const token = localStorage.getItem('qani_auth_token');
+    fetch('https://qani.io/api/v1/companies', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.json())
+      .then(list => { if (Array.isArray(list)) setKnownCompanies(list); })
+      .catch(() => {});
+  }, []);
+  const [newHiddenCompany, setNewHiddenCompany] = useState('');
   const [newEmail, setNewEmailC] = useState('');
   const [otpSentC, setOtpSentC] = useState(false);
   const [otpC, setOtpC] = useState('');
   const [sendingC, setSendingC] = useState(false);
-  const savePref = async (patch: Record<string, boolean>, okMsg: string) => {
+  const savePref = async (patch: Record<string, boolean | string[]>, okMsg: string) => {
     const token = localStorage.getItem('qani_auth_token');
     try {
       const res = await fetch(`https://qani.io/api/v1/candidates/${user?.id}`, {
@@ -188,7 +198,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
       return false;
     }
   };
-  const profileFieldsTop = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
+  const profileFieldsTop = [bio, phone, location, linkedIn, workRights, salaryAnnual || salaryExpectation, availableFrom, cvFileName];
   const profileFilledTop = profileFieldsTop.filter(Boolean).length;
   const profileCompletionPct = Math.round(((profileFilledTop + (skills.length > 0 ? 1 : 0)) / (profileFieldsTop.length + 1)) * 100);
   const guardApply = (jobId: string) => {
@@ -235,6 +245,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
       if ((p as any).profileVisible !== undefined) setProfileVisible((p as any).profileVisible);
       if ((p as any).notifyScreening !== undefined) setNotifyScreening((p as any).notifyScreening);
       if ((p as any).notifyJobs !== undefined) setNotifyJobs((p as any).notifyJobs);
+      if (Array.isArray((p as any).hiddenFromCompanies)) setHiddenCompanies((p as any).hiddenFromCompanies);
     }).catch(() => {});
   }, [user?.id, subView]);
 
@@ -1139,7 +1150,7 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
 
       {/* 6. CANDIDATE PROFILE */}
       {subView === 'profile' && (() => {
-        const profileFields = [bio, phone, location, linkedIn, workRights, salaryExpectation, availableFrom, cvFileName];
+        const profileFields = [bio, phone, location, linkedIn, workRights, salaryAnnual || salaryExpectation, availableFrom, cvFileName];
         const filled = profileFields.filter(Boolean).length;
         const completionPct = Math.round(((filled + (skills.length > 0 ? 1 : 0)) / (profileFields.length + 1)) * 100);
         return (
@@ -1666,6 +1677,49 @@ export const CandidatePages: React.FC<{ subView: string }> = ({ subView }) => {
                     <p className="text-[10px] text-gray-500">Recruiters can find and view your profile in the candidate directory.</p>
                   </div>
                 </label>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                  <p className="text-xs font-semibold text-gray-800">Hide my profile from specific companies</p>
+                  <p className="text-[10px] text-gray-500">Recruiters from these companies won't see your profile, screening results, or applications — useful if you'd rather your current employer didn't find you here.</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {hiddenCompanies.map((c) => (
+                      <span key={c} className="inline-flex items-center gap-1 text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 rounded-full py-1 px-2.5">
+                        {c}
+                        <button type="button" onClick={async () => {
+                          const next = hiddenCompanies.filter(x => x !== c);
+                          setHiddenCompanies(next);
+                          const ok = await savePref({ hiddenFromCompanies: next }, `Unblocked ${c}.`);
+                          if (!ok) setHiddenCompanies(hiddenCompanies);
+                        }} className="cursor-pointer hover:text-red-900">×</button>
+                      </span>
+                    ))}
+                    {hiddenCompanies.length === 0 && <span className="text-[10px] text-gray-400 italic">No companies blocked</span>}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <input type="text" value={newHiddenCompany} onChange={(e) => setNewHiddenCompany(e.target.value)}
+                      placeholder="Start typing a company name..." list="hide-company-suggestions"
+                      className="flex-1 text-xs p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500" />
+                    <datalist id="hide-company-suggestions">
+                      {knownCompanies.map(c => <option key={c} value={c} />)}
+                    </datalist>
+                    <button type="button" onClick={async () => {
+                      const name = newHiddenCompany.trim();
+                      if (!name) return;
+                      if (hiddenCompanies.some(c => c.toLowerCase() === name.toLowerCase())) { showToast('Already blocked.', 'info'); return; }
+                      const next = [...hiddenCompanies, name];
+                      setHiddenCompanies(next);
+                      setNewHiddenCompany('');
+                      const ok = await savePref({ hiddenFromCompanies: next }, `${name} blocked.`);
+                      if (!ok) setHiddenCompanies(hiddenCompanies);
+                    }} className="cursor-pointer text-xs font-semibold py-2 px-3 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition">
+                      Block
+                    </button>
+                  </div>
+                  {newHiddenCompany.trim().length > 0 && (
+                    knownCompanies.some(c => c.toLowerCase() === newHiddenCompany.trim().toLowerCase())
+                      ? <p className="text-[10px] text-green-600">✓ Matches a company on QANI — recruiters from here will be blocked.</p>
+                      : <p className="text-[10px] text-amber-600">No exact match found yet — pick a suggestion above, or block anyway if this employer may join QANI later.</p>
+                  )}
+                </div>
                 <label className="flex items-start gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer opacity-60">
                   <input type="checkbox" checked={true} disabled className="mt-0.5" />
                   <div>

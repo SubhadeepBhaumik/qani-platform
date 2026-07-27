@@ -4,6 +4,17 @@ import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 
 const prisma = new PrismaClient();
+const parseSalaryValue = (v: any): number | null => {
+  const n = Number(String(v).replace(/[^0-9.]/g, ''));
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+};
+const isHiddenForCompany = (profile: any, callerCompanyName?: string | null): boolean => {
+  if (!profile) return false;
+  if (profile.profileVisible === false) return true;
+  if (!callerCompanyName) return false;
+  const blocked: string[] = Array.isArray(profile.hiddenFromCompanies) ? profile.hiddenFromCompanies : [];
+  return blocked.some((c: string) => c.trim().toLowerCase() === callerCompanyName.trim().toLowerCase());
+};
 
 export class CandidatesController {
   static async registerCandidate(req: Request, res: Response) {
@@ -30,13 +41,32 @@ export class CandidatesController {
     }
   }
 
+  static async getCompanies(_req: Request, res: Response) {
+    try {
+      const recruiters = await prisma.user.findMany({
+        where: { role: 'recruiter', companyName: { not: null } },
+        select: { companyName: true },
+        distinct: ['companyName'],
+      });
+      const names = recruiters
+        .map((r: any) => (r.companyName || '').trim())
+        .filter((n: string) => n.length > 0)
+        .sort((a: string, b: string) => a.localeCompare(b));
+      return res.json(names);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to fetch companies' });
+    }
+  }
+
   static async getCandidates(req: Request, res: Response) {
     try {
+      const authUserId = (req as any).authUserId;
+      const caller = authUserId ? await prisma.user.findUnique({ where: { id: authUserId } }) : null;
       const users = await prisma.user.findMany({ where: { role: 'candidate' } });
       const profiles = await prisma.candidateProfile.findMany();
       const visibleUsers = users.filter((u: any) => {
         const p = profiles.find((pr: any) => pr.userId === u.id);
-        return (p as any)?.profileVisible !== false;
+        return !isHiddenForCompany(p, caller?.companyName);
       });
       const merged = visibleUsers.map((u: any) => {
         const profile = profiles.find((p: any) => p.userId === u.id);
@@ -78,7 +108,7 @@ export class CandidatesController {
         bio, skills, linkedinUrl, githubUrl, workRights,
         salaryExpectation, availableFrom, phone, location,
         cvUrl, cvFilename, profilePhotoUrl,
-        profileVisible, notifyScreening, notifyJobs,
+        profileVisible, notifyScreening, notifyJobs, hiddenFromCompanies,
         firstName, lastName
       } = req.body;
       if (decoded.userId !== id) { const caller = await prisma.user.findUnique({ where: { id: decoded.userId } }); if (caller === null || caller.role !== 'admin') { return res.status(403).json({ error: 'Forbidden' }); } }
@@ -100,12 +130,13 @@ export class CandidatesController {
         create: {
           userId: id,
           bio, skills: skills || [], linkedinUrl, githubUrl,
-          workRights, salaryExpectation: salaryExpectation ? Number(salaryExpectation) : null,
+          workRights, salaryExpectation: parseSalaryValue(salaryExpectation),
           availableFrom: availableFrom ? new Date(availableFrom) : null,
           phone, location, cvUrl, cvFilename, profilePhotoUrl,
           ...(profileVisible !== undefined && { profileVisible }),
           ...(notifyScreening !== undefined && { notifyScreening }),
           ...(notifyJobs !== undefined && { notifyJobs }),
+          ...(hiddenFromCompanies !== undefined && { hiddenFromCompanies }),
         },
         update: {
           ...(bio !== undefined && { bio }),
@@ -113,7 +144,7 @@ export class CandidatesController {
           ...(linkedinUrl !== undefined && { linkedinUrl }),
           ...(githubUrl !== undefined && { githubUrl }),
           ...(workRights !== undefined && { workRights }),
-          ...(salaryExpectation !== undefined && { salaryExpectation: Number(salaryExpectation) }),
+          ...(salaryExpectation !== undefined && { salaryExpectation: parseSalaryValue(salaryExpectation) }),
           ...(availableFrom !== undefined && { availableFrom: availableFrom ? new Date(availableFrom) : null }),
           ...(phone !== undefined && { phone }),
           ...(location !== undefined && { location }),
@@ -123,6 +154,7 @@ export class CandidatesController {
           ...(profileVisible !== undefined && { profileVisible }),
           ...(notifyScreening !== undefined && { notifyScreening }),
           ...(notifyJobs !== undefined && { notifyJobs }),
+          ...(hiddenFromCompanies !== undefined && { hiddenFromCompanies }),
         }
       });
       return res.json(profile);
@@ -319,7 +351,7 @@ export class CandidatesController {
     try {
       const { id } = req.params;
       const authUserId = (req as any).authUserId;
-      if (authUserId !== id) { const caller = await prisma.user.findUnique({ where: { id: authUserId } }); if (caller === null) { return res.status(401).json({ error: 'Unauthorized' }); } if (caller.role !== 'admin') { if (caller.role !== 'recruiter') { return res.status(403).json({ error: 'Forbidden' }); } const myJobs = await prisma.job.findMany({ where: { recruiterId: caller.id }, select: { id: true } }); const myJobIds = myJobs.map((j: any) => j.id); const linkedApp = await prisma.application.findFirst({ where: { candidateId: id, jobId: { in: myJobIds } } }); if (linkedApp === null) { return res.status(403).json({ error: 'Forbidden' }); } const vProf = await prisma.candidateProfile.findUnique({ where: { userId: id } }); if (vProf !== null && (vProf as any).profileVisible === false) { return res.status(403).json({ error: 'Forbidden' }); } } }
+      if (authUserId !== id) { const caller = await prisma.user.findUnique({ where: { id: authUserId } }); if (caller === null) { return res.status(401).json({ error: 'Unauthorized' }); } if (caller.role !== 'admin') { if (caller.role !== 'recruiter') { return res.status(403).json({ error: 'Forbidden' }); } const myJobs = await prisma.job.findMany({ where: { recruiterId: caller.id }, select: { id: true } }); const myJobIds = myJobs.map((j: any) => j.id); const linkedApp = await prisma.application.findFirst({ where: { candidateId: id, jobId: { in: myJobIds } } }); if (linkedApp === null) { return res.status(403).json({ error: 'Forbidden' }); } const vProf = await prisma.candidateProfile.findUnique({ where: { userId: id } }); if (isHiddenForCompany(vProf, caller.companyName)) { return res.status(403).json({ error: 'Forbidden' }); } } }
       const profile = await prisma.candidateProfile.findUnique({ where: { userId: id } });
       return res.json(profile || {});
     } catch (error) {
@@ -360,10 +392,12 @@ export class CandidatesController {
 export async function getPublicCandidateProfile(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const authUserId = (req as any).authUserId;
+    const caller = authUserId ? await prisma.user.findUnique({ where: { id: authUserId } }) : null;
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user || user.role !== 'candidate') return res.status(404).json({ error: 'Candidate not found' });
     const profile = await prisma.candidateProfile.findUnique({ where: { userId: id } });
-    if (profile !== null && (profile as any).profileVisible === false) return res.status(404).json({ error: 'Candidate not found' });
+    if (isHiddenForCompany(profile, caller?.role === 'recruiter' ? caller.companyName : null)) return res.status(404).json({ error: 'Candidate not found' });
     const applications = await prisma.application.findMany({ where: { candidateId: id, aiScore: { not: null } }, orderBy: { screeningCompletedAt: 'desc' } });
     const latestScore = applications.length > 0 ? Math.round(applications.reduce((acc, a) => acc + (a.aiScore || 0), 0) / applications.length) : null;
     const mostRecent = applications[0];

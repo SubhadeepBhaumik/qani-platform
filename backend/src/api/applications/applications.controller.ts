@@ -5,6 +5,13 @@ import { pushNotification } from '../notifications/notifications.controller';
 import { roles } from '../roles/roles.controller';
 
 const prisma = new PrismaClient();
+const isHiddenForCompany = (profile: any, callerCompanyName?: string | null): boolean => {
+  if (!profile) return false;
+  if (profile.profileVisible === false) return true;
+  if (!callerCompanyName) return false;
+  const blocked: string[] = Array.isArray(profile.hiddenFromCompanies) ? profile.hiddenFromCompanies : [];
+  return blocked.some((c: string) => c.trim().toLowerCase() === callerCompanyName.trim().toLowerCase());
+};
 
 // Keep exported applications array for backward compatibility with screening controller
 export let applications: any[] = [];
@@ -136,8 +143,8 @@ export class ApplicationsController {
         const myJobs = await prisma.job.findMany({ where: { recruiterId: caller.id }, select: { id: true } });
         const myJobIds = myJobs.map((j: any) => j.id);
         where.jobId = { in: myJobIds };
-        const hiddenProfiles = await prisma.candidateProfile.findMany({ where: { profileVisible: false }, select: { userId: true } });
-        const hiddenIds = hiddenProfiles.map((h: any) => h.userId);
+        const allProfiles = await prisma.candidateProfile.findMany({ select: { userId: true, profileVisible: true, hiddenFromCompanies: true } });
+        const hiddenIds = allProfiles.filter((p: any) => isHiddenForCompany(p, caller.companyName)).map((p: any) => p.userId);
         if (hiddenIds.length > 0) { where.candidateId = { notIn: hiddenIds }; }
       } else {
         where.candidateId = caller.id;
@@ -170,7 +177,7 @@ export class ApplicationsController {
         if (job === null || job.recruiterId !== caller.id) { return res.status(403).json({ error: 'Forbidden' }); }
         if (app.candidateId) {
           const cProf = await prisma.candidateProfile.findUnique({ where: { userId: app.candidateId } });
-          if (cProf !== null && (cProf as any).profileVisible === false) { return res.status(403).json({ error: 'Forbidden' }); }
+          if (isHiddenForCompany(cProf, caller.companyName)) { return res.status(403).json({ error: 'Forbidden' }); }
         }
         return res.json(app);
       } else {

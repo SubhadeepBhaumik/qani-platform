@@ -151,6 +151,7 @@ app.delete('/api/v1/requirements/:id', RequirementsController.deleteRequirement)
 
 // Candidate routes
 app.post('/api/v1/candidates/register', CandidatesController.registerCandidate);
+app.get('/api/v1/companies', requireAuth, CandidatesController.getCompanies);
 app.get('/api/v1/candidates', requireAuth, CandidatesController.getCandidates);
 app.get('/api/v1/candidates/public', CandidatesController.getPublicCandidates);
 app.get('/api/v1/candidates/:id', requireAuth, CandidatesController.getCandidate);
