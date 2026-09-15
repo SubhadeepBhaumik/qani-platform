@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from '../../services/auth.service';
 import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
+import { stripPII, extractPhoneLocally } from '../../services/pii.service';
 
 const prisma = new PrismaClient();
 const parseSalaryValue = (v: any): number | null => {
@@ -225,12 +226,16 @@ export class CandidatesController {
       if (!text || text.trim().length < 20) {
         return res.status(422).json({ error: 'Could not extract readable text from CV' });
       }
+      // Extract phone locally BEFORE redaction — it never needs to leave the server.
+      const localPhone = extractPhoneLocally(text);
+      const candidateUser = await prisma.user.findUnique({ where: { id } });
+      const safeText = stripPII(text, candidateUser?.firstName, candidateUser?.lastName);
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You extract structured candidate profile data from resume/CV text. Respond ONLY with valid JSON, no markdown, no commentary.' },
-          { role: 'user', content: `Extract the following fields from this CV text as JSON with exactly these keys: bio (a 2-3 sentence professional summary written in third person based on the CV), skills (array of up to 12 technical/professional skill strings), phone (string or null), location (city/region string or null), workRights (string or null, e.g. "Citizen", "PR", "Visa" if mentioned), linkedinUrl (string or null, only if a linkedin.com URL appears in the text).\n\nCV TEXT:\n${text.slice(0, 8000)}` },
+          { role: 'system', content: 'You extract structured candidate profile data from resume/CV text. Some personal identifiers have been redacted for privacy - work only with what remains. Respond ONLY with valid JSON, no markdown, no commentary.' },
+          { role: 'user', content: `Extract the following fields from this CV text as JSON with exactly these keys: bio (a 2-3 sentence professional summary written in third person based on the CV), skills (array of up to 12 technical/professional skill strings), location (city/region string or null), workRights (string or null, e.g. "Citizen", "PR", "Visa" if mentioned), linkedinUrl (string or null, only if a linkedin.com URL appears in the text).\n\nCV TEXT:\n${safeText.slice(0, 8000)}` },
         ],
         response_format: { type: 'json_object' },
         temperature: 0.2,
@@ -241,7 +246,7 @@ export class CandidatesController {
       return res.json({
         bio: typeof parsed.bio === 'string' ? parsed.bio : null,
         skills: Array.isArray(parsed.skills) ? parsed.skills.filter((sk: any) => typeof sk === 'string').slice(0, 12) : [],
-        phone: typeof parsed.phone === 'string' ? parsed.phone : null,
+        phone: localPhone,
         location: typeof parsed.location === 'string' ? parsed.location : null,
         workRights: typeof parsed.workRights === 'string' ? parsed.workRights : null,
         linkedinUrl: typeof parsed.linkedinUrl === 'string' ? parsed.linkedinUrl : null,
@@ -288,12 +293,14 @@ export class CandidatesController {
       if (!text || text.length < 200 || loginWallHit) {
         return res.status(422).json({ error: 'LinkedIn blocked this request (public pages usually require sign-in to view). Try uploading your CV instead.' });
       }
+      const candidateUser = await prisma.user.findUnique({ where: { id } });
+      const safeText = stripPII(text, candidateUser?.firstName, candidateUser?.lastName);
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You extract structured candidate profile data from a LinkedIn public page\'s raw text. The text may contain navigation clutter unrelated to the profile - ignore it. Respond ONLY with valid JSON, no markdown, no commentary.' },
-          { role: 'user', content: `Extract the following fields as JSON with exactly these keys: bio (a 2-3 sentence professional summary written in third person), skills (array of up to 12 technical/professional skill strings), location (city/region string or null). If the text does not look like a real LinkedIn profile (e.g. it's a login page), return {"bio": null, "skills": [], "location": null}.\n\nPAGE TEXT:\n${text.slice(0, 8000)}` },
+          { role: 'system', content: 'You extract structured candidate profile data from a LinkedIn public page\'s raw text. Some personal identifiers have been redacted for privacy - work only with what remains. The text may contain navigation clutter unrelated to the profile - ignore it. Respond ONLY with valid JSON, no markdown, no commentary.' },
+          { role: 'user', content: `Extract the following fields as JSON with exactly these keys: bio (a 2-3 sentence professional summary written in third person), skills (array of up to 12 technical/professional skill strings), location (city/region string or null). If the text does not look like a real LinkedIn profile (e.g. it's a login page), return {"bio": null, "skills": [], "location": null}.\n\nPAGE TEXT:\n${safeText.slice(0, 8000)}` },
         ],
         response_format: { type: 'json_object' },
         temperature: 0.2,
