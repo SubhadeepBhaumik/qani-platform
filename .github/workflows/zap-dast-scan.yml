@@ -1,0 +1,17 @@
+name: OWASP ZAP DAST Scan
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Weekly, Monday 03:00 UTC
+  workflow_dispatch: {}    # Also runnable on-demand from the Actions tab
+
+jobs:
+  zap_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ZAP Baseline Scan (passive, safe for production)
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'https://qani.io'
+          cmd_options: '-a'
+          fail_action: false
