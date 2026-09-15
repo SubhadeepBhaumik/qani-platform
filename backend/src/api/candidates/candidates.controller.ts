@@ -3,6 +3,7 @@ import { AuthService } from '../../services/auth.service';
 import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import { stripPII, extractPhoneLocally } from '../../services/pii.service';
+import { scanBuffer } from '../../services/malware-scan.service';
 
 const prisma = new PrismaClient();
 const parseSalaryValue = (v: any): number | null => {
@@ -178,6 +179,16 @@ export class CandidatesController {
       if (decoded.userId !== id) { const caller = await prisma.user.findUnique({ where: { id: decoded.userId } }); if (caller === null || caller.role !== 'admin') { return res.status(403).json({ error: 'Forbidden' }); } }
       if (!cvData || !cvFilename) return res.status(400).json({ error: 'cvData and cvFilename required' });
       if (cvData.length > 7 * 1024 * 1024) return res.status(400).json({ error: 'File too large. Max 5MB.' });
+
+      const dataMatch = cvData.match(/^data:(.+);base64,(.+)$/);
+      if (dataMatch) {
+        const fileBuffer = Buffer.from(dataMatch[2], 'base64');
+        const scanResult = await scanBuffer(fileBuffer, cvFilename);
+        if (scanResult.infected) {
+          console.error(`Malware detected in CV upload: ${scanResult.virusName}, candidate ${id}`);
+          return res.status(400).json({ error: 'This file failed a security scan and could not be uploaded. Please try a different file.' });
+        }
+      }
 
       const profile = await prisma.candidateProfile.upsert({
         where: { userId: id },
