@@ -2,12 +2,15 @@ name: OWASP ZAP DAST Scan
 
 on:
   schedule:
-    - cron: '0 3 * * 1'  # Weekly, Monday 03:00 UTC
-  workflow_dispatch: {}    # Also runnable on-demand from the Actions tab
+    - cron: '0 3 * * 1'
+  workflow_dispatch: {}
 
 jobs:
   zap_scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: ZAP Baseline Scan (passive, safe for production)
         uses: zaproxy/action-baseline@v0.12.0
