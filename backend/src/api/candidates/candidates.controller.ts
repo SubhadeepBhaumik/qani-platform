@@ -184,9 +184,13 @@ export class CandidatesController {
       if (dataMatch) {
         const fileBuffer = Buffer.from(dataMatch[2], 'base64');
         const scanResult = await scanBuffer(fileBuffer, cvFilename);
-        if (scanResult.infected) {
-          console.error(`Malware detected in CV upload: ${scanResult.virusName}, candidate ${id}`);
-          return res.status(400).json({ error: 'This file failed a security scan and could not be uploaded. Please try a different file.' });
+        if (!scanResult.clean) {
+          if (scanResult.infected) {
+            console.error(`Malware detected in CV upload: ${scanResult.virusName}, candidate ${id}`);
+          } else {
+            console.error(`CV upload rejected - malware scan could not run: ${scanResult.scanError}, candidate ${id}`);
+          }
+          return res.status(400).json({ error: 'This file failed a security scan and could not be uploaded. Please try again shortly.' });
         }
       }
 
