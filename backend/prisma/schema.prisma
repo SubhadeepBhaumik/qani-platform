@@ -239,3 +239,23 @@ model PricingPlan {
   updatedAt   DateTime @updatedAt
   @@map("pricing_plans")
 }
+
+model IntegrationConnection {
+  id                String    @id @default(cuid())
+  provider          String    // e.g. "jobadder"
+  tenantId          String    // QANI tenant: user.companyId ?? user.id (per-tenant isolation)
+  connectedByUserId String
+  externalAccountId String?
+  scope             String?
+  accessTokenEnc    String    // AES-256-GCM payload (v<n>:iv:tag:ct) - never plaintext
+  refreshTokenEnc   String    // AES-256-GCM payload - never plaintext
+  accessExpiresAt   DateTime
+  status            String    @default("active") // active, revoked, error
+  lastRefreshedAt   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([provider, tenantId])
+  @@index([connectedByUserId])
+  @@map("integration_connections")
+}
